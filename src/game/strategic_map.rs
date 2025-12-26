@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 
 use bevy::ui_widgets::{observe, ValueChange};
 
+use super::market::Resources;
 use crate::assets::Sylt;
 use crate::GameState;
 
@@ -118,15 +119,35 @@ enum HudButton {
     BuldingTabAction,
 }
 
-fn create_resource_icon(parent: &mut ChildSpawnerCommands) {
+fn create_resource_icon(parent: &mut ChildSpawnerCommands, resource: Resources) {
     parent.spawn((
         Node {
-            width: px(64),
+            width: px(128),
             height: px(64),
             margin: UiRect::all(px(4)),
             ..default()
         },
         BackgroundColor(Srgba::new(0.7, 0.7, 0.7, 1.0).into()),
+        children![
+            (
+                Node {
+                    width: px(64),
+                    height: px(64),
+                    margin: UiRect::all(px(4)),
+                    ..default()
+                },
+                BackgroundColor(Srgba::new(0.7, 0.7, 0.7, 1.0).into()),
+            ),
+            (
+                Node {
+                    width: px(64),
+                    height: px(64),
+                    margin: UiRect::all(px(4)),
+                    ..default()
+                },
+                BackgroundColor(Srgba::new(0.7, 0.5, 0.5, 1.0).into()),
+            )
+        ],
     ));
 }
 
@@ -169,8 +190,8 @@ fn hud_setup(
                     BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 1.0).into()),
                 ))
                 .with_children(|parent| {
-                    for i in 0..5 {
-                        create_resource_icon(parent);
+                    for resource in vec![Resources::Water, Resources::Stone, Resources::Souls] {
+                        create_resource_icon(parent, resource);
                     }
                 });
 
