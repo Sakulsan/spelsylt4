@@ -21,7 +21,7 @@ struct CityGraph {
 }
 
 const CIRCLE_DIST: f64 = 50.0;
-const JITTER: f32x = 15.0;
+const JITTER: f32 = 15.0;
 const CITY_COUNTS: [usize; 9] = [3, 4, 4, 5, 8, 12, 15, 20, 15];
 
 type CGraph = Graph<Entity, CityEdge, Undirected>;
