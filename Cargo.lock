@@ -4190,6 +4190,8 @@ dependencies = [
  "accesskit",
  "bevy",
  "bevy_simple_text_input",
+ "petgraph",
+ "rand",
  "serde",
  "serde_json",
 ]

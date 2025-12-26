@@ -13,6 +13,7 @@ const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
 mod game;
 
 mod assets;
+mod prelude;
 
 #[derive(Resource, DerefMut, Deref)]
 pub struct GlobalRng(StdRng);
