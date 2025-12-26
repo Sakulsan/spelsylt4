@@ -7,13 +7,14 @@ use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
+use crate::game::namelists;
 
-use crate::game::namelists::generate_city_names;
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
 mod game;
 
 mod assets;
 mod prelude;
+
 
 #[derive(Resource, DerefMut, Deref)]
 pub struct GlobalRng(StdRng);
