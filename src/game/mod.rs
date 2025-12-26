@@ -3,6 +3,4 @@
 pub mod scene;
 use bevy::prelude::*;
 
-pub(super) fn plugin(app: &mut App) {
-    app.add_plugins(scene::game_plugin);
-}
+pub(super) fn plugin(app: &mut App) {}
