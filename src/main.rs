@@ -8,6 +8,7 @@ use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
+use std::time::SystemTime;
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
 mod game;
 
@@ -79,6 +80,7 @@ fn main() {
         // Insert as resource the initial value for the settings resources
         .insert_resource(DisplayQuality::Medium)
         .insert_resource(GlobalRng(StdRng::from_seed([0; 32])))
+        //.insert_resource(GlobalRng(StdRng::seed_from_u64(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Error in system time.").as_secs())))
         .insert_resource(Volume(7))
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
