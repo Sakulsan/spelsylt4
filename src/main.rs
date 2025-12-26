@@ -5,10 +5,15 @@
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
+use rand::SeedableRng;
+use rand::rngs::StdRng;
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
 mod game;
 
 mod assets;
+
+#[derive(Resource, DerefMut, Deref)]
+pub struct GlobalRng(StdRng);
 
 // Enum that will be used as a global state for the game
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -42,6 +47,7 @@ fn main() {
         ))
         // Insert as resource the initial value for the settings resources
         .insert_resource(DisplayQuality::Medium)
+        .insert_resource(GlobalRng(StdRng::from_seed([0; 32])))
         .insert_resource(Volume(7))
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
