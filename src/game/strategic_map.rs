@@ -57,7 +57,7 @@ fn strategic_setup(
             height: Val::Vh(100.0),
             ..default()
         },
-        ImageNode {
+        Sprite {
             image: sylt.get_sprite("map").image,
             ..default()
         },
@@ -123,7 +123,7 @@ fn create_resource_icon(parent: &mut ChildSpawnerCommands) {
         Node {
             width: px(64),
             height: px(64),
-            margin: UiRect::all(percent(1)),
+            margin: UiRect::all(px(4)),
             ..default()
         },
         BackgroundColor(Srgba::new(0.7, 0.7, 0.7, 1.0).into()),
