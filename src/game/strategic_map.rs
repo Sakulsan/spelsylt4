@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use bevy::ui_widgets::{observe, ValueChange};
+
 use crate::assets::Sylt;
 use crate::GameState;
 
@@ -13,7 +15,7 @@ pub fn plugin(app: &mut App) {
         .insert_resource(SelectedCity("Unkown".to_string()))
         .init_state::<StrategicState>()
         .add_systems(OnEnter(StrategicState::Buildings), hud_setup)
-        .add_systems(Update, (city_interaction_system));
+        .add_systems(Update, (city_interaction_system, kill_button));
 }
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -44,6 +46,7 @@ fn strategic_setup(
             Button,
             CityData {
                 id: "Capital".to_string(),
+                population: 2,
                 districts: vec![DistrictType::Farm],
             },
             CityIcon {
@@ -59,15 +62,52 @@ fn strategic_setup(
     ));
 }
 
+fn kill_button(
+    mut interaction_query: Query<(&Interaction, &HudButton), (Changed<Interaction>, With<Button>)>,
+    mut menu_state: ResMut<NextState<StrategicState>>,
+) {
+    for (interaction, menu_button_action) in &interaction_query {
+        if *interaction == Interaction::Pressed {
+            match menu_button_action {
+                HudButton::KillHud => {
+                    menu_state.set(StrategicState::Map);
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+#[derive(Component)]
+enum HudButton {
+    KillHud,
+    ConstructionAction,
+    EconomyTabAction,
+    BuldingTabAction,
+}
+
 fn hud_setup(
     mut commands: Commands,
     mut sylt: Sylt,
-    mut city_data: Query<&CityData>,
+    city_data: Query<&CityData>,
     selected_city: Res<SelectedCity>,
 ) {
     for city in city_data {
         if city.id == selected_city.0 {
             commands.spawn((
+                DespawnOnExit(StrategicState::Buildings),
+                Node {
+                    top: Val::Vh(0.0),
+                    width: Val::Vw(100.0),
+                    height: Val::Vh(70.0),
+                    ..default()
+                },
+                BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 0.8).into()),
+                Button,
+                HudButton::KillHud, //Feels like a clunky way to quit the menu
+            ));
+            commands.spawn((
+                DespawnOnExit(StrategicState::Buildings),
                 Node {
                     top: Val::Vh(70.0),
                     width: Val::Vw(100.0),
@@ -82,15 +122,41 @@ fn hud_setup(
                 BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 1.0).into()),
                 children![
                     ((
+                        Node {
+                            width: percent(100.0),
+                            height: percent(20.0),
+                            ..default()
+                        },
                         // Title
                         Text::new(city.id.clone()),
                         TextFont { ..default() }
                     )),
-                    Node {
-                        width: percent(20.0),
-                        height: percent(10.0),
-                        ..default()
-                    }
+                    ((
+                        Node {
+                            width: percent(100.0),
+                            height: percent(100.0),
+                            align_items: AlignItems::Start,
+                            justify_content: JustifyContent::Start,
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Row,
+                            ..default()
+                        },
+                        Children::spawn((SpawnWith(
+                            |parent: &mut bevy::ecs::relationship::RelatedSpawner<ChildOf>| {
+                                for _ in 0..5 {
+                                    parent.spawn((
+                                        Node {
+                                            width: percent(20),
+                                            height: percent(100),
+                                            border: UiRect::all(Val::Px(2.0)),
+                                            ..default()
+                                        },
+                                        BorderColor::all(Color::BLACK),
+                                    ));
+                                }
+                            }
+                        ),))
+                    )),
                 ],
             ));
         }
@@ -118,6 +184,7 @@ enum DistrictType {
 #[derive(Component)]
 struct CityData {
     id: String,
+    population: u8,
     districts: Vec<DistrictType>,
 }
 
