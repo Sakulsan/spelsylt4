@@ -77,15 +77,14 @@ pub fn get_elven_name(mut rng: &mut ResMut<GlobalRng>) -> String {
     let elven_initial_particle = vec![
         "Dawn", "Sun", "Gem", "Ice", "Frost", "Heart", "Sky", "Heaven", "Winter", "Lore", "Fire",
         "World", "Moon", "Forge", "Flame", "Star", "Mage", "Silver", "Storm", "Amber", "Ash",
-        "Brass", "Gold", "Diamond", "Emerald", "Earth"
+        "Brass", "Gold", "Diamond", "Emerald", "Earth",
     ];
     let elven_latter_particle = vec![
-        "light", "spire", "tower", "haven", "reach", "star", "hearth", "home", "land", "peak", "fire",
-        "fall", "rise", "spring", "reign", "garden", "sun", "edge"
+        "light", "spire", "tower", "haven", "reach", "star", "hearth", "home", "land", "peak",
+        "fire", "fall", "rise", "spring", "reign", "garden", "sun", "edge",
     ];
-    let elven_placement_particle = vec![
-        "'s Edge", "'s Crown", "'s Peak", "'s Radiance", "'s Heart"
-    ];
+    let elven_placement_particle =
+        vec!["'s Edge", "'s Crown", "'s Peak", "'s Radiance", "'s Heart"];
 
     let mut name = "".to_string();
 
@@ -106,7 +105,7 @@ pub fn get_elven_name(mut rng: &mut ResMut<GlobalRng>) -> String {
                     .choose(&mut rng)
                     .expect("error in placement particle elven name generator"),
             );
-        },
+        }
         2 => {
             name = format!(
                 "{0}{1}",
@@ -168,13 +167,34 @@ pub fn get_goblin_name(mut rng: &mut ResMut<GlobalRng>) -> String {
 pub fn get_human_name(mut rng: &mut ResMut<GlobalRng>) -> String {
     let human_initial_particle = vec![
         "Coven", "Lon", "Wake", "Shef", "Man", "Brad", "Notting", "Birming", "Stoke", "Trent",
-        "Chelm", "York", "New", "Canter", "Don", "Bright", "Wolver", "Ply", "Der", "South", "North", "Prest",
-        "Chi", "Inver", "Lin", "Wor", "Lan", "Dun"
+        "Chelm", "York", "New", "Canter", "Don", "Bright", "Wolver", "Ply", "Der", "South",
+        "North", "Prest", "Chi", "Inver", "Lin", "Wor", "Lan", "Dun",
     ];
     let human_latter_particle = vec![
-        "try", "don", "field", "sea", "bury", "ham", "port", "ford", "mouth", "deen", "land",
-        "fast", "pool", "burg", "diff", "bridge", "hampton", "by", "cast", "cester", "shire", "cestershire",
-        "wich", "chester"
+        "try",
+        "don",
+        "field",
+        "sea",
+        "bury",
+        "ham",
+        "port",
+        "ford",
+        "mouth",
+        "deen",
+        "land",
+        "fast",
+        "pool",
+        "burg",
+        "diff",
+        "bridge",
+        "hampton",
+        "by",
+        "cast",
+        "cester",
+        "shire",
+        "cestershire",
+        "wich",
+        "chester",
     ];
     let mut human_extending_particle = "".to_string();
     match rng.random_range(0..10) {

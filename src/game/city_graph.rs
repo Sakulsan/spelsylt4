@@ -20,20 +20,20 @@ struct CityGraph {
     graph: CGraph,
 }
 
-const CIRCLE_DIST: f32 = 50.0;
+const CIRCLE_DIST: f32 = 100.0;
 const ANGULAR_CONSTRAINT: f32 = PI / 9.0;
 const JITTER: f32 = 15.0;
 const CITY_COUNTS: [usize; 9] = [3, 4, 4, 5, 8, 12, 15, 20, 15];
 const MIN_CITY_DIST: f32 = 50.0;
-const SCALE: f32 = 2.0;
+const SCALE: f32 = 1.0;
 
 type CGraph = Graph<Entity, CityEdge, Undirected>;
 
 fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
     let vec2 = |x, y| Vec2::new(x, y);
 
-    let mut random_circle_pos = |i: i32| {
-        let ang = rng.random_range(-PI..=PI);
+    let mut random_circle_pos = |i: i32, min: f32, max: f32| {
+        let ang = rng.random_range(-min..=max);
         let d = (i + 1) as f32 * CIRCLE_DIST;
         let jx = rng.random_range(-JITTER..JITTER);
         let jy = rng.random_range(-JITTER..JITTER);
@@ -42,14 +42,11 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
 
     let mut g = Graph::new_undirected();
 
-    let orig = vec2(-1000.0, -1000.0) / 2.0 * SCALE;
-    let offset = vec2(1000.0, 1000.0) * SCALE;
-
-    let origins = [
-        vec2(0.0, 0.0),
-        vec2(1.0, 0.0),
-        vec2(0.0, 1.0),
-        vec2(1.0, 1.0),
+    let positions = [
+        vec2(450., -1650.),
+        vec2(450., -150.),
+        vec2(-30., 1460.),
+        vec2(-1360., 500.),
     ];
 
     let mut spawn_city = |pos, color| {
@@ -65,12 +62,18 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
     let mut other_pos = Vec::new();
 
     for i in 0..4 {
-        let capital_pos = orig + offset * origins[i];
+        let capital_pos = positions[i];
 
-        spawn_city(capital_pos, make_color(colors[0]));
+        spawn_city(capital_pos * SCALE, make_color(colors[0]));
+
+        let (min, max) = match i {
+            3 => (-PI, PI),
+            _ => (-PI, PI),
+        };
 
         for (c, j) in CITY_COUNTS.into_iter().enumerate() {
             other_pos.clear();
+
             for _ in 0..j {
                 let mut city_pos = capital_pos + random_circle_pos(c as i32);
                 'x: loop {
@@ -82,7 +85,6 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
                     }
                     break;
                 }
-                let city_pos = city_pos * SCALE;
                 other_pos.push(city_pos);
                 spawn_city(city_pos, make_color(colors[(1 + c) % colors.len()]));
             }
@@ -189,6 +191,8 @@ fn remove_random_edges(mut rng: ResMut<GlobalRng>, mut g: ResMut<CityGraph>) {
     const REMOVAL_FACTOR: f64 = 0.25;
 
     let g = &mut g.graph;
+    let starting_components = connected_components(&*g);
+
     let mut g_test = CGraph::new_undirected();
     g_test.clone_from(g);
 
@@ -208,7 +212,7 @@ fn remove_random_edges(mut rng: ResMut<GlobalRng>, mut g: ResMut<CityGraph>) {
         };
         g_test.remove_edge(random_edge);
         // where performance goes to die
-        if connected_components(&g_test) == 1 {
+        if connected_components(&g_test) == starting_components {
             info!("Successfully removed node, continuing");
             g.remove_edge(random_edge);
             edges.pop();
