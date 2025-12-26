@@ -1,20 +1,24 @@
 use bevy::prelude::*;
 use std::marker::PhantomData;
 
-use bevy::ui_widgets::{observe, ValueChange};
-
-use super::market::Resources;
+use super::market::*;
 use crate::assets::Sylt;
 use crate::GameState;
+use bevy::ui_widgets::{observe, ValueChange};
+use std::collections::HashMap;
 
 // This plugin will contain the game. In this case, it's just be a screen that will
 // display the current settings for 5 seconds before returning to the menu
 #[derive(Resource, Deref)]
 struct SelectedCity(String);
 
+#[derive(Resource, Deref)]
+struct BuildinTable(HashMap<String, Building>);
+
 pub fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Game), strategic_setup)
         .insert_resource(SelectedCity("Unkown".to_string()))
+        .insert_resource(BuildinTable(super::market::gen_building_tables()))
         .init_state::<StrategicState>()
         .init_state::<HUDPosition>()
         .add_systems(OnEnter(StrategicState::HUDOpen), hud_setup)
@@ -67,7 +71,10 @@ fn strategic_setup(
             CityData {
                 id: "Capital".to_string(),
                 population: 2,
-                districts: vec![DistrictType::Farm, DistrictType::Mine],
+                buildings: vec![
+                    "Automated Clothiers".to_string(),
+                    "Mushroom Farm".to_string()
+                ],
             },
             CityIcon {
                 id: "Capital".to_string()
@@ -134,7 +141,7 @@ fn create_resource_icon(
             justify_content: JustifyContent::FlexStart,
             ..default()
         },
-        BackgroundColor(Srgba::new(0.7, 0.7, 0.7, 1.0).into()),
+        BackgroundColor(Srgba::new(0.9, 0.9, 0.9, 1.0).into()),
         children![
             (
                 Node {
@@ -155,7 +162,6 @@ fn create_resource_icon(
                         .image,
                     ..default()
                 },
-                BackgroundColor(Srgba::new(0.7, 0.7, 0.7, 1.0).into()),
             ),
             (Text::new(format!("x{}", cost)),)
         ],
@@ -360,7 +366,7 @@ enum DistrictType {
 struct CityData {
     id: String,
     population: u8,
-    districts: Vec<DistrictType>,
+    buildings: Vec<String>,
 }
 
 #[derive(Component)]
