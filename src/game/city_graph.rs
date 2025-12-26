@@ -21,8 +21,10 @@ struct CityGraph {
 }
 
 const CIRCLE_DIST: f64 = 50.0;
+const ANGULAR_CONSTRAINT: f32 = PI / 9.0;
 const JITTER: f32 = 15.0;
 const CITY_COUNTS: [usize; 9] = [3, 4, 4, 5, 8, 12, 15, 20, 15];
+const MIN_CITY_DIST: f32 = 50.0;
 
 type CGraph = Graph<Entity, CityEdge, Undirected>;
 
@@ -72,7 +74,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
                 let mut city_pos = capital_pos + random_circle_pos(c as i32);
                 'x: loop {
                     for v in &other_pos {
-                        if city_pos.distance(*v) < 20.0 {
+                        if city_pos.distance(*v) < MIN_CITY_DIST {
                             city_pos = capital_pos + random_circle_pos(c as i32);
                             continue 'x;
                         }
@@ -148,6 +150,15 @@ fn gen_edges(nodes: Query<&Node>, mut g: ResMut<CityGraph>) {
 
     for n in &nodes {
         scratch.clear();
+        for neighbor in g.neighbors(n.0) {
+            break;
+            let Ok(&Node(_, pos, _)) = nodes.get(g[neighbor]) else {
+                error!("Couldn't find entity in query");
+                continue;
+            };
+            scratch.push(pos - n.1);
+        }
+
         all_nodes.sort_by_key(|&Node(_, t2, _)| (n.1.distance(*t2) * 1_000_000.0) as u64);
 
         'outer: for other in all_nodes.iter().skip(1).take(10) {
@@ -157,7 +168,7 @@ fn gen_edges(nodes: Query<&Node>, mut g: ResMut<CityGraph>) {
             for x in &scratch {
                 let y = other.1 - n.1;
 
-                if y.angle_to(*x).abs() < PI / 22.5 {
+                if y.angle_to(*x).abs() < ANGULAR_CONSTRAINT {
                     continue 'outer;
                 }
             }
