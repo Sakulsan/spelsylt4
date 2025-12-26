@@ -1,3 +1,4 @@
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Resources {
     Food,
     Plants,
@@ -26,4 +27,38 @@ pub enum Resources {
     ExoticAlloys,
     Spellwork,
     Artifacts,
+}
+
+impl Resources {
+    pub fn all_resources() -> [Self; 27] {
+        [
+            Self::Food,
+            Self::Plants,
+            Self::CommonOre,
+            Self::RareOre,
+            Self::Lumber,
+            Self::Stone,
+            Self::Water,
+            Self::Glass,
+            Self::Coal,
+            Self::RefinedValuables,
+            Self::CommonAlloys,
+            Self::Textiles,
+            Self::ManufacturedGoods,
+            Self::Medicines,
+            Self::Reagents,
+            Self::Machinery,
+            Self::Drugs,
+            Self::Slaves,
+            Self::Souls,
+            Self::SimpleLabour,
+            Self::Military,
+            Self::Transportation,
+            Self::Luxuries,
+            Self::ComplexLabour,
+            Self::ExoticAlloys,
+            Self::Spellwork,
+            Self::Artifacts,
+        ]
+    }
 }
