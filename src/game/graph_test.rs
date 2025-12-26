@@ -1,10 +1,10 @@
-use bevy::prelude::*;
-use petgraph::{Graph, NodeIndex};
-use rand::prelude::*;
+use crate::prelude::*;
+
+use petgraph::{graph::NodeIndex, Graph, Undirected};
 
 pub fn plugin(app: &mut App) {
-    app.add_system(Startup, (setup, gen_edges).chain());
-    app.add_system(Update, gizmo_nodes);
+    app.add_systems(Startup, (setup, gen_edges).chain());
+    app.add_systems(Update, gizmo_nodes);
 }
 
 #[derive(Component)]
@@ -40,6 +40,10 @@ fn setup(mut commands: Commands) {
 
 fn gizmo_nodes(mut gizmos: Gizmos, nodes: Query<(&Transform, &Node)>, g: Res<CityGraph>) {
     for (t, n) in nodes {
-        gizmos.circle_2d(t.translation.xy(), radius, color)
+        gizmos.circle_2d(t.translation.xy(), 5.0, Color::linear_rgb(1.0, 0.0, 0.0));
     }
+}
+
+fn gen_edges() {
+    todo!()
 }
