@@ -75,22 +75,61 @@ pub fn get_dwarven_name(mut rng: &mut ResMut<GlobalRng>) -> String {
 
 pub fn get_elven_name(mut rng: &mut ResMut<GlobalRng>) -> String {
     let elven_initial_particle = vec![
-        "Dawn", "Sun", "Gem", "Ice", "Frost", "Heart", "Sky", "Heaven", "Winter", "Lore", "Future",
-        "Edge", "World", "Moon", "Forge", "Flame", "Star", "Mage",
+        "Dawn", "Sun", "Gem", "Ice", "Frost", "Heart", "Sky", "Heaven", "Winter", "Lore", "Fire",
+        "World", "Moon", "Forge", "Flame", "Star", "Mage", "Silver", "Storm", "Amber", "Ash",
+        "Brass", "Gold", "Diamond", "Emerald", "Earth"
     ];
     let elven_latter_particle = vec![
-        "light", "spire", "tower", "haven", "reach", "star", "hearth", "home", "land",
+        "light", "spire", "tower", "haven", "reach", "star", "hearth", "home", "land", "peak", "fire",
+        "fall", "rise", "spring", "reign", "garden", "sun", "edge"
+    ];
+    let elven_placement_particle = vec![
+        "'s Edge", "'s Crown", "'s Peak", "'s Radiance", "'s Heart"
     ];
 
-    let name = format!(
-        "{0}{1}",
-        elven_initial_particle
-            .choose(&mut rng)
-            .expect("error in initial particle elven name generator"),
-        elven_latter_particle
-            .choose(&mut rng)
-            .expect("error in latter particle elven name generator")
-    );
+    let mut name = "".to_string();
+
+    match rng.random_range(0..10) {
+        1 => {
+            name = format!(
+                "{0}{1} at {2}{3}",
+                elven_initial_particle
+                    .choose(&mut rng)
+                    .expect("error in initial particle elven name generator"),
+                elven_latter_particle
+                    .choose(&mut rng)
+                    .expect("error in latter particle elven name generator"),
+                elven_initial_particle
+                    .choose(&mut rng)
+                    .expect("error in latter particle elven name generator"),
+                elven_placement_particle
+                    .choose(&mut rng)
+                    .expect("error in placement particle elven name generator"),
+            );
+        },
+        2 => {
+            name = format!(
+                "{0}{1}",
+                elven_initial_particle
+                    .choose(&mut rng)
+                    .expect("error in initial particle elven name generator"),
+                elven_placement_particle
+                    .choose(&mut rng)
+                    .expect("error in latter particle elven name generator")
+            );
+        }
+        _ => {
+            name = format!(
+                "{0}{1}",
+                elven_initial_particle
+                    .choose(&mut rng)
+                    .expect("error in initial particle elven name generator"),
+                elven_latter_particle
+                    .choose(&mut rng)
+                    .expect("error in latter particle elven name generator")
+            );
+        }
+    }
 
     name
 }
@@ -129,11 +168,13 @@ pub fn get_goblin_name(mut rng: &mut ResMut<GlobalRng>) -> String {
 pub fn get_human_name(mut rng: &mut ResMut<GlobalRng>) -> String {
     let human_initial_particle = vec![
         "Coven", "Lon", "Wake", "Shef", "Man", "Brad", "Notting", "Birming", "Stoke", "Trent",
-        "Chelm", "York", "New", "Canter",
+        "Chelm", "York", "New", "Canter", "Don", "Bright", "Wolver", "Ply", "Der", "South", "North", "Prest",
+        "Chi", "Inver", "Lin", "Wor", "Lan", "Dun"
     ];
     let human_latter_particle = vec![
         "try", "don", "field", "sea", "bury", "ham", "port", "ford", "mouth", "deen", "land",
-        "fast", "pool", "burg", "diff",
+        "fast", "pool", "burg", "diff", "bridge", "hampton", "by", "cast", "cester", "shire", "cestershire",
+        "wich", "chester"
     ];
     let mut human_extending_particle = "".to_string();
     match rng.random_range(0..10) {
