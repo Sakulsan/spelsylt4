@@ -82,6 +82,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
                     }
                     break;
                 }
+                let city_pos = city_pos * SCALE;
                 other_pos.push(city_pos);
                 spawn_city(city_pos, make_color(colors[(1 + c) % colors.len()]));
             }
