@@ -7,6 +7,8 @@ use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
+
+use crate::game::namelists::generate_city_names;
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
 mod game;
 
@@ -51,9 +53,24 @@ fn main() {
         .insert_resource(Volume(7))
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
+        .add_systems(Startup, debug_city_names)
         .add_systems(Startup, setup)
         // Adds the plugins for each state
         .run();
+}
+
+fn debug_city_names(mut rng: ResMut<GlobalRng>) {
+    let names = generate_city_names((10, 10, 10, 10), &mut rng);
+    let mut display = |t: String, list: &Vec<String>| {
+        println!("{0} cities:", t);
+        for x in list {
+            println!("{0}", x);
+        }
+    };
+    display("dwarven".to_string(), &names[0]);
+    display("elven".to_string(), &names[1]);
+    display("goblin".to_string(), &names[2]);
+    display("human".to_string(), &names[3]);
 }
 
 fn setup(mut commands: Commands) {
