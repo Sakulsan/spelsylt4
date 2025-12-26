@@ -44,6 +44,4 @@ fn gizmo_nodes(mut gizmos: Gizmos, nodes: Query<(&Transform, &Node)>, g: Res<Cit
     }
 }
 
-fn gen_edges() {
-    todo!()
-}
+fn gen_edges() {}
