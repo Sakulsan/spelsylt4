@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use std::marker::PhantomData;
 
 use bevy::ui_widgets::{observe, ValueChange};
 
@@ -14,15 +15,33 @@ pub fn plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Game), strategic_setup)
         .insert_resource(SelectedCity("Unkown".to_string()))
         .init_state::<StrategicState>()
-        .add_systems(OnEnter(StrategicState::Buildings), hud_setup)
+        .init_state::<HUDPosition>()
+        .add_systems(OnEnter(StrategicState::HUDOpen), hud_setup)
+        //        .add_systems(OnEnter(HUDPosition::Actions), open_actions)
+        //        .add_systems(OnEnter(HUDPosition::Buildings), open_buildings)
+        //        .add_systems(OnEnter(HUDPosition::Market), open_market)
         .add_systems(Update, (city_interaction_system, kill_button));
 }
+
+/*#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+enum StrategicState<T: Send + Sync + Eq + std::fmt::Debug + std::hash::Hash + Clone + 'static> {
+    #[default]
+    Map,
+    HUDOpen(HUDPosition, T),
+}*/
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 enum StrategicState {
     #[default]
     Map,
+    HUDOpen,
+}
+
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+enum HUDPosition {
+    #[default]
     Buildings,
+    Actions,
     Market,
 }
 
@@ -47,7 +66,7 @@ fn strategic_setup(
             CityData {
                 id: "Capital".to_string(),
                 population: 2,
-                districts: vec![DistrictType::Farm],
+                districts: vec![DistrictType::Farm, DistrictType::Mine],
             },
             CityIcon {
                 id: "Capital".to_string()
@@ -65,6 +84,7 @@ fn strategic_setup(
 fn kill_button(
     mut interaction_query: Query<(&Interaction, &HudButton), (Changed<Interaction>, With<Button>)>,
     mut menu_state: ResMut<NextState<StrategicState>>,
+    mut tab_state: ResMut<NextState<HUDPosition>>,
 ) {
     for (interaction, menu_button_action) in &interaction_query {
         if *interaction == Interaction::Pressed {
@@ -72,6 +92,17 @@ fn kill_button(
                 HudButton::KillHud => {
                     menu_state.set(StrategicState::Map);
                 }
+
+                HudButton::OperationAction => {
+                    tab_state.set(HUDPosition::Actions);
+                }
+                HudButton::EconomyTabAction => {
+                    tab_state.set(HUDPosition::Market);
+                }
+                HudButton::BuldingTabAction => {
+                    tab_state.set(HUDPosition::Buildings);
+                }
+
                 _ => {}
             }
         }
@@ -82,8 +113,21 @@ fn kill_button(
 enum HudButton {
     KillHud,
     ConstructionAction,
+    OperationAction,
     EconomyTabAction,
     BuldingTabAction,
+}
+
+fn create_resource_icon(parent: &mut ChildSpawnerCommands) {
+    parent.spawn((
+        Node {
+            width: px(64),
+            height: px(64),
+            margin: UiRect::all(percent(1)),
+            ..default()
+        },
+        BackgroundColor(Srgba::new(0.7, 0.7, 0.7, 1.0).into()),
+    ));
 }
 
 fn hud_setup(
@@ -94,24 +138,49 @@ fn hud_setup(
 ) {
     for city in city_data {
         if city.id == selected_city.0 {
+            //Map quit upon click
             commands.spawn((
-                DespawnOnExit(StrategicState::Buildings),
+                DespawnOnExit(StrategicState::HUDOpen),
                 Node {
                     top: Val::Vh(0.0),
-                    width: Val::Vw(100.0),
+                    width: Val::Vw(60.0),
                     height: Val::Vh(70.0),
                     ..default()
                 },
-                BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 0.8).into()),
                 Button,
                 HudButton::KillHud, //Feels like a clunky way to quit the menu
             ));
+
+            //Market values
+            commands
+                .spawn((
+                    DespawnOnExit(StrategicState::HUDOpen),
+                    Node {
+                        top: Val::Vh(0.0),
+                        left: Val::Vh(100.0),
+                        width: Val::Vw(40.0),
+                        height: Val::Vh(70.0),
+                        align_items: AlignItems::Start,
+                        justify_content: JustifyContent::Start,
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Column,
+                        ..default()
+                    },
+                    BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 1.0).into()),
+                ))
+                .with_children(|parent| {
+                    for i in 0..5 {
+                        create_resource_icon(parent);
+                    }
+                });
+
+            //Action menu
             commands.spawn((
-                DespawnOnExit(StrategicState::Buildings),
+                DespawnOnExit(StrategicState::HUDOpen),
                 Node {
                     top: Val::Vh(70.0),
                     width: Val::Vw(100.0),
-                    height: Val::Vh(30.0),
+                    height: Val::Vh(40.0),
                     align_items: AlignItems::Start,
                     justify_content: JustifyContent::Start,
                     display: Display::Flex,
@@ -121,17 +190,63 @@ fn hud_setup(
                 },
                 BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 1.0).into()),
                 children![
-                    ((
+                    (
                         Node {
                             width: percent(100.0),
                             height: percent(20.0),
+                            align_items: AlignItems::Start,
+                            justify_content: JustifyContent::Start,
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Row,
                             ..default()
                         },
-                        // Title
-                        Text::new(city.id.clone()),
-                        TextFont { ..default() }
-                    )),
-                    ((
+                        children![
+                            (
+                                Node {
+                                    width: percent(40.0),
+                                    ..default()
+                                },
+                                // Title
+                                Text::new(city.id.clone()),
+                                TextFont { ..default() },
+                            ),
+                            (
+                                Button,
+                                HudButton::BuldingTabAction,
+                                Node {
+                                    width: percent(20.0),
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(0.2, 0.2, 0.9, 1.0).into()),
+                                Text::new("Buildings"),
+                                TextFont { ..default() },
+                            ),
+                            (
+                                Button,
+                                HudButton::OperationAction,
+                                Node {
+                                    width: percent(20.0),
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(0.2, 0.2, 0.9, 1.0).into()),
+                                Text::new("Actions"),
+                                TextFont { ..default() },
+                            ),
+                            (
+                                Button,
+                                HudButton::EconomyTabAction,
+                                Node {
+                                    width: percent(20.0),
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(0.2, 0.2, 0.9, 1.0).into()),
+                                Text::new("Market"),
+                                TextFont { ..default() },
+                            )
+                        ]
+                    ),
+                    (
+                        DespawnOnExit(HUDPosition::Buildings),
                         Node {
                             width: percent(100.0),
                             height: percent(100.0),
@@ -141,22 +256,44 @@ fn hud_setup(
                             flex_direction: FlexDirection::Row,
                             ..default()
                         },
-                        Children::spawn((SpawnWith(
-                            |parent: &mut bevy::ecs::relationship::RelatedSpawner<ChildOf>| {
-                                for _ in 0..5 {
-                                    parent.spawn((
-                                        Node {
-                                            width: percent(20),
-                                            height: percent(100),
-                                            border: UiRect::all(Val::Px(2.0)),
-                                            ..default()
-                                        },
-                                        BorderColor::all(Color::BLACK),
-                                    ));
+                        Children::spawn((SpawnWith({
+                            let districts = city.districts.clone();
+
+                            move |parent: &mut bevy::ecs::relationship::RelatedSpawner<ChildOf>| {
+                                //let length = 2;
+                                for i in 0..5 {
+                                    if i < districts.len() {
+                                        parent.spawn((
+                                            Node {
+                                                width: percent(18),
+                                                height: percent(80),
+                                                margin: UiRect::all(percent(1)),
+                                                ..default()
+                                            },
+                                            Text::new(match districts[i] {
+                                                DistrictType::Farm => "Farm district",
+                                                DistrictType::Wizard => "Arcane district",
+                                                DistrictType::Smith => "Blacksmith district",
+                                                DistrictType::Mine => "Mining district",
+                                            }),
+                                            BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into()),
+                                        ));
+                                    } else {
+                                        parent.spawn((
+                                            Node {
+                                                width: percent(18),
+                                                height: percent(80),
+                                                margin: UiRect::all(percent(1)),
+                                                ..default()
+                                            },
+                                            Text::new("Unbuilt district"),
+                                            BackgroundColor(Srgba::new(0.9, 0.1, 0.1, 1.0).into()),
+                                        ));
+                                    }
                                 }
                             }
-                        ),))
-                    )),
+                        }),))
+                    ),
                 ],
             ));
         }
@@ -175,6 +312,7 @@ struct Human;
 //#[derive(Component)]
 //struct Demographic<T>();
 
+#[derive(Clone)]
 enum DistrictType {
     Farm,
     Wizard,
@@ -184,6 +322,12 @@ enum DistrictType {
 #[derive(Component)]
 struct CityData {
     id: String,
+    population: u8,
+    districts: Vec<DistrictType>,
+}
+
+#[derive(Component)]
+struct Market {
     population: u8,
     districts: Vec<DistrictType>,
 }
@@ -201,7 +345,7 @@ fn city_interaction_system(
             Interaction::Pressed => {
                 println!("Pressed the city {}", city.id);
                 selected_city.0 = city.id.clone();
-                menu_state.set(StrategicState::Buildings);
+                menu_state.set(StrategicState::HUDOpen);
             }
             Interaction::Hovered => *node_color = Srgba::new(1.0, 0.1, 0.1, 1.0).into(),
             _ => {}
