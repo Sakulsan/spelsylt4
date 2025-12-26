@@ -3,6 +3,7 @@
 pub mod graph_test;
 pub mod scene;
 pub mod strategic_map;
+pub mod namelists;
 use bevy::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
