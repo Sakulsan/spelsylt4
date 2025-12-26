@@ -80,8 +80,6 @@ struct DemoDisabledButton;
 struct PreviewSprite;
 
 fn demo_root(sylt: Sylt) -> impl Bundle {
-    info!("lol");
-
     (
         Node {
             width: percent(100),
