@@ -86,8 +86,6 @@ pub fn get_elven_name(mut rng: &mut ResMut<GlobalRng>) -> String {
     let elven_placement_particle = vec![
         "'s Edge", "'s Crown", "'s Peak", "'s Radiance", "'s Heart", "'s Eye", ""
     ];
-    let elven_placement_particle =
-        vec!["'s Edge", "'s Crown", "'s Peak", "'s Radiance", "'s Heart"];
 
     let mut name = "".to_string();
 
