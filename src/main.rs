@@ -2,19 +2,17 @@
 //! change some settings or quit. There is no actual game, it will just display the current
 //! settings for 5 seconds before going back to the menu.
 
+use crate::game::namelists::*;
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
-use rand::SeedableRng;
 use rand::rngs::StdRng;
-use crate::game::namelists::*;
-
+use rand::SeedableRng;
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
 mod game;
 
 mod assets;
 mod prelude;
-
 
 #[derive(Resource, DerefMut, Deref)]
 pub struct GlobalRng(StdRng);
@@ -40,6 +38,35 @@ enum DisplayQuality {
 #[derive(Resource, Debug, Component, PartialEq, Eq, Clone, Copy)]
 struct Volume(u32);
 
+fn move_camera(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut cam_pos: Query<&mut Transform, With<Camera2d>>,
+) {
+    let Ok(mut c) = cam_pos.single_mut() else {
+        error!("we have multiple cameras or something");
+        return;
+    };
+    let c = &mut c.translation;
+
+    let v = |x, y| Vec3::new(x, y, 0.0);
+
+    use KeyCode as K;
+
+    let x = [
+        (K::ArrowRight, v(1.0, 0.0)),
+        (K::ArrowLeft, v(-1.0, 0.0)),
+        (K::ArrowUp, v(0.0, 1.0)),
+        (K::ArrowDown, v(0.0, -1.0)),
+    ];
+    let shift = keys.pressed(K::ShiftLeft);
+
+    for (key, dir) in x {
+        if keys.pressed(key) {
+            *c += dir * if shift { 100.0 } else { 20.0 };
+        }
+    }
+}
+
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, FeathersPlugins, TextInputPlugin))
@@ -57,6 +84,7 @@ fn main() {
         .init_state::<GameState>()
         .add_systems(Startup, debug_city_names)
         .add_systems(Startup, setup)
+        .add_systems(Update, move_camera)
         // Adds the plugins for each state
         .run();
 }
