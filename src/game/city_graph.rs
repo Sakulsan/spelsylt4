@@ -20,7 +20,7 @@ struct CityGraph {
     graph: CGraph,
 }
 
-const CIRCLE_DIST: f64 = 50.0;
+const CIRCLE_DIST: f32 = 50.0;
 const ANGULAR_CONSTRAINT: f32 = PI / 9.0;
 const JITTER: f32 = 15.0;
 const CITY_COUNTS: [usize; 9] = [3, 4, 4, 5, 8, 12, 15, 20, 15];
@@ -33,7 +33,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
 
     let mut random_circle_pos = |i: i32| {
         let ang = rng.random_range(-PI..=PI);
-        let d = (i + 1) as f32 * 50.0;
+        let d = (i + 1) as f32 * CIRCLE_DIST;
         let jx = rng.random_range(-JITTER..JITTER);
         let jy = rng.random_range(-JITTER..JITTER);
         Vec2::from_angle(ang) * d + vec2(jx, jy)
