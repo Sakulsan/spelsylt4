@@ -25,6 +25,7 @@ const ANGULAR_CONSTRAINT: f32 = PI / 9.0;
 const JITTER: f32 = 15.0;
 const CITY_COUNTS: [usize; 9] = [3, 4, 4, 5, 8, 12, 15, 20, 15];
 const MIN_CITY_DIST: f32 = 50.0;
+const SCALE: f32 = 2.0;
 
 type CGraph = Graph<Entity, CityEdge, Undirected>;
 
@@ -41,8 +42,8 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
 
     let mut g = Graph::new_undirected();
 
-    let orig = vec2(-1000.0, -1000.0) / 2.0;
-    let offset = vec2(1000.0, 1000.0);
+    let orig = vec2(-1000.0, -1000.0) / 2.0 * SCALE;
+    let offset = vec2(1000.0, 1000.0) * SCALE;
 
     let origins = [
         vec2(0.0, 0.0),
