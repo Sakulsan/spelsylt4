@@ -71,16 +71,23 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
     };
 
     let lake_rects = [
-        rect(-280, 220, 320, 650),
-        rect(-570, -50, 150, 250),
-        rect(-400, -500, 300, 0),
+        rect(-430, 620, 330, 850),
+        rect(-700, 340, 360, 620),
+        rect(-650, 220, 160, 340),
+        rect(-650, 70, -30, 220),
+        rect(-390, -40, -250, 70),
+        rect(-250, 270, 130, 70),
+        rect(1060, 1200, 1750, 1650),
+        rect(1220, 800, 1640, 1200)
     ];
 
     let check_boxes = |p| {
-        map_rect.contains(p)
-            && !lake_rects[0].contains(p)
-            && !lake_rects[1].contains(p)
-            && !lake_rects[2].contains(p)
+        let contains = map_rect.contains(p);
+        let mut not_underwater = true;
+        for rect in lake_rects {
+            not_underwater = not_underwater && rect.contains(p);
+        }
+        contains && not_underwater
     };
 
     let colors = [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0];
