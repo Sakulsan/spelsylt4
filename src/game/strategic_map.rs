@@ -370,7 +370,7 @@ impl CityData {
         sigmoid as f64
     }
 
-    pub fn available_commodities(&self, building_table: &Res<BuildinTable>) {
+    pub fn available_commodities(&self, building_table: &Res<BuildinTable>) -> Vec<Resources> {
         let mut resources: HashMap<Resources, isize> = HashMap::new();
         macro_rules! get_outputs {
             ($list:expr) => {
@@ -391,6 +391,8 @@ impl CityData {
         get_outputs!(self.buildings_t3);
         get_outputs!(self.buildings_t4);
         get_outputs!(self.buildings_t5);
+
+        resources.iter().filter(|(k, v)| v >= &&0).map(|(k, v)| *k).collect::<Vec<Resources>>()
     }
 
     pub fn update_market(&mut self, building_table: &Res<BuildinTable>) {
