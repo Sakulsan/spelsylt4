@@ -13,8 +13,8 @@ use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
 #[derive(Resource, Deref)]
 pub struct SelectedCity(pub CityData);
 
-#[derive(Resource, Deref)]
-struct BuildinTable(HashMap<String, Building>);
+#[derive(Resource, Deref, Debug)]
+pub struct BuildinTable(HashMap<String, Building>);
 
 #[derive(Resource, Default)]
 pub struct PlayerStats {
@@ -293,6 +293,7 @@ pub struct CityData {
     pub buildings_t4: Vec<(String, Faction)>,
     pub buildings_t5: Vec<(String, Faction)>,
     pub market: HashMap<Resources, isize>,
+    pub tier_up_counter: u8,
 }
 
 impl CityData {
@@ -358,7 +359,110 @@ impl CityData {
             buildings_t3: t3,
             buildings_t4: t4,
             buildings_t5: t5,
-            market: market
+            market: market,
+            tier_up_counter: 0
+        }
+    }
+
+    pub fn update_market(&mut self, building_table: &Res<BuildinTable>) {
+        macro_rules! update_market_over_buildings {
+            ($list:expr) => {
+                for b in &$list {
+                    println!("{:?}", b);
+                    if b.1 != Faction::Neutral { continue; }
+                    for (res, amount) in &building_table.0.get(&b.0).expect(format!("Couldn't retrieve value for {:?}", &b.0).as_str()).input {
+                        self.market.insert(*res, self.market[&res] - amount);
+                    }
+                    for (res, amount) in &building_table.0.get(&b.0).expect(format!("Couldn't retrieve value for {:?}", &b.0).as_str()).output {
+                        self.market.insert(*res, self.market[&res] + amount);
+                    }
+                }
+            };
+        }
+
+        update_market_over_buildings!(self.buildings_t1);
+        update_market_over_buildings!(self.buildings_t2);
+        update_market_over_buildings!(self.buildings_t3);
+        update_market_over_buildings!(self.buildings_t4);
+        update_market_over_buildings!(self.buildings_t5);
+
+        let match_condition = self.population;
+
+        let mut tier_up = |condition: bool| {
+            if condition {
+                if self.tier_up_counter == 5 {
+                    self.tier_up_counter = 0;
+                    self.population += 1;
+                } else {
+                    self.tier_up_counter += 1;
+                }
+            } else {
+                self.tier_up_counter = 0;
+            }
+        };
+
+        match match_condition {
+            1 => {
+                tier_up(self.market.insert(Resources::Food, self.market[&Resources::Food] - 5).expect("error in city market") - 5 >= 0 &&
+                self.market.insert(Resources::Water, self.market[&Resources::Water] - 3).expect("error in city market") - 3 >= 0 &&
+                self.market.insert(Resources::Lumber, self.market[&Resources::Lumber] - 2).expect("error in city market") - 2 >= 0);
+                self.market.insert(Resources::SimpleLabour, self.market[&Resources::SimpleLabour] + 5);
+            },
+            2 => {
+                tier_up(self.market.insert(Resources::Food, self.market[&Resources::Food] - 15).expect("error in city market") - 15 >= 0 &&
+                self.market.insert(Resources::Water, self.market[&Resources::Water] - 10).expect("error in city market") - 10 >= 0 &&
+                self.market.insert(Resources::Lumber, self.market[&Resources::Lumber] - 5).expect("error in city market") - 5 >= 0 &&
+                self.market.insert(Resources::Stone, self.market[&Resources::Stone] - 3).expect("error in city market") - 3 >= 0 &&
+                self.market.insert(Resources::Glass, self.market[&Resources::Glass] - 3).expect("error in city market") - 3 >= 0 &&
+                self.market.insert(Resources::Textiles, self.market[&Resources::Textiles] - 3).expect("error in city market") - 3 >= 0);
+                self.market.insert(Resources::SimpleLabour, self.market[&Resources::SimpleLabour] + 20);
+                self.market.insert(Resources::ComplexLabour, self.market[&Resources::ComplexLabour] + 5);
+            },
+            3 => {
+                tier_up(self.market.insert(Resources::Food, self.market[&Resources::Food] - 20).expect("error in city market") - 20 >= 0 &&
+                self.market.insert(Resources::Water, self.market[&Resources::Water] - 15).expect("error in city market") - 15 >= 0 &&
+                self.market.insert(Resources::Lumber, self.market[&Resources::Lumber] - 10).expect("error in city market") - 10 >= 0 &&
+                self.market.insert(Resources::Stone, self.market[&Resources::Stone] - 6).expect("error in city market") - 6 >= 0 &&
+                self.market.insert(Resources::Glass, self.market[&Resources::Glass] - 6).expect("error in city market") - 6 >= 0 &&
+                self.market.insert(Resources::Textiles, self.market[&Resources::Textiles] - 6).expect("error in city market") - 6 >= 0 &&
+                self.market.insert(Resources::Medicines, self.market[&Resources::Medicines] - 3).expect("error in city market") - 3 >= 0 &&
+                self.market.insert(Resources::ManufacturedGoods, self.market[&Resources::ManufacturedGoods] - 3).expect("error in city market") - 3 >= 0 &&
+                self.market.insert(Resources::Luxuries, self.market[&Resources::Luxuries] - 15).expect("error in city market") - 15 >= 0 &&
+                self.market.insert(Resources::Transportation, self.market[&Resources::Transportation] - 15).expect("error in city market") - 15 >= 0);
+                self.market.insert(Resources::SimpleLabour, self.market[&Resources::SimpleLabour] + 45);
+                self.market.insert(Resources::ComplexLabour, self.market[&Resources::ComplexLabour] + 20);
+            },
+            4 => {
+                tier_up(self.market.insert(Resources::Food, self.market[&Resources::Food] - 50).expect("error in city market") - 50 >= 0 &&
+                self.market.insert(Resources::Water, self.market[&Resources::Water] - 30).expect("error in city market") - 30 >= 0 &&
+                self.market.insert(Resources::Lumber, self.market[&Resources::Lumber] - 20).expect("error in city market") - 20 >= 0 &&
+                self.market.insert(Resources::Stone, self.market[&Resources::Stone] - 15).expect("error in city market") - 15 >= 0 &&
+                self.market.insert(Resources::Glass, self.market[&Resources::Glass] - 15).expect("error in city market") - 15 >= 0 &&
+                self.market.insert(Resources::Textiles, self.market[&Resources::Textiles] - 15).expect("error in city market") - 15 >= 0 &&
+                self.market.insert(Resources::Medicines, self.market[&Resources::Medicines] - 10).expect("error in city market") - 10 >= 0 &&
+                self.market.insert(Resources::ManufacturedGoods, self.market[&Resources::ManufacturedGoods] - 10).expect("error in city market") - 10 >= 0 &&
+                self.market.insert(Resources::Luxuries, self.market[&Resources::Luxuries] - 25).expect("error in city market") - 25 >= 0 &&
+                self.market.insert(Resources::Transportation, self.market[&Resources::Transportation] - 25).expect("error in city market") - 25 >= 0 &&
+                self.market.insert(Resources::Military, self.market[&Resources::Military] - 15).expect("error in city market") - 15 >= 0);
+                self.market.insert(Resources::SimpleLabour, self.market[&Resources::SimpleLabour] + 80);
+                self.market.insert(Resources::ComplexLabour, self.market[&Resources::ComplexLabour] + 45);
+            },
+            5 => {
+                self.market.insert(Resources::Food, self.market[&Resources::Food] - 100);
+                self.market.insert(Resources::Water, self.market[&Resources::Water] - 50);
+                self.market.insert(Resources::Lumber, self.market[&Resources::Lumber] - 40);
+                self.market.insert(Resources::Stone, self.market[&Resources::Stone] - 30);
+                self.market.insert(Resources::Glass, self.market[&Resources::Glass] - 30);
+                self.market.insert(Resources::Textiles, self.market[&Resources::Textiles] - 20);
+                self.market.insert(Resources::Medicines, self.market[&Resources::Medicines] - 20);
+                self.market.insert(Resources::ManufacturedGoods, self.market[&Resources::ManufacturedGoods] - 20);
+                self.market.insert(Resources::Luxuries, self.market[&Resources::Luxuries] - 60);
+                self.market.insert(Resources::Transportation, self.market[&Resources::Transportation] - 60);
+                self.market.insert(Resources::Military, self.market[&Resources::Military] - 50);
+                self.market.insert(Resources::SimpleLabour, self.market[&Resources::SimpleLabour] + 125);
+                self.market.insert(Resources::ComplexLabour, self.market[&Resources::ComplexLabour] + 80);
+            }
+            _ => { panic!("Tried to update markets on a city of tier {:?}", self.population) }
         }
     }
 }

@@ -82,11 +82,11 @@ impl Resources {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Building {
-    input: HashMap<Resources, isize>,
-    output: HashMap<Resources, isize>,
-    tier: usize,
-    image_sylt_id: Option<String>,
-    build_type: BuildingType,
+    pub input: HashMap<Resources, isize>,
+    pub output: HashMap<Resources, isize>,
+    pub tier: usize,
+    pub image_sylt_id: Option<String>,
+    pub build_type: BuildingType
 }
 
 pub fn gen_building_tables() -> HashMap<String, Building> {
@@ -146,7 +146,7 @@ pub fn gen_building_tables() -> HashMap<String, Building> {
     generate_building!("Ironwood Forestry", Spellwork x 1, SimpleLabour x 15; CommonAlloys x 10; 1);
     generate_building!("Forest Foraging", Spellwork x 1, SimpleLabour x 15; Lumber x 30; 1);
     generate_building!("Domesticated Orchards", Spellwork x 5, Water x 10, SimpleLabour x 20, ComplexLabour x 70; ManufacturedGoods x 50; 2);
-    generate_building!("Amber Plnatation", Spellwork x 5, Water x 5, SimpleLabour x 5; RefinedValuables x 20; 2);
+    generate_building!("Amber Plantations", Spellwork x 5, Water x 5, SimpleLabour x 5; RefinedValuables x 20; 2);
     generate_building!("Gardens of Wonder", Spellwork x 5, Water x 5, SimpleLabour x 5; Reagents x 20; 2);
     generate_building!("Elemental Springs", Spellwork x 15, Reagents x 10, SimpleLabour x 10; Water x 160; 3);
     generate_building!("Integrated Farms", Spellwork x 10, Reagents x 10, Water x 10, SimpleLabour x 10; Food x 75, Plants x 75; 3);
@@ -244,34 +244,41 @@ pub fn gen_random_building(
                 tier
             ),
         },
-        BuildingType::Elven => match tier {
-            1 => match random_choice % 3 {
-                0 => "Earth Spirit Aid",
-                1 => "Ironwood Forestry",
-                2 => "Forest Foraging",
-                _ => panic!("Modulo stopped working in gen_random_building"),
-            },
-            2 => match random_choice % 3 {
-                0 => "Domesticated Orchards",
-                1 => "Amber Plnatation",
-                2 => "Gardens of Wonder",
-                _ => panic!("Modulo stopped working in gen_random_building"),
-            },
-            3 => match random_choice % 2 {
-                0 => "Elemental Springs",
-                1 => "Integrated Farms",
-                _ => panic!("Modulo stopped working in gen_random_building"),
-            },
-            4 => match random_choice % 2 {
-                0 => "Gaian Meadows",
-                1 => "Self-spinning Weavers",
-                _ => panic!("Modulo stopped working in gen_random_building"),
-            },
-            5 => "Archmage's Tower",
-            _ => panic!(
-                "gen_random_building tried to generate a building of tier {:?}",
-                tier
-            ),
+        BuildingType::Elven => {
+            match tier {
+                1 => {
+                    match random_choice % 3 {
+                        0 => "Earth Spirit Aid", 
+                        1 => "Ironwood Forestry",
+                        2 => "Forest Foraging",
+                        _ => panic!("Modulo stopped working in gen_random_building")
+                    }
+                }
+                2 => {
+                    match random_choice % 3 {
+                        0 => "Domesticated Orchards",
+                        1 => "Amber Plantations", 
+                        2 => "Gardens of Wonder",
+                        _ => panic!("Modulo stopped working in gen_random_building")
+                    }
+                }
+                3 => {
+                    match random_choice % 2 {
+                        0 => "Elemental Springs",
+                        1 => "Integrated Farms",
+                        _ => panic!("Modulo stopped working in gen_random_building")
+                    }
+                }
+                4 => {
+                    match random_choice % 2 {
+                        0 => "Gaian Meadows",
+                        1 => "Self-spinning Weavers",
+                        _ => panic!("Modulo stopped working in gen_random_building")
+                    }
+                }
+                5 => "Archmage's Tower",
+                _ => panic!("gen_random_building tried to generate a building of tier {:?}", tier)
+            }
         },
         BuildingType::Goblin => match tier {
             1 => match random_choice % 3 {

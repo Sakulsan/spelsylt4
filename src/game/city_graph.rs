@@ -3,6 +3,7 @@ use std::f32::consts::PI;
 
 use super::market::*;
 use super::strategic_map::{CityData, Faction};
+use crate::game::strategic_map::BuildinTable;
 use crate::prelude::*;
 
 use petgraph::{algo::connected_components, graph::NodeIndex, Graph, Undirected};
@@ -67,22 +68,24 @@ fn spawn_city(
                 race: BuildingType::Dwarven,
                 population: 5,
                 buildings_t1: vec!(("Gem Cutters".to_string(), Faction::Neutral), ("Gem Cutters".to_string(), Faction::Neutral), ("Standard Mines".to_string(), Faction::Neutral), ("Standard Mines".to_string(), Faction::Neutral), ("Standard Mines".to_string(), Faction::Neutral)),
-                buildings_t2: vec!(("Growth Vats".to_string(), Faction::Neutral), ("Core Drill".to_string(), Faction::Neutral), ("Preparatory Facilies".to_string(), Faction::Neutral), ("Educated Workers".to_string(), Faction::Neutral)),
+                buildings_t2: vec!(("Growth Vats".to_string(), Faction::Neutral), ("Core Drill".to_string(), Faction::Neutral), ("Preparatory Facilities".to_string(), Faction::Neutral), ("Educated Workers".to_string(), Faction::Neutral)),
                 buildings_t3: vec!(("Automation Components".to_string(), Faction::Neutral), ("Megabreweries".to_string(), Faction::Neutral), ("Megabreweries".to_string(), Faction::Neutral)),
                 buildings_t4: vec!(("Industrial Smeltery".to_string(), Faction::Neutral), ("Dwarven Assembly Lines".to_string(), Faction::Neutral)),
                 buildings_t5: vec!(("The Great Red Forges".to_string(), Faction::Neutral)),
-                market: empty_market
+                market: empty_market,
+                tier_up_counter: 0
             } }
             BuildingType::Elven => { CityData {
                 id: "Jewel of All Creation".to_string(),
                 race: BuildingType::Elven,
                 population: 5,
                 buildings_t1: vec!(("Earth Spirit Aid".to_string(), Faction::Neutral), ("Ironwood Forestry".to_string(), Faction::Neutral), ("Forest Foraging".to_string(), Faction::Neutral), ("Standard Mines".to_string(), Faction::Neutral), ("Standard Mines".to_string(), Faction::Neutral)),
-                buildings_t2: vec!(("Amber Plantation".to_string(), Faction::Neutral), ("Amber Plantation".to_string(), Faction::Neutral), ("Gardens of Wonder".to_string(), Faction::Neutral), ("Gardens of Wonder".to_string(), Faction::Neutral)),
+                buildings_t2: vec!(("Amber Plantations".to_string(), Faction::Neutral), ("Amber Plantations".to_string(), Faction::Neutral), ("Gardens of Wonder".to_string(), Faction::Neutral), ("Gardens of Wonder".to_string(), Faction::Neutral)),
                 buildings_t3: vec!(("Integrated Farms".to_string(), Faction::Neutral), ("Elemental Springs".to_string(), Faction::Neutral), ("Basic Industry".to_string(), Faction::Neutral)),
                 buildings_t4: vec!(("Gaian Meadows".to_string(), Faction::Neutral), ("Self-spinning Weavers".to_string(), Faction::Neutral)),
                 buildings_t5: vec!(("Tower of the Luminous Science".to_string(), Faction::Neutral)),
-                market: empty_market
+                market: empty_market,
+                tier_up_counter: 0
             } }
             BuildingType::Goblin => { CityData {
                 id: "Tevet Pekhep Dered".to_string(),
@@ -93,18 +96,20 @@ fn spawn_city(
                 buildings_t3: vec!(("Artisan District".to_string(), Faction::Neutral), ("Trains".to_string(), Faction::Neutral), ("Apothecary's Workshop".to_string(), Faction::Neutral)),
                 buildings_t4: vec!(("Siege-Factories".to_string(), Faction::Neutral), ("Golem Automatons".to_string(), Faction::Neutral)),
                 buildings_t5: vec!(("Cauldronworks of the Four Clans".to_string(), Faction::Neutral)),
-                market: empty_market
+                market: empty_market,
+                tier_up_counter: 0
             } }
             BuildingType::Human => { CityData {
                 id: "Great Lancastershire".to_string(),
                 race: BuildingType::Human,
                 population: 5,
-                buildings_t1: vec!(("Large Industrial District".to_string(), Faction::Neutral), ("Large Industrial District".to_string(), Faction::Neutral), ("Fishing Port".to_string(), Faction::Neutral), ("Fishing Port".to_string(), Faction::Neutral), ("Tree Plantation".to_string(), Faction::Neutral)),
+                buildings_t1: vec!(("Large Industrial District".to_string(), Faction::Neutral), ("Large Industrial District".to_string(), Faction::Neutral), ("Fishing Port".to_string(), Faction::Neutral), ("Fishing Port".to_string(), Faction::Neutral), ("Tree Plantations".to_string(), Faction::Neutral)),
                 buildings_t2: vec!(("Water Cleaning Facilities".to_string(), Faction::Neutral), ("Water Cleaning Facilities".to_string(), Faction::Neutral), ("Hired Workforces".to_string(), Faction::Neutral), ("Small-scale Forges".to_string(), Faction::Neutral)),
                 buildings_t3: vec!(("Manufactories".to_string(), Faction::Neutral), ("Mercenary Guild".to_string(), Faction::Neutral), ("Apothecary's Workshop".to_string(), Faction::Neutral)),
                 buildings_t4: vec!(("Teleportation Circle Network".to_string(), Faction::Neutral), ("Strip Mines".to_string(), Faction::Neutral)),
                 buildings_t5: vec!(("Sunstrider Headquarters".to_string(), Faction::Neutral)),
-                market: empty_market
+                market: empty_market,
+                tier_up_counter: 0
             } }
             _ => { panic!("Attempted to spawn city for capital of race type {:?}", race) }
         };
