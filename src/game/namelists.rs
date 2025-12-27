@@ -7,40 +7,35 @@ use rand::Rng;
 use crate::assets::Sylt;
 use crate::GameState;
 use crate::GlobalRng;
+use crate::game::market::BuildingType;
 
-#[derive(Debug, Clone, Copy)]
-enum CityType {
-    Human,
-    Elven,
-    Goblin,
-    Dwarven,
-}
+
 
 pub fn generate_city_names(
     amount: (usize, usize, usize, usize),
     mut rng: &mut ResMut<GlobalRng>,
 ) -> Vec<Vec<String>> {
     let mut names = vec![vec![], vec![], vec![], vec![]];
-    let mut city_iter = |citytype: CityType, amount: usize, idx: usize| {
+    let mut city_iter = |citytype: BuildingType, amount: usize, idx: usize| {
         for i in 0..amount {
             names[idx].push(generate_city_name(citytype, &mut rng));
         }
     };
-    city_iter(CityType::Dwarven, amount.0, 0);
-    city_iter(CityType::Elven, amount.1, 1);
-    city_iter(CityType::Goblin, amount.2, 2);
-    city_iter(CityType::Human, amount.3, 3);
+    city_iter(BuildingType::Dwarven, amount.0, 0);
+    city_iter(BuildingType::Elven, amount.1, 1);
+    city_iter(BuildingType::Goblin, amount.2, 2);
+    city_iter(BuildingType::Human, amount.3, 3);
 
     names
 }
 
-pub fn generate_city_name(city_type: CityType, mut rng: &mut ResMut<GlobalRng>) -> String {
+pub fn generate_city_name(city_type: BuildingType, mut rng: &mut ResMut<GlobalRng>) -> String {
     match city_type {
-        CityType::Dwarven => get_dwarven_name(&mut rng),
-        CityType::Elven => get_elven_name(&mut rng),
-        CityType::Goblin => get_goblin_name(&mut rng),
-        CityType::Human => get_human_name(&mut rng),
-        default => panic!("You forgot to implement a namelist for {:?}", city_type),
+        BuildingType::Dwarven => get_dwarven_name(&mut rng),
+        BuildingType::Elven => get_elven_name(&mut rng),
+        BuildingType::Goblin => get_goblin_name(&mut rng),
+        BuildingType::Human => get_human_name(&mut rng),
+        default => panic!("Tried to get name for {:?}", city_type),
     }
 }
 
