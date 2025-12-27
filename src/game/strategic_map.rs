@@ -1,7 +1,5 @@
 use super::strategic_hud::PopupHUD;
 use crate::prelude::*;
-use bevy::audio::Volume;
-use bevy::sprite_render::{Wireframe2dConfig, Wireframe2dPlugin};
 
 use super::market::*;
 use crate::GameState;
@@ -35,7 +33,7 @@ pub fn plugin(app: &mut App) {
     .init_state::<StrategicState>()
     .add_systems(
         Update,
-        (city_interaction_system).run_if(in_state(PopupHUD::Off)),
+        (city_interaction_system, check_turn_button).run_if(in_state(PopupHUD::Off)),
     )
     .add_systems(Update, update_ui_nodes.run_if(in_state(GameState::Game)));
 }
@@ -61,6 +59,26 @@ fn spawn_map_sprite(mut commands: Commands, mut sylt: Sylt) {
             ..default()
         },
         DespawnOnExit(GameState::Game),
+    ));
+
+    commands.spawn((
+        Button,
+        TurnButton {},
+        Node {
+            position_type: PositionType::Absolute,
+            top: px(0),
+            right: px(0),
+            width: px(128),
+            height: px(64),
+            border: UiRect::all(Val::Px(2.0)),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        BorderColor::all(Color::BLACK),
+        DespawnOnExit(GameState::Game),
+        BackgroundColor(Srgba::new(0.2, 0.8, 0.2, 1.0).into()),
+        children![(Text::new("Next turn"))],
     ));
 }
 
@@ -154,6 +172,9 @@ pub enum Faction {
 }
 
 #[derive(Component, Default, Clone, Debug)]
+struct TurnButton {}
+
+#[derive(Component, Default, Clone, Debug)]
 pub struct CityData {
     pub id: String,
     pub race: BuildingType,
@@ -177,24 +198,27 @@ fn city_interaction_system(
     mut selected_city: ResMut<SelectedCity>,
     mut popupp_state: ResMut<NextState<PopupHUD>>,
     mut commands: Commands,
-    asset_server: Res<AssetServer>
+    asset_server: Res<AssetServer>,
 ) {
     for (interaction, city) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
                 println!("Pressed the city {}", city.id);
-                selected_city.0 = (*city).clone();  
+                selected_city.0 = (*city).clone();
                 menu_state.set(StrategicState::HUDOpen);
                 popupp_state.set(PopupHUD::Off);
 
-                
                 commands.spawn((
                     AudioPlayer::new(asset_server.load(match selected_city.0.race {
-                        BuildingType::Dwarven => { "music/Dwarftowneffect.ogg" },
-                        BuildingType::Goblin => { "music/Gnometowneffect.ogg" },
-                        BuildingType::Human => { "music/Humanstowneffect.ogg" },
-                        BuildingType::Elven => { "music/Elvestowneffect.ogg" },
-                        _ => {panic!("Attempted to play city sound effect for non-existent city type.")}
+                        BuildingType::Dwarven => "music/Dwarftowneffect.ogg",
+                        BuildingType::Goblin => "music/Gnometowneffect.ogg",
+                        BuildingType::Human => "music/Humanstowneffect.ogg",
+                        BuildingType::Elven => "music/Elvestowneffect.ogg",
+                        _ => {
+                            panic!(
+                                "Attempted to play city sound effect for non-existent city type."
+                            )
+                        }
                     })),
                     PlaybackSettings {
                         mode: bevy::audio::PlaybackMode::Once,
@@ -204,6 +228,28 @@ fn city_interaction_system(
             }
             //Interaction::Hovered => *node_color = Srgba::new(1.0, 0.1, 0.1, 1.0).into(),
             _ => {}
+        }
+    }
+}
+
+//Next turn button
+fn check_turn_button(
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor),
+        (Changed<Interaction>, With<TurnButton>),
+    >,
+    mut commands: Commands,
+) {
+    for (interaction, mut node_color) in interaction_query.iter_mut() {
+        match *interaction {
+            Interaction::Pressed => {
+                println!("New turn");
+                commands.trigger(super::turn::TurnEnd);
+            }
+            Interaction::Hovered => {
+                *node_color = BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into())
+            }
+            _ => *node_color = BackgroundColor(Srgba::new(0.2, 0.8, 0.2, 1.0).into()),
         }
     }
 }

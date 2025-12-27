@@ -95,10 +95,10 @@ fn popup_window(commands: &mut Commands, row_align: bool) -> Entity {
             ZIndex(2),
             PopUpItem,
             Node {
-                top: Val::Vh(10.0),
-                left: Val::Vw(10.0),
-                width: Val::Vw(80.0),
-                height: Val::Vh(80.0),
+                top: Val::Vh(5.0),
+                left: Val::Vw(5.0),
+                width: Val::Vw(90.0),
+                height: Val::Vh(90.0),
                 align_items: AlignItems::Stretch,
                 justify_content: JustifyContent::FlexStart,
                 display: Display::Flex,
@@ -332,7 +332,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt) {
                     .spawn((
                         Node {
                             width: percent(100),
-                            height: percent(50),
+                            height: percent(55),
                             margin: UiRect::all(px(4)),
                             justify_content: JustifyContent::FlexStart,
                             flex_direction: FlexDirection::Column,
@@ -343,14 +343,21 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt) {
                     .with_children(|parent| {
                         create_resource_list(
                             parent,
-                            vec![(Resources::Stone, 25, 18), (Resources::Food, 10, 30)],
+                            vec![
+                                (Resources::RefinedValuables, 0, 0),
+                                (Resources::CommonAlloys, 0, 0),
+                                (Resources::Textiles, 0, 0),
+                                (Resources::ManufacturedGoods, 0, 0),
+                                (Resources::Medicines, 0, 0),
+                                (Resources::Reagents, 0, 0),
+                                (Resources::Machinery, 0, 0),
+                            ],
                             "Advanced materials".to_string(),
                             &mut sylt,
                         );
                     });
             });
 
-        //Services
         //Illegals and Advanced
         parent
             .spawn((Node {

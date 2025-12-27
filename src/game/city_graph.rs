@@ -42,7 +42,15 @@ fn gen_rand_circle(i: i32, min: f32, max: f32, rng: &mut ResMut<GlobalRng>) -> V
     Vec2::from_angle(ang) * d + vec2(jx, jy)
 }
 
-pub fn spawn_city(pos: Vec2, color: Color, race: BuildingType, capital: bool, commands: &mut Commands, mut rng: &mut ResMut<GlobalRng>, g: &mut Graph<Entity, CityEdge, Undirected>) {
+pub fn spawn_city(
+    pos: Vec2,
+    color: Color,
+    race: BuildingType,
+    capital: bool,
+    commands: &mut Commands,
+    mut rng: &mut ResMut<GlobalRng>,
+    g: &mut Graph<Entity, CityEdge, Undirected>,
+) {
     let mut ent = commands.spawn_empty();
     let idx = g.add_node(ent.id());
     let data = CityData {
@@ -110,7 +118,15 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
         (BuildingType::Elven, vec2(-30., 1460.)),
         (BuildingType::Dwarven, vec2(-1360., 500.)),
     ] {
-        spawn_city(capital_pos * SCALE, make_color(colors[0]), race, true, &mut commands, &mut rng, &mut g);
+        spawn_city(
+            capital_pos * SCALE,
+            make_color(colors[0]),
+            race,
+            true,
+            &mut commands,
+            &mut rng,
+            &mut g,
+        );
 
         let (min, max) = match race {
             BuildingType::Dwarven => (-(260f32.to_radians()), 0.0),
@@ -140,7 +156,15 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
                 if check_boxes(city_pos) {
                     other_pos.push(city_pos);
                     println!("Missing a city spawn");
-                    spawn_city(city_pos, make_color(colors[(1 + c) % colors.len()]), race, false, &mut commands, &mut rng, &mut g);
+                    spawn_city(
+                        city_pos,
+                        make_color(colors[(1 + c) % colors.len()]),
+                        race,
+                        false,
+                        &mut commands,
+                        &mut rng,
+                        &mut g,
+                    );
                 }
             }
         }
@@ -155,9 +179,9 @@ fn gizmo_nodes(mut gizmos: Gizmos, nodes: Query<&Node>, g: Res<CityGraph>) {
     }
 
     let g = &g.graph;
-    for (n1) in &nodes {
+    for n1 in &nodes {
         for neighbor in g.neighbors(n1.0) {
-            let (n2) = nodes.get(g[neighbor]).expect("lol");
+            let n2 = nodes.get(g[neighbor]).expect("lol");
 
             gizmos.line_2d(n1.1, n2.1, Color::linear_rgb(1.0, 0.0, 0.0));
         }
