@@ -34,8 +34,8 @@ pub struct Caravan {
 
 #[derive(Clone, Default, Eq, PartialEq, Debug, Hash)]
 pub struct Order {
-    goal_city_id: String,
-    trade_order: Vec<(Resources, isize)>,
+    pub goal_city_id: String,
+    pub trade_order: Vec<(Resources, isize)>,
 }
 
 pub fn plugin(app: &mut App) {
