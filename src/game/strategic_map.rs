@@ -1,6 +1,7 @@
 use super::strategic_hud::PopupHUD;
 use crate::prelude::*;
 use bevy::audio::Volume;
+use bevy::sprite_render::{Wireframe2dConfig, Wireframe2dPlugin};
 
 use super::market::*;
 use crate::GameState;
@@ -94,7 +95,7 @@ fn spawn_city_ui_nodes(
                 ..default()
             },
             ImageNode::new(sylt.get_image("town_ui_icon")),
-            BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
+            BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 0.3).into()),
             related!(
                 Tooltips[(
                     Text::new("hello\nbevy!"),

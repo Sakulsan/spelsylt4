@@ -3,6 +3,7 @@ use bevy::ui::InteractionDisabled;
 
 use super::market::*;
 use super::strategic_map::{CityData, SelectedCity, StrategicState};
+use super::tooltip::Tooltips;
 use crate::prelude::*;
 pub fn plugin(app: &mut App) {
     app.init_state::<PopupHUD>()
@@ -180,6 +181,40 @@ fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>, mut sylt: S
                                     ..default()
                                 },
                                 BackgroundColor(Srgba::new(0.5, 0.2, 0.9, 1.0).into()),
+                                Button,
+                                related!(
+                                    Tooltips[(
+/*                                        Text::new(format!("Owned by {}",match building.1 {
+                                            Faction::Normal => {
+                                                ""
+                                            }
+                                            _ => ""
+
+                                        })),*/
+                                        TextShadow::default(),
+                                        // Set the justification of the Text
+                                        TextLayout::new_with_justify(Justify::Center),
+                                        // Set the style of the Node itself.
+                                        Node { ..default() },
+                                        BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
+                                    ),
+                                    (
+                                        Text::new("I produce this"),
+                                        TextShadow::default(),
+                                        // Set the justification of the Text
+                                        TextLayout::new_with_justify(Justify::Center),
+                                        // Set the style of the Node itself.
+                                        Node { ..default() }
+                                    ),
+                                    (
+                                        Text::new("here is lore"),
+                                        TextShadow::default(),
+                                        // Set the justification of the Text
+                                        TextLayout::new_with_justify(Justify::Center),
+                                        // Set the style of the Node itself.
+                                        Node { ..default() }
+                                    )]
+                                ),
                             ));
                         } else {
                             parent.spawn((

@@ -34,6 +34,7 @@ pub fn spawn_tooltip_container(
         let id = commands
             .spawn((
                 TooltipContainer,
+                ZIndex(5),
                 Node {
                     display: Display::Flex,
                     flex_direction: FlexDirection::Column,
