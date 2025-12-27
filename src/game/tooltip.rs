@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use bevy::ui::InteractionDisabled;
 
 #[derive(Component, Debug)]
 #[relationship(relationship_target = Tooltips)]
@@ -8,6 +9,7 @@ pub struct TooltipOf {
 }
 
 #[derive(Component, Debug)]
+#[require(Button)]
 #[relationship_target(relationship = TooltipOf, linked_spawn)]
 pub struct Tooltips(Vec<Entity>);
 
@@ -73,7 +75,10 @@ pub fn reparent_tooltips(
 }
 
 pub fn reveal_tooltips(
-    query: Query<(&Interaction, &TooltipContainerTarget), Changed<Interaction>>,
+    query: Query<
+        (&Interaction, &TooltipContainerTarget),
+        (Changed<Interaction>, Without<InteractionDisabled>),
+    >,
     mut vis_query: Query<&mut Visibility>,
 ) {
     for (interaction, container) in query {

@@ -8,6 +8,7 @@ pub mod strategic_hud;
 pub mod strategic_map;
 use bevy::prelude::*;
 pub mod tooltip;
+pub mod turn;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
