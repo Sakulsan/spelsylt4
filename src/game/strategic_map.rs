@@ -68,17 +68,25 @@ use super::city_graph::Node as CityNode;
 use super::tooltip::Tooltips;
 fn spawn_city_ui_nodes(
     mut commands: Commands,
-    graph_nodes: Query<(Entity, &CityNode)>,
+    graph_nodes: Query<(Entity, &CityNode, &super::city_graph::CityTypeComponent)>,
     mut sylt: Sylt,
+    mut rng: ResMut<GlobalRng>,
 ) {
     println!("Hi");
-    for (ent, node) in graph_nodes {
+    for (ent, node, city_type) in graph_nodes {
         commands.entity(ent).insert(AnchoredUiNodes::spawn_one((
             AnchorUiConfig {
                 anchorpoint: AnchorPoint::middle(),
                 ..default()
             },
             Button,
+            CityData {
+                id: super::namelists::generate_city_name(city_type.0, &mut rng),
+                population: 3,
+                buildings_t1: vec![("Automated Clothiers".to_string(), Faction::Neutral)],
+                buildings_t2: vec![("Mushroom Farm".to_string(), Faction::Neutral)],
+                ..default()
+            },
             Transform::from_xyz(0., 0.0, 1.0),
             Node {
                 width: px(32),
@@ -169,15 +177,12 @@ pub struct CityData {
 //}
 
 fn city_interaction_system(
-    mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, &CityData),
-        Changed<Interaction>,
-    >,
+    mut interaction_query: Query<(&Interaction, &CityData), Changed<Interaction>>,
     mut menu_state: ResMut<NextState<StrategicState>>,
     mut selected_city: ResMut<SelectedCity>,
     mut popupp_state: ResMut<NextState<PopupHUD>>,
 ) {
-    for (interaction, mut node_color, city) in &mut interaction_query {
+    for (interaction, city) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
                 println!("Pressed the city {}", city.id);
@@ -185,7 +190,7 @@ fn city_interaction_system(
                 menu_state.set(StrategicState::HUDOpen);
                 popupp_state.set(PopupHUD::Off);
             }
-            Interaction::Hovered => *node_color = Srgba::new(1.0, 0.1, 0.1, 1.0).into(),
+            //Interaction::Hovered => *node_color = Srgba::new(1.0, 0.1, 0.1, 1.0).into(),
             _ => {}
         }
     }

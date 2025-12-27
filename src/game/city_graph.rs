@@ -18,7 +18,7 @@ pub struct Node(pub NodeIndex, pub Vec2, pub Color);
 struct CityEdge(f32);
 
 #[derive(Component, Clone, Debug)]
-struct CityTypeComponent(BuildingType);
+pub struct CityTypeComponent(pub BuildingType);
 
 #[derive(Resource)]
 pub struct CityGraph {
@@ -51,17 +51,10 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
         let mut ent = commands.spawn_empty();
         let idx = g.add_node(ent.id());
         ent.insert((
-            //Transform::from_translation(pos.extend(0.0)), Lukas is dying
+            Transform::from_translation(pos.extend(0.0)),
             Node(idx, pos, color),
+            Button,
             CityTypeComponent(race),
-            CityData {
-                //id: super::namelists::generate_city_name(race, &mut rng),
-                id: "Capital".to_string(),
-                population: 3,
-                buildings_t1: vec![("Automated Clothiers".to_string(), Faction::Neutral)],
-                buildings_t2: vec![("Mushroom Farm".to_string(), Faction::Neutral)],
-                ..default()
-            },
         ));
     };
 
