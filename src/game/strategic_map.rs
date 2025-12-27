@@ -73,20 +73,14 @@ fn spawn_city_ui_nodes(
     mut rng: ResMut<GlobalRng>,
 ) {
     println!("Hi");
-    for (ent, node, city_type) in graph_nodes {
+    for (ent, node, city_data) in graph_nodes {
         commands.entity(ent).insert(AnchoredUiNodes::spawn_one((
             AnchorUiConfig {
                 anchorpoint: AnchorPoint::middle(),
                 ..default()
             },
             Button,
-            CityData {
-                id: super::namelists::generate_city_name(city_type.0, &mut rng),
-                population: 3,
-                buildings_t1: vec![("Automated Clothiers".to_string(), Faction::Neutral)],
-                buildings_t2: vec![("Mushroom Farm".to_string(), Faction::Neutral)],
-                ..default()
-            },
+            city_data.0.clone(),
             Transform::from_xyz(0., 0.0, 1.0),
             Node {
                 width: px(32),
@@ -159,7 +153,7 @@ pub enum Faction {
     Player(usize),
 }
 
-#[derive(Component, Default, Clone)]
+#[derive(Component, Default, Clone, Debug)]
 pub struct CityData {
     pub id: String,
     pub race: BuildingType,

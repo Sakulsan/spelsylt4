@@ -18,7 +18,7 @@ pub struct Node(pub NodeIndex, pub Vec2, pub Color);
 struct CityEdge(f32);
 
 #[derive(Component, Clone, Debug)]
-pub struct CityTypeComponent(pub BuildingType);
+pub struct CityTypeComponent(pub CityData);
 
 #[derive(Resource)]
 pub struct CityGraph {
@@ -42,21 +42,29 @@ fn gen_rand_circle(i: i32, min: f32, max: f32, rng: &mut ResMut<GlobalRng>) -> V
     Vec2::from_angle(ang) * d + vec2(jx, jy)
 }
 
+pub fn spawn_city(pos: Vec2, color: Color, race: BuildingType, capital: bool, commands: &mut Commands, mut rng: &mut ResMut<GlobalRng>, g: &mut Graph<Entity, CityEdge, Undirected>) {
+    let mut ent = commands.spawn_empty();
+    let idx = g.add_node(ent.id());
+    let data = CityData {
+        id: super::namelists::generate_city_name(race, &mut rng),
+        population: 3,
+        buildings_t1: vec![("Automated Clothiers".to_string(), Faction::Neutral)],
+        buildings_t2: vec![("Mushroom Farm".to_string(), Faction::Neutral)],
+        race: race,
+        ..default()
+    };
+    ent.insert((
+        Transform::from_translation(pos.extend(0.0)),
+        Node(idx, pos, color),
+        Button,
+        CityTypeComponent(data),
+    ));
+}
+
 fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
     let vec2 = |x, y| Vec2::new(x, y);
 
     let mut g = Graph::new_undirected();
-
-    let mut spawn_city = |pos: Vec2, color, race: BuildingType| {
-        let mut ent = commands.spawn_empty();
-        let idx = g.add_node(ent.id());
-        ent.insert((
-            Transform::from_translation(pos.extend(0.0)),
-            Node(idx, pos, color),
-            Button,
-            CityTypeComponent(race),
-        ));
-    };
 
     const M: f32 = 2000.0 - 110.0;
 
@@ -102,7 +110,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
         (BuildingType::Elven, vec2(-30., 1460.)),
         (BuildingType::Dwarven, vec2(-1360., 500.)),
     ] {
-        spawn_city(capital_pos * SCALE, make_color(colors[0]), race);
+        spawn_city(capital_pos * SCALE, make_color(colors[0]), race, true, &mut commands, &mut rng, &mut g);
 
         let (min, max) = match race {
             BuildingType::Dwarven => (-(260f32.to_radians()), 0.0),
@@ -132,7 +140,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
                 if check_boxes(city_pos) {
                     other_pos.push(city_pos);
                     println!("Missing a city spawn");
-                    spawn_city(city_pos, make_color(colors[(1 + c) % colors.len()]), race);
+                    spawn_city(city_pos, make_color(colors[(1 + c) % colors.len()]), race, false, &mut commands, &mut rng, &mut g);
                 }
             }
         }
