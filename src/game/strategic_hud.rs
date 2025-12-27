@@ -1,16 +1,30 @@
 use bevy::math::usize;
+use bevy::ui::InteractionDisabled;
 
 use super::market::*;
 use super::strategic_map::{CityData, SelectedCity, StrategicState};
 use crate::prelude::*;
 pub fn plugin(app: &mut App) {
     app.init_state::<PopupHUD>()
+        .add_systems(OnExit(PopupHUD::Off), remove_interaction)
+        .add_systems(OnEnter(PopupHUD::Off), put_back_interaction)
         .add_systems(OnEnter(StrategicState::HUDOpen), city_hud_setup)
         .add_systems(OnEnter(PopupHUD::Buildings), building_menu)
         .add_systems(OnEnter(PopupHUD::Caravan), caravan_menu)
         .add_systems(OnEnter(PopupHUD::Wares), wares_menu)
         .add_systems(Update, no_popup_button.run_if(in_state(PopupHUD::Off)))
         .add_systems(Update, popup_button);
+}
+
+fn remove_interaction(mut commands: Commands, query: Query<Entity, With<Node>>) {
+    for node in query {
+        commands.entity(node).insert(InteractionDisabled);
+    }
+}
+fn put_back_interaction(mut commands: Commands, query: Query<Entity, With<Node>>) {
+    for node in query {
+        commands.entity(node).remove::<InteractionDisabled>();
+    }
 }
 
 #[derive(Component)]
@@ -78,7 +92,7 @@ fn popup_button(
     }
 }
 
-fn popup_window(commands: &mut Commands, row_align: bool) -> Entity {
+fn popup_window(commands: &mut Commands, row_align: bool, mut sylt: &mut Sylt) -> Entity {
     commands.spawn((
         ZIndex(1),
         PopUpItem,
@@ -108,7 +122,8 @@ fn popup_window(commands: &mut Commands, row_align: bool) -> Entity {
                 border: UiRect::all(Val::Px(2.0)),
                 ..default()
             },
-            BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 1.0).into()),
+            ImageNode::new(sylt.get_image("parchment")),
+            //BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 1.0).into()),
             BorderColor::all(Color::BLACK),
             children![(
                 Button,
@@ -128,8 +143,8 @@ fn popup_window(commands: &mut Commands, row_align: bool) -> Entity {
         .id()
 }
 
-fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
-    let window = popup_window(&mut commands, false);
+fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>, mut sylt: Sylt) {
+    let window = popup_window(&mut commands, false, &mut sylt);
     for tiers in 1..(city.0.population + 1) {
         commands.entity(window).with_children(|parent| {
             parent
@@ -183,8 +198,8 @@ fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
     }
 }
 
-fn caravan_menu(mut commands: Commands) {
-    let window = popup_window(&mut commands, false);
+fn caravan_menu(mut commands: Commands, mut sylt: Sylt) {
+    let window = popup_window(&mut commands, false, &mut sylt);
 
     commands.entity(window).with_children(|parent| {
         parent.spawn((
@@ -201,7 +216,7 @@ fn caravan_menu(mut commands: Commands) {
 }
 
 fn wares_menu(mut commands: Commands, mut sylt: Sylt) {
-    let window = popup_window(&mut commands, true);
+    let window = popup_window(&mut commands, true, &mut sylt);
 
     //Basic and exotic mats
     commands.entity(window).with_children(|parent| {
