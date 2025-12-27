@@ -71,6 +71,7 @@ fn spawn_city_ui_nodes(
     graph_nodes: Query<(Entity, &CityNode)>,
     mut sylt: Sylt,
 ) {
+    println!("Hi");
     for (ent, node) in graph_nodes {
         commands.entity(ent).insert(AnchoredUiNodes::spawn_one((
             AnchorUiConfig {
@@ -79,16 +80,6 @@ fn spawn_city_ui_nodes(
             },
             Button,
             Transform::from_xyz(0., 0.0, 1.0),
-            CityData {
-                id: "Capital".to_string(),
-                population: 3,
-                buildings_t1: vec![("Automated Clothiers".to_string(), Faction::Neutral)],
-                buildings_t2: vec![("Mushroom Farm".to_string(), Faction::Neutral)],
-                ..default()
-            },
-            CityIcon {
-                id: "Capital".to_string(),
-            },
             Node {
                 width: px(32),
                 height: px(32),
@@ -124,6 +115,7 @@ fn spawn_city_ui_nodes(
             ),
         )));
     }
+    println!("Bye");
 }
 
 fn update_ui_nodes(
@@ -149,15 +141,6 @@ fn update_ui_nodes(
     }
 }
 
-#[derive(Component)]
-struct CityIcon {
-    id: String,
-}
-
-struct Dwarf;
-struct Goblin;
-struct Elf;
-struct Human;
 //#[derive(Component)]
 //struct Demographic<T>();
 

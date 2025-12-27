@@ -1,5 +1,7 @@
 use std::f32::consts::PI;
 
+use super::market::*;
+use super::strategic_map::{CityData, Faction};
 use crate::prelude::*;
 
 use petgraph::{algo::connected_components, graph::NodeIndex, Graph, Undirected};
@@ -15,6 +17,9 @@ pub struct Node(pub NodeIndex, pub Vec2, pub Color);
 #[derive(Component, Clone, Debug)]
 struct CityEdge(f32);
 
+#[derive(Component, Clone, Debug)]
+struct CityTypeComponent(BuildingType);
+
 #[derive(Resource)]
 pub struct CityGraph {
     graph: CGraph,
@@ -29,32 +34,34 @@ const SCALE: f32 = 1.0;
 
 type CGraph = Graph<Entity, CityEdge, Undirected>;
 
+fn gen_rand_circle(i: i32, min: f32, max: f32, rng: &mut ResMut<GlobalRng>) -> Vec2 {
+    let ang = rng.random_range(min..=max);
+    let d = (i + 1) as f32 * CIRCLE_DIST;
+    let jx = rng.random_range(-JITTER..JITTER);
+    let jy = rng.random_range(-JITTER..JITTER);
+    Vec2::from_angle(ang) * d + vec2(jx, jy)
+}
+
 fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
     let vec2 = |x, y| Vec2::new(x, y);
 
-    let mut random_circle_pos = |i: i32, min: f32, max: f32| {
-        let ang = rng.random_range(min..=max);
-        let d = (i + 1) as f32 * CIRCLE_DIST;
-        let jx = rng.random_range(-JITTER..JITTER);
-        let jy = rng.random_range(-JITTER..JITTER);
-        Vec2::from_angle(ang) * d + vec2(jx, jy)
-    };
-
     let mut g = Graph::new_undirected();
 
-    let positions = [
-        vec2(450., -1650.),
-        vec2(450., -150.),
-        vec2(-30., 1460.),
-        vec2(-1360., 500.),
-    ];
-
-    let mut spawn_city = |pos: Vec2, color| {
+    let mut spawn_city = |pos: Vec2, color, race: BuildingType| {
         let mut ent = commands.spawn_empty();
         let idx = g.add_node(ent.id());
         ent.insert((
-            Transform::from_translation(pos.extend(0.0)),
+            //Transform::from_translation(pos.extend(0.0)), Lukas is dying
             Node(idx, pos, color),
+            CityTypeComponent(race),
+            CityData {
+                //id: super::namelists::generate_city_name(race, &mut rng),
+                id: "Capital".to_string(),
+                population: 3,
+                buildings_t1: vec![("Automated Clothiers".to_string(), Faction::Neutral)],
+                buildings_t2: vec![("Mushroom Farm".to_string(), Faction::Neutral)],
+                ..default()
+            },
         ));
     };
 
@@ -78,7 +85,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
         rect(-390, -40, -250, 70),
         rect(-250, -270, 130, 70),
         rect(1060, 1200, 1750, 1650),
-        rect(1220, 800, 1640, 1200)
+        rect(1220, 800, 1640, 1200),
     ];
 
     let check_boxes = |p| {
@@ -96,13 +103,16 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
 
     let mut other_pos = Vec::new();
 
-    for i in 0..4 {
-        let capital_pos = positions[i];
+    for (race, capital_pos) in [
+        (BuildingType::Goblin, vec2(450., -1650.)),
+        (BuildingType::Human, vec2(450., -150.)),
+        (BuildingType::Elven, vec2(-30., 1460.)),
+        (BuildingType::Dwarven, vec2(-1360., 500.)),
+    ] {
+        spawn_city(capital_pos * SCALE, make_color(colors[0]), race);
 
-        spawn_city(capital_pos * SCALE, make_color(colors[0]));
-
-        let (min, max) = match i {
-            3 => (-(260f32.to_radians()), 0.0),
+        let (min, max) = match race {
+            BuildingType::Dwarven => (-(260f32.to_radians()), 0.0),
             _ => (-PI, PI),
         };
 
@@ -110,7 +120,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
             other_pos.clear();
 
             for _ in 0..j {
-                let mut city_pos = capital_pos + random_circle_pos(c as i32, min, max);
+                let mut city_pos = capital_pos + gen_rand_circle(c as i32, min, max, &mut rng);
                 let mut attempts = 0;
                 'x: loop {
                     attempts += 1;
@@ -120,7 +130,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
                     }
                     for v in &other_pos {
                         if city_pos.distance(*v) < MIN_CITY_DIST {
-                            city_pos = capital_pos + random_circle_pos(c as i32, min, max);
+                            city_pos = capital_pos + gen_rand_circle(c as i32, min, max, &mut rng);
                             continue 'x;
                         }
                     }
@@ -128,7 +138,8 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
                 }
                 if check_boxes(city_pos) {
                     other_pos.push(city_pos);
-                    spawn_city(city_pos, make_color(colors[(1 + c) % colors.len()]));
+                    println!("Missing a city spawn");
+                    spawn_city(city_pos, make_color(colors[(1 + c) % colors.len()]), race);
                 }
             }
         }
