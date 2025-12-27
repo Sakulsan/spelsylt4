@@ -1,3 +1,4 @@
+use super::strategic_hud::PopupHUD;
 use bevy::prelude::*;
 use std::marker::PhantomData;
 
@@ -10,7 +11,7 @@ use std::collections::HashMap;
 // This plugin will contain the game. In this case, it's just be a screen that will
 // display the current settings for 5 seconds before returning to the menu
 #[derive(Resource, Deref)]
-struct SelectedCity(String);
+pub struct SelectedCity(pub String);
 
 #[derive(Resource, Deref)]
 struct BuildinTable(HashMap<String, Building>);
@@ -20,12 +21,10 @@ pub fn plugin(app: &mut App) {
         .insert_resource(SelectedCity("Unkown".to_string()))
         .insert_resource(BuildinTable(super::market::gen_building_tables()))
         .init_state::<StrategicState>()
-        .init_state::<HUDPosition>()
-        .add_systems(OnEnter(StrategicState::HUDOpen), hud_setup)
-        //        .add_systems(OnEnter(HUDPosition::Actions), open_actions)
-        //        .add_systems(OnEnter(HUDPosition::Buildings), open_buildings)
-        //        .add_systems(OnEnter(HUDPosition::Market), open_market)
-        .add_systems(Update, (city_interaction_system, kill_button));
+        .add_systems(
+            Update,
+            (city_interaction_system).run_if(in_state(PopupHUD::Off)),
+        );
 }
 
 /*#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -36,18 +35,10 @@ enum StrategicState<T: Send + Sync + Eq + std::fmt::Debug + std::hash::Hash + Cl
 }*/
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
-enum StrategicState {
+pub enum StrategicState {
     #[default]
     Map,
     HUDOpen,
-}
-
-#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
-enum HUDPosition {
-    #[default]
-    Buildings,
-    Actions,
-    Market,
 }
 
 fn strategic_setup(
@@ -62,12 +53,14 @@ fn strategic_setup(
             height: Val::Vh(100.0),
             ..default()
         },
+        Transform::from_xyz(0., 0.0, -1.0),
         Sprite {
             image: sylt.get_sprite("map").image,
             ..default()
         },
         children![(
             Button,
+            Transform::from_xyz(0., 0.0, 1.0),
             CityData {
                 id: "Capital".to_string(),
                 population: 2,
@@ -80,262 +73,16 @@ fn strategic_setup(
                 id: "Capital".to_string()
             },
             Node {
-                width: Val::Px(20.0),
-                height: Val::Px(20.0),
+                width: px(32),
+                height: px(32),
                 ..default()
-            },
-            BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
+            } //          Sprite {
+              //                color: Srgba::new(1.0, 0.1, 0.1, 1.0).into(),
+              //                custom_size: Some(Vec2::new(75., 75.)),
+              //                ..default()
+              //            }
         )],
     ));
-}
-
-fn kill_button(
-    mut interaction_query: Query<(&Interaction, &HudButton), (Changed<Interaction>, With<Button>)>,
-    mut menu_state: ResMut<NextState<StrategicState>>,
-    mut tab_state: ResMut<NextState<HUDPosition>>,
-) {
-    for (interaction, menu_button_action) in &interaction_query {
-        if *interaction == Interaction::Pressed {
-            match menu_button_action {
-                HudButton::KillHud => {
-                    menu_state.set(StrategicState::Map);
-                }
-
-                HudButton::OperationAction => {
-                    tab_state.set(HUDPosition::Actions);
-                }
-                HudButton::EconomyTabAction => {
-                    tab_state.set(HUDPosition::Market);
-                }
-                HudButton::BuldingTabAction => {
-                    tab_state.set(HUDPosition::Buildings);
-                }
-
-                _ => {}
-            }
-        }
-    }
-}
-
-#[derive(Component)]
-enum HudButton {
-    KillHud,
-    ConstructionAction,
-    OperationAction,
-    EconomyTabAction,
-    BuldingTabAction,
-}
-
-fn create_resource_icon(
-    parent: &mut ChildSpawnerCommands,
-    resource: Resources,
-    cost: usize,
-    sylt: &mut Sylt,
-) {
-    parent.spawn((
-        Node {
-            width: px(160),
-            height: px(80),
-            margin: UiRect::all(px(4)),
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::FlexStart,
-            ..default()
-        },
-        BackgroundColor(Srgba::new(0.9, 0.9, 0.9, 1.0).into()),
-        children![
-            (
-                Node {
-                    right: px(0),
-                    width: px(80),
-                    height: px(80),
-                    margin: UiRect::all(px(4)),
-                    ..default()
-                },
-                ImageNode {
-                    image: sylt
-                        .get_sprite(match resource {
-                            Resources::Water => "resource_water",
-                            Resources::Stone => "resource_stone",
-                            Resources::Lumber => "resource_wood",
-                            _ => "map",
-                        })
-                        .image,
-                    ..default()
-                },
-            ),
-            (Text::new(format!("x{}", cost)),)
-        ],
-    ));
-}
-
-fn hud_setup(
-    mut commands: Commands,
-    mut sylt: Sylt,
-    city_data: Query<&CityData>,
-    selected_city: Res<SelectedCity>,
-) {
-    for city in city_data {
-        if city.id == selected_city.0 {
-            //Map quit upon click
-            commands.spawn((
-                DespawnOnExit(StrategicState::HUDOpen),
-                Node {
-                    top: Val::Vh(0.0),
-                    width: Val::Vw(60.0),
-                    height: Val::Vh(70.0),
-                    ..default()
-                },
-                Button,
-                HudButton::KillHud, //Feels like a clunky way to quit the menu
-            ));
-
-            //Market values
-            commands
-                .spawn((
-                    DespawnOnExit(StrategicState::HUDOpen),
-                    Node {
-                        top: Val::Vh(0.0),
-                        left: Val::Vh(100.0),
-                        width: Val::Vw(40.0),
-                        height: Val::Vh(70.0),
-                        align_items: AlignItems::Start,
-                        justify_content: JustifyContent::Start,
-                        display: Display::Flex,
-                        flex_direction: FlexDirection::Column,
-                        ..default()
-                    },
-                    BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 1.0).into()),
-                ))
-                .with_children(|parent| {
-                    for resource in [
-                        Resources::Water,
-                        Resources::Stone,
-                        Resources::Lumber,
-                        Resources::Souls,
-                    ] {
-                        create_resource_icon(parent, resource, 12, &mut sylt);
-                    }
-                });
-
-            //Action menu
-            commands.spawn((
-                DespawnOnExit(StrategicState::HUDOpen),
-                Node {
-                    top: Val::Vh(70.0),
-                    width: Val::Vw(100.0),
-                    height: Val::Vh(40.0),
-                    align_items: AlignItems::Start,
-                    justify_content: JustifyContent::Start,
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Column,
-                    row_gap: px(10),
-                    ..default()
-                },
-                BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 1.0).into()),
-                children![
-                    (
-                        Node {
-                            width: percent(100.0),
-                            height: percent(20.0),
-                            align_items: AlignItems::Start,
-                            justify_content: JustifyContent::Start,
-                            display: Display::Flex,
-                            flex_direction: FlexDirection::Row,
-                            ..default()
-                        },
-                        children![
-                            (
-                                Node {
-                                    width: percent(40.0),
-                                    ..default()
-                                },
-                                // Title
-                                Text::new(city.id.clone()),
-                                TextFont { ..default() },
-                            ),
-                            (
-                                Button,
-                                HudButton::BuldingTabAction,
-                                Node {
-                                    width: percent(20.0),
-                                    ..default()
-                                },
-                                BackgroundColor(Srgba::new(0.2, 0.2, 0.9, 1.0).into()),
-                                Text::new("Buildings"),
-                                TextFont { ..default() },
-                            ),
-                            (
-                                Button,
-                                HudButton::OperationAction,
-                                Node {
-                                    width: percent(20.0),
-                                    ..default()
-                                },
-                                BackgroundColor(Srgba::new(0.2, 0.2, 0.9, 1.0).into()),
-                                Text::new("Actions"),
-                                TextFont { ..default() },
-                            ),
-                            (
-                                Button,
-                                HudButton::EconomyTabAction,
-                                Node {
-                                    width: percent(20.0),
-                                    ..default()
-                                },
-                                BackgroundColor(Srgba::new(0.2, 0.2, 0.9, 1.0).into()),
-                                Text::new("Market"),
-                                TextFont { ..default() },
-                            )
-                        ]
-                    ),
-                    (
-                        DespawnOnExit(HUDPosition::Buildings),
-                        Node {
-                            width: percent(100.0),
-                            height: percent(100.0),
-                            align_items: AlignItems::Start,
-                            justify_content: JustifyContent::Start,
-                            display: Display::Flex,
-                            flex_direction: FlexDirection::Row,
-                            ..default()
-                        },
-                        Children::spawn((SpawnWith({
-                            let districts = city.buildings.clone();
-
-                            move |parent: &mut bevy::ecs::relationship::RelatedSpawner<ChildOf>| {
-                                //let length = 2;
-                                for i in 0..5 {
-                                    if i < districts.len() {
-                                        parent.spawn((
-                                            Node {
-                                                width: percent(18),
-                                                height: percent(80),
-                                                margin: UiRect::all(percent(1)),
-                                                ..default()
-                                            },
-                                            Text::new("lol"),
-                                            BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into()),
-                                        ));
-                                    } else {
-                                        parent.spawn((
-                                            Node {
-                                                width: percent(18),
-                                                height: percent(80),
-                                                margin: UiRect::all(percent(1)),
-                                                ..default()
-                                            },
-                                            Text::new("Unbuilt district"),
-                                            BackgroundColor(Srgba::new(0.9, 0.1, 0.1, 1.0).into()),
-                                        ));
-                                    }
-                                }
-                            }
-                        }),))
-                    ),
-                ],
-            ));
-        }
-    }
 }
 
 #[derive(Component)]
@@ -358,10 +105,10 @@ enum DistrictType {
     Mine,
 }
 #[derive(Component)]
-struct CityData {
-    id: String,
-    population: u8,
-    buildings: Vec<String>,
+pub struct CityData {
+    pub id: String,
+    pub population: u8,
+    pub buildings: Vec<String>,
 }
 
 #[derive(Component)]
@@ -377,6 +124,7 @@ fn city_interaction_system(
     >,
     mut menu_state: ResMut<NextState<StrategicState>>,
     mut selected_city: ResMut<SelectedCity>,
+    mut popupp_state: ResMut<NextState<PopupHUD>>,
 ) {
     for (interaction, mut node_color, city) in &mut interaction_query {
         match *interaction {
@@ -384,6 +132,7 @@ fn city_interaction_system(
                 println!("Pressed the city {}", city.id);
                 selected_city.0 = city.id.clone();
                 menu_state.set(StrategicState::HUDOpen);
+                popupp_state.set(PopupHUD::Off);
             }
             Interaction::Hovered => *node_color = Srgba::new(1.0, 0.1, 0.1, 1.0).into(),
             _ => {}

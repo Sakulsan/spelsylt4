@@ -1,0 +1,381 @@
+use super::market::*;
+use super::strategic_map::{CityData, SelectedCity, StrategicState};
+use crate::prelude::*;
+pub fn plugin(app: &mut App) {
+    app.init_state::<PopupHUD>()
+        .add_systems(OnEnter(StrategicState::HUDOpen), city_hud_setup)
+        .add_systems(OnEnter(PopupHUD::Buildings), building_menu)
+        .add_systems(OnEnter(PopupHUD::Caravan), caravan_menu)
+        .add_systems(OnEnter(PopupHUD::Wares), wares_menu)
+        .add_systems(Update, no_popup_button.run_if(in_state(PopupHUD::Off)))
+        .add_systems(Update, popup_button);
+}
+
+#[derive(Component)]
+struct PopUpItem;
+
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+pub enum PopupHUD {
+    #[default]
+    Off,
+    Buildings,
+    Caravan,
+    Wares,
+}
+
+fn no_popup_button(
+    mut interaction_query: Query<(&Interaction, &HudButton), (Changed<Interaction>, With<Button>)>,
+    mut menu_state: ResMut<NextState<StrategicState>>,
+    mut tab_state: ResMut<NextState<PopupHUD>>,
+) {
+    for (interaction, menu_button_action) in &interaction_query {
+        if *interaction == Interaction::Pressed {
+            match menu_button_action {
+                HudButton::KillHud => {
+                    menu_state.set(StrategicState::Map);
+                }
+
+                HudButton::OperationAction => {
+                    tab_state.set(PopupHUD::Caravan);
+                }
+                HudButton::EconomyTabAction => {
+                    tab_state.set(PopupHUD::Wares);
+                }
+                HudButton::BuldingTabAction => {
+                    tab_state.set(PopupHUD::Buildings);
+                }
+
+                _ => {}
+            }
+        }
+    }
+}
+
+fn popup_button(
+    mut commands: Commands,
+    mut interaction_query: Query<
+        (&Interaction, &PopupButton),
+        (Changed<Interaction>, With<Button>),
+    >,
+    //mut menu_state: ResMut<NextState<StrategicState>>,
+    mut tab_state: ResMut<NextState<PopupHUD>>,
+    mut popup_items: Query<Entity, With<PopUpItem>>,
+) {
+    for (interaction, menu_button_action) in &interaction_query {
+        if *interaction == Interaction::Pressed {
+            match menu_button_action {
+                PopupButton::KillHud => {
+                    tab_state.set(PopupHUD::Off);
+                    for entity in popup_items.iter() {
+                        commands.entity(entity).despawn();
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+fn popup_window(commands: &mut Commands) -> Entity {
+    commands.spawn((
+        ZIndex(1),
+        PopUpItem,
+        Node {
+            width: Val::Vw(100.0),
+            height: Val::Vh(100.0),
+            ..default()
+        },
+        //        DespawnOnExit(PopupHUD::Buildings),
+        //        DespawnOnExit(PopupHUD::Wares),
+        //        DespawnOnExit(PopupHUD::Caravan),
+        BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+    ));
+    commands
+        .spawn((
+            ZIndex(2),
+            PopUpItem,
+            Node {
+                top: Val::Vh(10.0),
+                left: Val::Vw(10.0),
+                width: Val::Vw(80.0),
+                height: Val::Vh(80.0),
+                align_items: AlignItems::Stretch,
+                justify_content: JustifyContent::FlexStart,
+                display: Display::Flex,
+                flex_direction: FlexDirection::Column,
+                border: UiRect::all(Val::Px(2.0)),
+                ..default()
+            },
+            BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 1.0).into()),
+            BorderColor::all(Color::BLACK),
+        ))
+        .id()
+}
+
+fn building_menu(mut commands: Commands) {
+    let window = popup_window(&mut commands);
+
+    commands.entity(window).with_child((
+        Node {
+            width: percent(100),
+            height: percent(15),
+            align_items: AlignItems::FlexEnd,
+            justify_content: JustifyContent::FlexStart,
+            flex_direction: FlexDirection::Row,
+            ..default()
+        },
+        children![(
+            Button,
+            PopupButton::KillHud,
+            Node {
+                width: px(32),
+                height: px(32),
+                ..default()
+            },
+            BackgroundColor(Srgba::new(0.9, 0.2, 0.2, 1.0).into())
+        )],
+    ));
+
+    for tiers in 1..6 {
+        commands.entity(window).with_children(|parent| {
+            parent
+                .spawn((
+                    Node {
+                        width: percent(100),
+                        height: percent(15),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::SpaceEvenly,
+                        flex_direction: FlexDirection::Row,
+                        ..default()
+                    },
+                    Text::new(format!("Tier {}", tiers)),
+                    BackgroundColor(Srgba::new(0.2, 0.2, 1.0, 1.0).into()),
+                ))
+                .with_children(|parent| {
+                    for building_slot in 0..tiers {
+                        println!("Tier {} has slot {}", tiers, building_slot);
+                        parent.spawn((
+                            Node {
+                                width: px(32),
+                                height: px(32),
+                                ..default()
+                            },
+                            BackgroundColor(Srgba::new(0.2, 1., 0.2, 1.0).into()),
+                        ));
+                    }
+                });
+        });
+    }
+}
+
+fn caravan_menu(mut commands: Commands) {
+    let window = popup_window(&mut commands);
+}
+
+fn wares_menu(mut commands: Commands) {
+    let window = popup_window(&mut commands);
+}
+
+#[derive(Component)]
+enum HudButton {
+    KillHud,
+    OperationAction,
+    EconomyTabAction,
+    BuldingTabAction,
+}
+
+#[derive(Component)]
+enum PopupButton {
+    KillHud,
+    BuldingTabAction,
+}
+
+fn create_resource_icon(
+    parent: &mut ChildSpawnerCommands,
+    resource: Resources,
+    cost: usize,
+    sylt: &mut Sylt,
+) {
+    parent.spawn((
+        Node {
+            width: px(160),
+            height: px(80),
+            margin: UiRect::all(px(4)),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::FlexStart,
+            ..default()
+        },
+        BackgroundColor(Srgba::new(0.9, 0.9, 0.9, 1.0).into()),
+        children![
+            (
+                Node {
+                    right: px(0),
+                    width: px(80),
+                    height: px(80),
+                    margin: UiRect::all(px(4)),
+                    ..default()
+                },
+                ImageNode {
+                    image: sylt
+                        .get_sprite(match resource {
+                            Resources::Water => "resource_water",
+                            Resources::Stone => "resource_stone",
+                            Resources::Lumber => "resource_wood",
+                            _ => "map",
+                        })
+                        .image,
+                    ..default()
+                },
+            ),
+            (Text::new(format!("x{}", cost)),)
+        ],
+    ));
+}
+
+fn city_hud_setup(
+    mut commands: Commands,
+    mut sylt: Sylt,
+    city_data: Query<&CityData>,
+    selected_city: Res<SelectedCity>,
+) {
+    for city in city_data {
+        if city.id == selected_city.0 {
+            //Map quit upon click
+            commands.spawn((
+                DespawnOnExit(StrategicState::HUDOpen),
+                Node {
+                    top: Val::Vh(0.0),
+                    width: Val::Vw(100.0),
+                    height: Val::Vh(70.0),
+                    ..default()
+                },
+                Button,
+                HudButton::KillHud, //Feels like a clunky way to quit the menu
+            ));
+
+            //Action menu
+            commands.spawn((
+                DespawnOnExit(StrategicState::HUDOpen),
+                Node {
+                    top: Val::Vh(70.0),
+                    width: Val::Vw(100.0),
+                    height: Val::Vh(40.0),
+                    align_items: AlignItems::Start,
+                    justify_content: JustifyContent::Start,
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
+                    row_gap: px(10),
+                    ..default()
+                },
+                BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 1.0).into()),
+                children![
+                    (
+                        Node {
+                            width: percent(100.0),
+                            height: percent(20.0),
+                            align_items: AlignItems::Start,
+                            justify_content: JustifyContent::Start,
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Row,
+                            ..default()
+                        },
+                        children![
+                            (
+                                Node {
+                                    width: percent(40.0),
+                                    ..default()
+                                },
+                                // Title
+                                Text::new(city.id.clone()),
+                                TextFont { ..default() },
+                            ),
+                            (
+                                Button,
+                                HudButton::BuldingTabAction,
+                                Node {
+                                    width: percent(20.0),
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(0.2, 0.2, 0.9, 1.0).into()),
+                                Text::new("Buildings"),
+                                TextFont { ..default() },
+                            ),
+                            (
+                                Button,
+                                HudButton::OperationAction,
+                                Node {
+                                    width: percent(20.0),
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(0.2, 0.2, 0.9, 1.0).into()),
+                                Text::new("Actions"),
+                                TextFont { ..default() },
+                            ),
+                            (
+                                Button,
+                                HudButton::EconomyTabAction,
+                                Node {
+                                    width: percent(20.0),
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(0.2, 0.2, 0.9, 1.0).into()),
+                                Text::new("Market"),
+                                TextFont { ..default() },
+                            )
+                        ]
+                    ),
+                    (
+                        DespawnOnExit(PopupHUD::Buildings),
+                        Node {
+                            width: percent(100.0),
+                            height: percent(100.0),
+                            align_items: AlignItems::Start,
+                            justify_content: JustifyContent::Start,
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Row,
+                            ..default()
+                        },
+                        children![
+                            (
+                                Button,
+                                HudButton::BuldingTabAction,
+                                Node {
+                                    width: percent(18),
+                                    height: percent(80),
+                                    margin: UiRect::all(percent(1)),
+                                    ..default()
+                                },
+                                Text::new("Investigate buildings"),
+                                BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into()),
+                            ),
+                            (
+                                Button,
+                                HudButton::EconomyTabAction,
+                                Node {
+                                    width: percent(18),
+                                    height: percent(80),
+                                    margin: UiRect::all(percent(1)),
+                                    ..default()
+                                },
+                                Text::new("Check wares"),
+                                BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into())
+                            ),
+                            (
+                                Button,
+                                HudButton::OperationAction,
+                                Node {
+                                    width: percent(18),
+                                    height: percent(80),
+                                    margin: UiRect::all(percent(1)),
+                                    ..default()
+                                },
+                                Text::new("Send a new caravan"),
+                                BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into())
+                            )
+                        ]
+                    ),
+                ],
+            ));
+        }
+    }
+}

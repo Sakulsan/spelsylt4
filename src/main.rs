@@ -84,7 +84,7 @@ fn move_camera(
         proj.scale -= 0.05;
     }
 
-    proj.scale = 0.05f32.min(proj.scale);
+    proj.scale = 0.05f32.max(proj.scale);
 }
 
 fn main() {
@@ -125,7 +125,14 @@ fn debug_city_names(mut rng: ResMut<GlobalRng>) {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2d);
+    commands.spawn((
+        Camera2d,
+        Projection::Orthographic(OrthographicProjection {
+            //scaling_mode: ScalingMode::WindowSize,
+            scale: 10.0,
+            ..OrthographicProjection::default_2d()
+        }),
+    ));
 }
 
 mod splash {
