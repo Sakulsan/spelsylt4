@@ -83,6 +83,8 @@ fn move_camera(
     } else if keys.pressed(K::KeyX) {
         proj.scale -= 0.05;
     }
+
+    proj.scale = 0.05f32.min(proj.scale);
 }
 
 fn main() {

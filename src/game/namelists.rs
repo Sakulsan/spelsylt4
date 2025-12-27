@@ -77,14 +77,20 @@ pub fn get_elven_name(mut rng: &mut ResMut<GlobalRng>) -> String {
     let elven_initial_particle = vec![
         "Dawn", "Sun", "Gem", "Ice", "Frost", "Heart", "Sky", "Heaven", "Winter", "Lore", "Fire",
         "World", "Moon", "Forge", "Flame", "Star", "Mage", "Silver", "Storm", "Amber", "Ash",
-        "Brass", "Gold", "Diamond", "Emerald", "Earth", "Jewel"
+        "Brass", "Gold", "Diamond", "Emerald", "Earth", "Jewel",
     ];
     let elven_latter_particle = vec![
-        "light", "spire", "tower", "haven", "reach", "star", "hearth", "home", "land", "peak", "fire",
-        "fall", "rise", "spring", "reign", "garden", "sun", "edge", "crown"
+        "light", "spire", "tower", "haven", "reach", "star", "hearth", "home", "land", "peak",
+        "fire", "fall", "rise", "spring", "reign", "garden", "sun", "edge", "crown",
     ];
     let elven_placement_particle = vec![
-        "'s Edge", "'s Crown", "'s Peak", "'s Radiance", "'s Heart", "'s Eye", ""
+        "'s Edge",
+        "'s Crown",
+        "'s Peak",
+        "'s Radiance",
+        "'s Heart",
+        "'s Eye",
+        "",
     ];
 
     let mut name = "".to_string();
