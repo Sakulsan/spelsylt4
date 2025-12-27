@@ -292,6 +292,7 @@ pub struct CityData {
     pub buildings_t3: Vec<(String, Faction)>,
     pub buildings_t4: Vec<(String, Faction)>,
     pub buildings_t5: Vec<(String, Faction)>,
+    pub market: HashMap<Resources, isize>,
 }
 
 impl CityData {
@@ -343,6 +344,11 @@ impl CityData {
             ));
         }
 
+        let mut market = HashMap::new();
+        for res in Resources::all_resources() {
+            market.insert(res, 0);
+        }
+
         CityData {
             id: super::namelists::generate_city_name(race, &mut rng),
             race: race,
@@ -352,6 +358,7 @@ impl CityData {
             buildings_t3: t3,
             buildings_t4: t4,
             buildings_t5: t5,
+            market: market
         }
     }
 }
