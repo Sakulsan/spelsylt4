@@ -366,7 +366,7 @@ impl CityData {
 
     pub fn get_resource_value(&self, res: &Resources) -> f64 {
         let total = self.market.get(res).expect(format!("tried to find resource {:?} but the resource was missing", res).as_str());
-        let sigmoid = 2.0/(1.0 + (std::f64::consts::E).powf(*total as f64 / 50.0)) * res.get_base_value() as f64;
+        let sigmoid = 2.0/(1.0 + (std::f64::consts::E).powf(*total as f64 / 200.0)) * res.get_base_value() as f64;
         sigmoid.max(0.3)
     }
 
