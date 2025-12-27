@@ -300,7 +300,7 @@ fn hud_setup(
                             ..default()
                         },
                         Children::spawn((SpawnWith({
-                            let districts = city.districts.clone();
+                            let districts = city.buildings.clone();
 
                             move |parent: &mut bevy::ecs::relationship::RelatedSpawner<ChildOf>| {
                                 //let length = 2;
@@ -313,12 +313,7 @@ fn hud_setup(
                                                 margin: UiRect::all(percent(1)),
                                                 ..default()
                                             },
-                                            Text::new(match districts[i] {
-                                                DistrictType::Farm => "Farm district",
-                                                DistrictType::Wizard => "Arcane district",
-                                                DistrictType::Smith => "Blacksmith district",
-                                                DistrictType::Mine => "Mining district",
-                                            }),
+                                            Text::new("lol"),
                                             BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into()),
                                         ));
                                     } else {
