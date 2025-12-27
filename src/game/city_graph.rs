@@ -143,8 +143,8 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
     let mut other_pos = Vec::new();
 
     for (race, capital_pos) in [
-        (BuildingType::Goblin, vec2(450., -1650.)),
-        (BuildingType::Human, vec2(450., -150.)),
+        (BuildingType::Goblin, vec2(650., -1450.)),
+        (BuildingType::Human, vec2(20., -150.)),
         (BuildingType::Elven, vec2(-30., 1460.)),
         (BuildingType::Dwarven, vec2(-1360., 500.)),
     ] {
