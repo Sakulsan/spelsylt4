@@ -47,7 +47,7 @@ fn spawn_city(pos: Vec2, color: Color, race: BuildingType, tier: u8, capital: bo
     let idx = g.add_node(ent.id());
     let mut data = CityData::new(race, tier, &mut rng);
     if capital {
-        let data = match race {
+        data = match race {
             BuildingType::Dwarven => { CityData {
                 id: "Terez-e-Palaz".to_string(),
                 race: BuildingType::Dwarven,
@@ -60,7 +60,7 @@ fn spawn_city(pos: Vec2, color: Color, race: BuildingType, tier: u8, capital: bo
             } }
             BuildingType::Elven => { CityData {
                 id: "Jewel of All Creation".to_string(),
-                race: BuildingType::Dwarven,
+                race: BuildingType::Elven,
                 population: 5,
                 buildings_t1: vec!(("Earth Spirit Aid".to_string(), Faction::Neutral), ("Ironwood Forestry".to_string(), Faction::Neutral), ("Forest Foraging".to_string(), Faction::Neutral), ("Standard Mines".to_string(), Faction::Neutral), ("Standard Mines".to_string(), Faction::Neutral)),
                 buildings_t2: vec!(("Amber Plantation".to_string(), Faction::Neutral), ("Amber Plantation".to_string(), Faction::Neutral), ("Gardens of Wonder".to_string(), Faction::Neutral), ("Gardens of Wonder".to_string(), Faction::Neutral)),
@@ -70,7 +70,7 @@ fn spawn_city(pos: Vec2, color: Color, race: BuildingType, tier: u8, capital: bo
             } }
             BuildingType::Goblin => { CityData {
                 id: "Tevet Pekhep Dered".to_string(),
-                race: BuildingType::Dwarven,
+                race: BuildingType::Goblin,
                 population: 5,
                 buildings_t1: vec!(("Deep Mines".to_string(), Faction::Neutral), ("Deep Mines".to_string(), Faction::Neutral), ("Animated Objects".to_string(), Faction::Neutral), ("Alchemical Enhancements".to_string(), Faction::Neutral), ("Alchemical Enhancements".to_string(), Faction::Neutral)),
                 buildings_t2: vec!(("Glaziery".to_string(), Faction::Neutral), ("Glaziery".to_string(), Faction::Neutral), ("Charcoal Kilns".to_string(), Faction::Neutral), ("Hill Quarries".to_string(), Faction::Neutral)),
@@ -80,7 +80,7 @@ fn spawn_city(pos: Vec2, color: Color, race: BuildingType, tier: u8, capital: bo
             } }
             BuildingType::Human => { CityData {
                 id: "Great Lancastershire".to_string(),
-                race: BuildingType::Dwarven,
+                race: BuildingType::Human,
                 population: 5,
                 buildings_t1: vec!(("Large Industrial District".to_string(), Faction::Neutral), ("Large Industrial District".to_string(), Faction::Neutral), ("Fishing Port".to_string(), Faction::Neutral), ("Fishing Port".to_string(), Faction::Neutral), ("Tree Plantation".to_string(), Faction::Neutral)),
                 buildings_t2: vec!(("Water Cleaning Facilities".to_string(), Faction::Neutral), ("Water Cleaning Facilities".to_string(), Faction::Neutral), ("Hired Workforces".to_string(), Faction::Neutral), ("Small-scale Forges".to_string(), Faction::Neutral)),
