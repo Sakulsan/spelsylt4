@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 
 use bevy::ui_widgets::{observe, ValueChange};
 
+use super::market::Resources;
 use crate::assets::Sylt;
 use crate::GameState;
 
@@ -118,15 +119,46 @@ enum HudButton {
     BuldingTabAction,
 }
 
-fn create_resource_icon(parent: &mut ChildSpawnerCommands) {
+fn create_resource_icon(
+    parent: &mut ChildSpawnerCommands,
+    resource: Resources,
+    cost: usize,
+    sylt: &mut Sylt,
+) {
     parent.spawn((
         Node {
-            width: px(64),
-            height: px(64),
+            width: px(160),
+            height: px(80),
             margin: UiRect::all(px(4)),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::FlexStart,
             ..default()
         },
         BackgroundColor(Srgba::new(0.7, 0.7, 0.7, 1.0).into()),
+        children![
+            (
+                Node {
+                    right: px(0),
+                    width: px(80),
+                    height: px(80),
+                    margin: UiRect::all(px(4)),
+                    ..default()
+                },
+                ImageNode {
+                    image: sylt
+                        .get_sprite(match resource {
+                            Resources::Water => "resource_water",
+                            Resources::Stone => "resource_stone",
+                            Resources::Lumber => "resource_wood",
+                            _ => "map",
+                        })
+                        .image,
+                    ..default()
+                },
+                BackgroundColor(Srgba::new(0.7, 0.7, 0.7, 1.0).into()),
+            ),
+            (Text::new(format!("x{}", cost)),)
+        ],
     ));
 }
 
@@ -169,8 +201,13 @@ fn hud_setup(
                     BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 1.0).into()),
                 ))
                 .with_children(|parent| {
-                    for i in 0..5 {
-                        create_resource_icon(parent);
+                    for resource in [
+                        Resources::Water,
+                        Resources::Stone,
+                        Resources::Lumber,
+                        Resources::Souls,
+                    ] {
+                        create_resource_icon(parent, resource, 12, &mut sylt);
                     }
                 });
 

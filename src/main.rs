@@ -42,11 +42,22 @@ struct Volume(u32);
 fn move_camera(
     keys: Res<ButtonInput<KeyCode>>,
     mut cam_pos: Query<&mut Transform, With<Camera2d>>,
+    mut proj: Query<&mut Projection>,
 ) {
     let Ok(mut c) = cam_pos.single_mut() else {
         error!("we have multiple cameras or something");
         return;
     };
+
+    let Ok(mut proj) = proj.single_mut() else {
+        error!("we have multiple cameras or something");
+        return;
+    };
+    let Projection::Orthographic(proj) = &mut *proj else {
+        error!("projection wasn't orthographic :(");
+        return;
+    };
+
     let c = &mut c.translation;
 
     let v = |x, y| Vec3::new(x, y, 0.0);
@@ -66,6 +77,14 @@ fn move_camera(
             *c += dir * if shift { 100.0 } else { 20.0 };
         }
     }
+
+    if keys.pressed(K::KeyZ) {
+        proj.scale += 0.05;
+    } else if keys.pressed(K::KeyX) {
+        proj.scale -= 0.05;
+    }
+
+    proj.scale = 0.05f32.min(proj.scale);
 }
 
 fn main() {
