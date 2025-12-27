@@ -6,9 +6,11 @@ use crate::game::namelists::*;
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
+use bevy_ui_anchor::AnchorUiPlugin;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use std::time::SystemTime;
+
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
 mod game;
 
@@ -87,9 +89,17 @@ fn move_camera(
     proj.scale = 0.05f32.max(proj.scale);
 }
 
+#[derive(Component)]
+struct TheDefaultUiCamera;
+
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, FeathersPlugins, TextInputPlugin))
+        .add_plugins((
+            DefaultPlugins,
+            FeathersPlugins,
+            TextInputPlugin,
+            AnchorUiPlugin::<TheDefaultUiCamera>::new(),
+        ))
         .add_plugins((
             splash::splash_plugin,
             menu::menu_plugin,
@@ -103,6 +113,12 @@ fn main() {
         .insert_resource(Volume(7))
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
+        .add_systems(Startup, |mut commands: Commands, cam: DefaultUiCamera| {
+            let Some(cam) = cam.get() else {
+                return;
+            };
+            commands.entity(cam).insert(TheDefaultUiCamera);
+        })
         .add_systems(Startup, debug_city_names)
         .add_systems(Startup, setup)
         .add_systems(Update, move_camera)

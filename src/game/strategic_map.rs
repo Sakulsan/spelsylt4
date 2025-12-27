@@ -6,6 +6,8 @@ use super::market::*;
 use crate::GameState;
 use std::collections::HashMap;
 
+use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
+
 // This plugin will contain the game. In this case, it's just be a screen that will
 // display the current settings for 5 seconds before returning to the menu
 #[derive(Resource, Deref)]
@@ -60,7 +62,11 @@ fn spawn_city_ui_nodes(
     mut sylt: Sylt,
 ) {
     for (ent, node) in graph_nodes {
-        commands.entity(ent).insert((
+        commands.entity(ent).insert(AnchoredUiNodes::spawn_one((
+            AnchorUiConfig {
+                anchorpoint: AnchorPoint::middle(),
+                ..default()
+            },
             Button,
             Transform::from_xyz(0., 0.0, 1.0),
             CityData {
@@ -79,8 +85,9 @@ fn spawn_city_ui_nodes(
                 height: px(32),
                 ..default()
             },
+            ImageNode::new(sylt.get_image("town_ui_icon")),
             BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
-        ));
+        )));
     }
 }
 
