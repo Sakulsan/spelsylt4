@@ -64,6 +64,7 @@ fn spawn_map_sprite(mut commands: Commands, mut sylt: Sylt) {
 }
 
 use super::city_graph::Node as CityNode;
+use super::tooltip::Tooltips;
 fn spawn_city_ui_nodes(
     mut commands: Commands,
     graph_nodes: Query<(Entity, &CityNode)>,
@@ -94,6 +95,32 @@ fn spawn_city_ui_nodes(
             },
             ImageNode::new(sylt.get_image("town_ui_icon")),
             BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
+            related!(
+                Tooltips[(
+                    Text::new("hello\nbevy!"),
+                    TextShadow::default(),
+                    // Set the justification of the Text
+                    TextLayout::new_with_justify(Justify::Center),
+                    // Set the style of the Node itself.
+                    Node { ..default() }
+                ),
+                (
+                    Text::new("hello\nbevy!"),
+                    TextShadow::default(),
+                    // Set the justification of the Text
+                    TextLayout::new_with_justify(Justify::Center),
+                    // Set the style of the Node itself.
+                    Node { ..default() }
+                ),
+                (
+                    Text::new("hello\nbevy!"),
+                    TextShadow::default(),
+                    // Set the justification of the Text
+                    TextLayout::new_with_justify(Justify::Center),
+                    // Set the style of the Node itself.
+                    Node { ..default() }
+                )]
+            ),
         )));
     }
 }
