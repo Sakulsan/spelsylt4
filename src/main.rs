@@ -95,7 +95,7 @@ struct DefaultUiCameraMarker;
 fn main() {
     App::new()
         .add_plugins((
-            DefaultPlugins,
+            DefaultPlugins.set(ImagePlugin::default_nearest()),
             FeathersPlugins,
             TextInputPlugin,
             AnchorUiPlugin::<DefaultUiCameraMarker>::new(),
