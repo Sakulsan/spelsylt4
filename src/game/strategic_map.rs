@@ -370,11 +370,33 @@ impl CityData {
         sigmoid as f64
     }
 
+    pub fn available_commodities(&self, building_table: &Res<BuildinTable>) {
+        let mut resources: HashMap<Resources, isize> = HashMap::new();
+        macro_rules! get_outputs {
+            ($list:expr) => {
+                for b in &$list {
+                    if b.1 != Faction::Neutral { continue; }
+                    for (res, amount) in &building_table.0.get(&b.0).expect(format!("Couldn't retrieve value for {:?}", &b.0).as_str()).input {
+                        resources.insert(*res, resources.get(res).or_else(|| -> Option<&isize> {Some(&0)}).expect(format!("bruh value {:?}", res).as_str()) + amount);
+                    }
+                    for (res, amount) in &building_table.0.get(&b.0).expect(format!("Couldn't retrieve value for {:?}", &b.0).as_str()).output {
+                        resources.insert(*res, resources.get(res).or_else(|| -> Option<&isize> {Some(&0)}).expect(format!("bruh value {:?}", res).as_str()) - amount);
+                    }
+                }
+            };
+        }
+
+        get_outputs!(self.buildings_t1);
+        get_outputs!(self.buildings_t2);
+        get_outputs!(self.buildings_t3);
+        get_outputs!(self.buildings_t4);
+        get_outputs!(self.buildings_t5);
+    }
+
     pub fn update_market(&mut self, building_table: &Res<BuildinTable>) {
         macro_rules! update_market_over_buildings {
             ($list:expr) => {
                 for b in &$list {
-                    println!("{:?}", b);
                     if b.1 != Faction::Neutral { continue; }
                     for (res, amount) in &building_table.0.get(&b.0).expect(format!("Couldn't retrieve value for {:?}", &b.0).as_str()).input {
                         self.market.insert(*res, self.market[&res] - amount);
