@@ -134,7 +134,7 @@ pub fn gen_building_tables() -> HashMap<String, Building> {
     generate_building!("Core Drill", Machinery x 10, CommonAlloys x 10, Water x 10, Coal x 5; Stone x 100; 2);
     generate_building!("Growth Vats", Machinery x 5, Plants x 20, SimpleLabour x 15; Medicines x 25; 2);
     generate_building!("Automation Components", Machinery x 10, ManufacturedGoods x 10, Coal x 10; SimpleLabour x 120; 3);
-    generate_building!("Megabreweries", Reagents x 5, Machinery x 5, Food x 70; Luxuries x 150; 3);
+    generate_building!("Megabreweries", Reagents x 5, Machinery x 5, Food x 55, SimpleLabour x 15; Luxuries x 150; 3);
     generate_building!("Industrial Smeltery", CommonOre x 100, Coal x 40, Machinery x 20, SimpleLabour x 15; CommonAlloys x 100; 4);
     generate_building!("Dwarven Assembly Lines", CommonAlloys x 40, Water x 10, Coal x 10, Stone x 10, SimpleLabour x 5; Machinery x 80; 4);
     generate_building!("Adamantium Smeltery", CommonAlloys x 20, RefinedValuables x 40, Reagents x 20, Machinery x 20, RareOre x 30, CommonOre x 20, Coal x 10, ComplexLabour x 10; ExoticAlloys x 100; 5);
@@ -342,6 +342,47 @@ pub fn gen_random_building(tier: u8, mut rng: &mut ResMut<GlobalRng>, race: Buil
                 _ => panic!("gen_random_building tried to generate a building of tier {:?}", tier)
             }
         },
+        BuildingType::Generic => {
+            match tier {
+                1 => {
+                    match random_choice % 5 {
+                        0 => "Standard Farms",
+                        1 => "Standard Mines",
+                        2 => "Quarry", 
+                        3 => "Forestry Site", 
+                        4 => "Workers", 
+                        _ => panic!("Modulo stopped working in gen_random_building")
+                    }
+                }
+                2 => {
+                    match random_choice % 5 {
+                        0 => "Educated Workers",
+                        1 => "Well", 
+                        2 => "Glassworks", 
+                        3 => "Wagons", 
+                        4 => "Cloth Mills", 
+                        _ => panic!("Modulo stopped working in gen_random_building")
+                    }
+                }
+                3 => {
+                    match random_choice % 3 {
+                        0 => "Apothecary's Workshop", 
+                        1 => "Basic Industry", 
+                        2 => "Hired Mercenaries", 
+                        _ => panic!("Modulo stopped working in gen_random_building")
+                    }
+                }
+                4 => {
+                    match random_choice % 2 {
+                        0 => "Modern Artificers",
+                        1 => "Modern Soldiers", 
+                        _ => panic!("Modulo stopped working in gen_random_building")
+                    }
+                }
+                5 => "Modern Comforts",
+                _ => panic!("gen_random_building tried to generate a building of tier {:?}", tier)
+            }
+        }
         _ => {panic!("fucky wucky code in gen_random_building.")}
     };
 
