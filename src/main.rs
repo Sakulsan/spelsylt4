@@ -129,7 +129,7 @@ fn setup(mut commands: Commands) {
         Camera2d,
         Projection::Orthographic(OrthographicProjection {
             //scaling_mode: ScalingMode::WindowSize,
-            scale: 10.0,
+            scale: 2.5,
             ..OrthographicProjection::default_2d()
         }),
     ));
@@ -334,6 +334,14 @@ mod menu {
     }
 
     fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+        commands.spawn((
+            AudioPlayer::new(asset_server.load("music/Bellsachiming.ogg")),
+            PlaybackSettings {
+                mode: bevy::audio::PlaybackMode::Loop,
+                ..default()
+            },
+        ));
+
         // Common style for all buttons on the screen
         let button_node = Node {
             width: px(300),
@@ -708,5 +716,11 @@ mod menu {
                 }
             }
         }
+    }
+}
+
+fn kill_music(mut commands: Commands, mut audio_sources: Query<Entity, With<AudioPlayer>>) {
+    for entity in audio_sources.iter_mut() {
+        commands.entity(entity).despawn();
     }
 }

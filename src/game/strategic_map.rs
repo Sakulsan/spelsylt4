@@ -1,11 +1,9 @@
 use super::strategic_hud::PopupHUD;
-use bevy::prelude::*;
-use std::marker::PhantomData;
+use crate::prelude::*;
+use bevy::audio::Volume;
 
 use super::market::*;
-use crate::assets::Sylt;
 use crate::GameState;
-use bevy::ui_widgets::{observe, ValueChange};
 use std::collections::HashMap;
 
 // This plugin will contain the game. In this case, it's just be a screen that will
@@ -17,14 +15,17 @@ pub struct SelectedCity(pub String);
 struct BuildinTable(HashMap<String, Building>);
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(OnEnter(GameState::Game), strategic_setup)
-        .insert_resource(SelectedCity("Unkown".to_string()))
-        .insert_resource(BuildinTable(super::market::gen_building_tables()))
-        .init_state::<StrategicState>()
-        .add_systems(
-            Update,
-            (city_interaction_system).run_if(in_state(PopupHUD::Off)),
-        );
+    app.add_systems(
+        OnEnter(GameState::Game),
+        (strategic_setup, crate::kill_music),
+    )
+    .insert_resource(SelectedCity("Unkown".to_string()))
+    .insert_resource(BuildinTable(super::market::gen_building_tables()))
+    .init_state::<StrategicState>()
+    .add_systems(
+        Update,
+        (city_interaction_system).run_if(in_state(PopupHUD::Off)),
+    );
 }
 
 /*#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -45,8 +46,17 @@ fn strategic_setup(
     mut commands: Commands,
     //    display_quality: Res<DisplayQuality>,
     //    volume: Res<Volume>,
+    asset_server: Res<AssetServer>,
     mut sylt: Sylt,
 ) {
+    commands.spawn((
+        AudioPlayer(asset_server.load::<AudioSource>("music/Moneymoneymoney.ogg")),
+        PlaybackSettings {
+            mode: bevy::audio::PlaybackMode::Loop,
+            ..default()
+        },
+    ));
+
     commands.spawn((
         Node {
             width: Val::Vw(100.0),
