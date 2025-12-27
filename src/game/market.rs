@@ -78,6 +78,38 @@ impl Resources {
             Self::Artifacts,
         ]
     }
+
+    pub fn get_base_value(&self) -> isize {
+        match &self {
+            Self::Food => {1},
+            Self::Plants => {1},
+            Self::CommonOre => {1},
+            Self::RareOre => {1},
+            Self::Lumber => {1},
+            Self::Stone => {1},
+            Self::Water => {1},
+            Self::Glass => {1},
+            Self::Coal => {1},
+            Self::RefinedValuables => {3},
+            Self::CommonAlloys => {3},
+            Self::Textiles => {3},
+            Self::ManufacturedGoods => {3},
+            Self::Medicines => {3},
+            Self::Reagents => {3},
+            Self::Machinery => {3},
+            Self::Drugs => {3},
+            Self::Slaves => {3},
+            Self::Vitae => {5},
+            Self::SimpleLabour => {1},
+            Self::Military => {1},
+            Self::Transportation => {1},
+            Self::Luxuries => {1},
+            Self::ComplexLabour => {1},
+            Self::ExoticAlloys => {5},
+            Self::Spellwork => {5},
+            Self::Artifacts => {5},
+        }
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
