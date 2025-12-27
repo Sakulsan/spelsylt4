@@ -42,7 +42,8 @@ pub enum BuildingType {
     Dwarven,
     #[default]
     Generic,
-    Illegal
+    Illegal,
+    Unique
 }
 
 impl Resources {
@@ -164,7 +165,7 @@ pub fn gen_building_tables() -> HashMap<String, Building> {
     generate_building!("Artisan District", RareOre x 20, Glass x 10, ComplexLabour x 10; RefinedValuables x 90; 3);
     generate_building!("Trains", Lumber x 20, Coal x 20, Machinery x 15, ComplexLabour x 15; Transportation x 150; 3);
     generate_building!("Siege-Factories", Artifacts x 10, ComplexLabour x 15; Military x 150; 4);
-    generate_building!("Golem Automatons", Artifacts x 10, ExoticAlloys x 10, Reagents x 10, Stone x 5; ComplexLabour x 220; 4);
+    generate_building!("Golem Automatons", Artifacts x 10, ExoticAlloys x 10, Reagents x 10, Stone x 5; ComplexLabour x 100, SimpleLabour x 100, Military x 100; 4);
     generate_building!("Alchemic Factories", ExoticAlloys x 10, RefinedValuables x 10, Reagents x 10, Glass x 20, RareOre x 10, ComplexLabour x 30; Artifacts x 60; 5);
 
     //Human buildings
@@ -188,6 +189,12 @@ pub fn gen_building_tables() -> HashMap<String, Building> {
     generate_building!("Joy Distillery", Reagents x 5, Medicines x 5, ComplexLabour x 10; Drugs x 30; 3);
     generate_building!("Lawless Enforcement", Military x 100, Luxuries x 25, RefinedValuables x 10; Slaves x 80; 4);
     generate_building!("Life Extractors", Slaves x 20, Spellwork x 10, ComplexLabour x 10; Vitae x 50; 5);
+
+    //Capital buildings
+    generate_building!("Tower of the Luminous Science", ComplexLabour x 70, Reagents x 75, RefinedValuables x 75; Spellwork x 150; 5);
+    generate_building!("The Great Red Forges", CommonAlloys x 25, RefinedValuables x 45, Reagents x 25, Machinery x 25, RareOre x 35, CommonOre x 25, Coal x 15, ComplexLabour x 35; ExoticAlloys x 150; 5);
+    generate_building!("Cauldronworks of the Four Clans",  ExoticAlloys x 15, RefinedValuables x 15, Reagents x 15, Glass x 40, RareOre x 25, ComplexLabour x 50; Artifacts x 120; 5);
+    generate_building!("Sunstrider Headquarters", RefinedValuables x 100, Medicines x 50; ExoticAlloys x 40, Spellwork x 40, Artifacts x 40, Military x 70; 5);
 
     all_buildings
 }

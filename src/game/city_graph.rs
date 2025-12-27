@@ -45,7 +45,52 @@ fn gen_rand_circle(i: i32, min: f32, max: f32, rng: &mut ResMut<GlobalRng>) -> V
 fn spawn_city(pos: Vec2, color: Color, race: BuildingType, tier: u8, capital: bool, commands: &mut Commands, mut rng: &mut ResMut<GlobalRng>, g: &mut Graph<Entity, CityEdge, Undirected>) {
     let mut ent = commands.spawn_empty();
     let idx = g.add_node(ent.id());
-    let data = CityData::new(race, tier, &mut rng);
+    let mut data = CityData::new(race, tier, &mut rng);
+    if capital {
+        let data = match race {
+            BuildingType::Dwarven => { CityData {
+                id: "Terez-e-Palaz".to_string(),
+                race: BuildingType::Dwarven,
+                population: 5,
+                buildings_t1: vec!(("Gem Cutters".to_string(), Faction::Neutral), ("Gem Cutters".to_string(), Faction::Neutral), ("Standard Mines".to_string(), Faction::Neutral), ("Standard Mines".to_string(), Faction::Neutral), ("Standard Mines".to_string(), Faction::Neutral)),
+                buildings_t2: vec!(("Growth Vats".to_string(), Faction::Neutral), ("Core Drill".to_string(), Faction::Neutral), ("Preparatory Facilies".to_string(), Faction::Neutral), ("Educated Workers".to_string(), Faction::Neutral)),
+                buildings_t3: vec!(("Automation Components".to_string(), Faction::Neutral), ("Megabreweries".to_string(), Faction::Neutral), ("Megabreweries".to_string(), Faction::Neutral)),
+                buildings_t4: vec!(("Industrial Smeltery".to_string(), Faction::Neutral), ("Dwarven Assembly Lines".to_string(), Faction::Neutral)),
+                buildings_t5: vec!(("The Great Red Forges".to_string(), Faction::Neutral))
+            } }
+            BuildingType::Elven => { CityData {
+                id: "Jewel of All Creation".to_string(),
+                race: BuildingType::Dwarven,
+                population: 5,
+                buildings_t1: vec!(("Earth Spirit Aid".to_string(), Faction::Neutral), ("Ironwood Forestry".to_string(), Faction::Neutral), ("Forest Foraging".to_string(), Faction::Neutral), ("Standard Mines".to_string(), Faction::Neutral), ("Standard Mines".to_string(), Faction::Neutral)),
+                buildings_t2: vec!(("Amber Plantation".to_string(), Faction::Neutral), ("Amber Plantation".to_string(), Faction::Neutral), ("Gardens of Wonder".to_string(), Faction::Neutral), ("Gardens of Wonder".to_string(), Faction::Neutral)),
+                buildings_t3: vec!(("Integrated Farms".to_string(), Faction::Neutral), ("Elemental Springs".to_string(), Faction::Neutral), ("Basic Industry".to_string(), Faction::Neutral)),
+                buildings_t4: vec!(("Gaian Meadows".to_string(), Faction::Neutral), ("Self-spinning Weavers".to_string(), Faction::Neutral)),
+                buildings_t5: vec!(("Tower of the Luminous Science".to_string(), Faction::Neutral))
+            } }
+            BuildingType::Goblin => { CityData {
+                id: "Tevet Pekhep Dered".to_string(),
+                race: BuildingType::Dwarven,
+                population: 5,
+                buildings_t1: vec!(("Deep Mines".to_string(), Faction::Neutral), ("Deep Mines".to_string(), Faction::Neutral), ("Animated Objects".to_string(), Faction::Neutral), ("Alchemical Enhancements".to_string(), Faction::Neutral), ("Alchemical Enhancements".to_string(), Faction::Neutral)),
+                buildings_t2: vec!(("Glaziery".to_string(), Faction::Neutral), ("Glaziery".to_string(), Faction::Neutral), ("Charcoal Kilns".to_string(), Faction::Neutral), ("Hill Quarries".to_string(), Faction::Neutral)),
+                buildings_t3: vec!(("Artisan District".to_string(), Faction::Neutral), ("Trains".to_string(), Faction::Neutral), ("Apothecary's Workshop".to_string(), Faction::Neutral)),
+                buildings_t4: vec!(("Siege-Factories".to_string(), Faction::Neutral), ("Golem Automatons".to_string(), Faction::Neutral)),
+                buildings_t5: vec!(("Cauldronworks of the Four Clans".to_string(), Faction::Neutral))
+            } }
+            BuildingType::Human => { CityData {
+                id: "Great Lancastershire".to_string(),
+                race: BuildingType::Dwarven,
+                population: 5,
+                buildings_t1: vec!(("Large Industrial District".to_string(), Faction::Neutral), ("Large Industrial District".to_string(), Faction::Neutral), ("Fishing Port".to_string(), Faction::Neutral), ("Fishing Port".to_string(), Faction::Neutral), ("Tree Plantation".to_string(), Faction::Neutral)),
+                buildings_t2: vec!(("Water Cleaning Facilities".to_string(), Faction::Neutral), ("Water Cleaning Facilities".to_string(), Faction::Neutral), ("Hired Workforces".to_string(), Faction::Neutral), ("Small-scale Forges".to_string(), Faction::Neutral)),
+                buildings_t3: vec!(("Manufactories".to_string(), Faction::Neutral), ("Mercenary Guild".to_string(), Faction::Neutral), ("Apothecary's Workshop".to_string(), Faction::Neutral)),
+                buildings_t4: vec!(("Teleportation Circle Network".to_string(), Faction::Neutral), ("Strip Mines".to_string(), Faction::Neutral)),
+                buildings_t5: vec!(("Sunstrider Headquarters".to_string(), Faction::Neutral))
+            } }
+            _ => { panic!("Attempted to spawn city for capital of race type {:?}", race) }
+        };
+    }
     ent.insert((
         Transform::from_translation(pos.extend(0.0)),
         Node(idx, pos, color),
