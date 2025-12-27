@@ -625,8 +625,7 @@ fn create_resource_icon(
                     ..default()
                 },
             ),
-            (Text::new("Resource Name")),
-            //(Text::new(format!("{}x", amount)),),
+            (Text::new(resource.get_name())),
             (Text::new(format!("{:.2}$", cost)),)
         ],
     ));
