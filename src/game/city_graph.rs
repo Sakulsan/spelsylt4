@@ -42,19 +42,7 @@ fn gen_rand_circle(i: i32, min: f32, max: f32, rng: &mut ResMut<GlobalRng>) -> V
     Vec2::from_angle(ang) * d + vec2(jx, jy)
 }
 
-<<<<<<< HEAD
-pub fn spawn_city(
-    pos: Vec2,
-    color: Color,
-    race: BuildingType,
-    capital: bool,
-    commands: &mut Commands,
-    mut rng: &mut ResMut<GlobalRng>,
-    g: &mut Graph<Entity, CityEdge, Undirected>,
-) {
-=======
 fn spawn_city(pos: Vec2, color: Color, race: BuildingType, tier: u8, capital: bool, commands: &mut Commands, mut rng: &mut ResMut<GlobalRng>, g: &mut Graph<Entity, CityEdge, Undirected>) {
->>>>>>> 0171732 (random city gen)
     let mut ent = commands.spawn_empty();
     let idx = g.add_node(ent.id());
     let data = CityData::new(race, tier, &mut rng);
@@ -151,19 +139,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
                     };
                     other_pos.push(city_pos);
                     println!("Missing a city spawn");
-<<<<<<< HEAD
-                    spawn_city(
-                        city_pos,
-                        make_color(colors[(1 + c) % colors.len()]),
-                        race,
-                        false,
-                        &mut commands,
-                        &mut rng,
-                        &mut g,
-                    );
-=======
                     spawn_city(city_pos, make_color(colors[(1 + c) % colors.len()]), race, tier, false, &mut commands, &mut rng, &mut g);
->>>>>>> 0171732 (random city gen)
                 }
             }
         }
