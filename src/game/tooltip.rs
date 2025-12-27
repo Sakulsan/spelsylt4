@@ -9,7 +9,7 @@ pub struct TooltipOf {
 }
 
 #[derive(Component, Debug)]
-#[require(Interaction)]
+#[require(Button)]
 #[relationship_target(relationship = TooltipOf, linked_spawn)]
 pub struct Tooltips(Vec<Entity>);
 
