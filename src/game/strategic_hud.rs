@@ -78,7 +78,7 @@ fn popup_button(
     }
 }
 
-fn popup_window(commands: &mut Commands) -> Entity {
+fn popup_window(commands: &mut Commands, row_align: bool) -> Entity {
     commands.spawn((
         ZIndex(1),
         PopUpItem,
@@ -87,9 +87,6 @@ fn popup_window(commands: &mut Commands) -> Entity {
             height: Val::Vh(100.0),
             ..default()
         },
-        //        DespawnOnExit(PopupHUD::Buildings),
-        //        DespawnOnExit(PopupHUD::Wares),
-        //        DespawnOnExit(PopupHUD::Caravan),
         BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
     ));
     commands
@@ -104,40 +101,35 @@ fn popup_window(commands: &mut Commands) -> Entity {
                 align_items: AlignItems::Stretch,
                 justify_content: JustifyContent::FlexStart,
                 display: Display::Flex,
-                flex_direction: FlexDirection::Column,
+                flex_direction: match row_align {
+                    true => FlexDirection::Row,
+                    false => FlexDirection::Column,
+                },
                 border: UiRect::all(Val::Px(2.0)),
                 ..default()
             },
             BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 1.0).into()),
             BorderColor::all(Color::BLACK),
+            children![(
+                Button,
+                ZIndex(3),
+                PopupButton::KillHud,
+                Node {
+                    position_type: PositionType::Absolute,
+                    top: px(0),
+                    right: px(0),
+                    width: px(32),
+                    height: px(32),
+                    ..default()
+                },
+                BackgroundColor(Srgba::new(0.9, 0.2, 0.2, 1.0).into())
+            )],
         ))
         .id()
 }
 
 fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
-    let window = popup_window(&mut commands);
-
-    commands.entity(window).with_child((
-        Node {
-            width: percent(100),
-            height: percent(15),
-            align_items: AlignItems::FlexEnd,
-            justify_content: JustifyContent::FlexStart,
-            flex_direction: FlexDirection::Row,
-            ..default()
-        },
-        children![(
-            Button,
-            PopupButton::KillHud,
-            Node {
-                width: px(32),
-                height: px(32),
-                ..default()
-            },
-            BackgroundColor(Srgba::new(0.9, 0.2, 0.2, 1.0).into())
-        )],
-    ));
-
+    let window = popup_window(&mut commands, false);
     for tiers in 1..(city.0.population + 1) {
         commands.entity(window).with_children(|parent| {
             parent
@@ -192,11 +184,172 @@ fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
 }
 
 fn caravan_menu(mut commands: Commands) {
-    let window = popup_window(&mut commands);
+    let window = popup_window(&mut commands, false);
+
+    commands.entity(window).with_children(|parent| {
+        parent.spawn((
+            Node {
+                width: percent(100),
+                height: percent(15),
+                align_items: AlignItems::FlexEnd,
+                flex_direction: FlexDirection::Row,
+                ..default()
+            },
+            BackgroundColor(Srgba::new(0.2, 0.2, 1.0, 1.0).into()),
+        ));
+    });
 }
 
-fn wares_menu(mut commands: Commands) {
-    let window = popup_window(&mut commands);
+fn wares_menu(mut commands: Commands, mut sylt: Sylt) {
+    let window = popup_window(&mut commands, true);
+
+    //Basic and exotic mats
+    commands.entity(window).with_children(|parent| {
+        //Basic and exotic mats
+        parent
+            .spawn((Node {
+                top: px(32),
+                width: percent(33),
+                height: percent(100),
+                margin: UiRect::all(px(4)),
+                justify_content: JustifyContent::FlexStart,
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },))
+            .with_children(|parent| {
+                parent
+                    .spawn((
+                        Node {
+                            width: percent(100),
+                            height: percent(60),
+                            margin: UiRect::all(px(4)),
+                            justify_content: JustifyContent::FlexStart,
+                            flex_direction: FlexDirection::Column,
+                            ..default()
+                        },
+                        BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
+                    ))
+                    .with_children(|parent| {
+                        create_resource_list(
+                            parent,
+                            vec![(Resources::Water, 12, 200), (Resources::Food, 10, 30)],
+                            "Basic materials".to_string(),
+                            &mut sylt,
+                        );
+                    });
+
+                parent
+                    .spawn((
+                        Node {
+                            width: percent(100),
+                            height: percent(20),
+                            margin: UiRect::all(px(4)),
+                            justify_content: JustifyContent::FlexStart,
+                            flex_direction: FlexDirection::Column,
+                            ..default()
+                        },
+                        BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
+                    ))
+                    .with_children(|parent| {
+                        create_resource_list(
+                            parent,
+                            vec![(Resources::Stone, 25, 18), (Resources::Food, 10, 30)],
+                            "Exotic materials".to_string(),
+                            &mut sylt,
+                        );
+                    });
+            });
+
+        //Illegals and Advanced
+        parent
+            .spawn((Node {
+                top: px(32),
+                width: percent(33),
+                height: percent(100),
+                margin: UiRect::all(px(4)),
+                justify_content: JustifyContent::FlexStart,
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },))
+            .with_children(|parent| {
+                parent
+                    .spawn((
+                        Node {
+                            width: percent(100),
+                            height: percent(30),
+                            margin: UiRect::all(px(4)),
+                            justify_content: JustifyContent::FlexStart,
+                            flex_direction: FlexDirection::Column,
+                            ..default()
+                        },
+                        BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
+                    ))
+                    .with_children(|parent| {
+                        create_resource_list(
+                            parent,
+                            vec![(Resources::Water, 12, 200), (Resources::Food, 10, 30)],
+                            "Illegal materials".to_string(),
+                            &mut sylt,
+                        );
+                    });
+
+                parent
+                    .spawn((
+                        Node {
+                            width: percent(100),
+                            height: percent(50),
+                            margin: UiRect::all(px(4)),
+                            justify_content: JustifyContent::FlexStart,
+                            flex_direction: FlexDirection::Column,
+                            ..default()
+                        },
+                        BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
+                    ))
+                    .with_children(|parent| {
+                        create_resource_list(
+                            parent,
+                            vec![(Resources::Stone, 25, 18), (Resources::Food, 10, 30)],
+                            "Advanced materials".to_string(),
+                            &mut sylt,
+                        );
+                    });
+            });
+
+        //Services
+        //Illegals and Advanced
+        parent
+            .spawn((Node {
+                top: px(32),
+                width: percent(33),
+                height: percent(100),
+                margin: UiRect::all(px(4)),
+                justify_content: JustifyContent::FlexStart,
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },))
+            .with_children(|parent| {
+                parent
+                    .spawn((
+                        Node {
+                            width: percent(100),
+                            height: percent(50),
+                            margin: UiRect::all(px(4)),
+                            justify_content: JustifyContent::FlexStart,
+                            flex_direction: FlexDirection::Column,
+                            ..default()
+                        },
+                        BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
+                    ))
+                    .with_children(|parent| {
+                        create_resource_list(
+                            parent,
+                            vec![(Resources::Water, 12, 200), (Resources::Food, 10, 30)],
+                            "Services".to_string(),
+                            &mut sylt,
+                        );
+                    });
+            });
+    });
 }
 
 #[derive(Component)]
@@ -213,29 +366,55 @@ enum PopupButton {
     BuldingTabAction,
 }
 
+fn create_resource_list(
+    parent: &mut ChildSpawnerCommands,
+    resources: Vec<(Resources, usize, usize)>,
+    box_name: String,
+    mut sylt: &mut Sylt,
+) {
+    parent.spawn((
+        Node {
+            width: percent(100),
+            height: px(40),
+            ..default()
+        },
+        Text::new(box_name.clone()),
+    ));
+
+    for (resouce_type, cost, available) in resources {
+        create_resource_icon(parent, resouce_type, cost, available, &mut sylt);
+    }
+}
+
 fn create_resource_icon(
     parent: &mut ChildSpawnerCommands,
     resource: Resources,
     cost: usize,
+    amount: usize,
     sylt: &mut Sylt,
 ) {
     parent.spawn((
         Node {
-            width: px(160),
-            height: px(80),
-            margin: UiRect::all(px(4)),
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::FlexStart,
+            width: percent(100),
+            height: px(40),
+            margin: UiRect {
+                left: px(0),
+                right: px(0),
+                top: px(0),
+                bottom: px(4),
+            },
+            align_items: AlignItems::FlexStart,
+            justify_content: JustifyContent::SpaceBetween,
+            border: UiRect::all(Val::Px(2.0)),
             ..default()
         },
-        BackgroundColor(Srgba::new(0.9, 0.9, 0.9, 1.0).into()),
+        BorderColor::all(Color::BLACK),
         children![
             (
                 Node {
                     right: px(0),
-                    width: px(80),
-                    height: px(80),
-                    margin: UiRect::all(px(4)),
+                    width: px(40),
+                    height: px(40),
                     ..default()
                 },
                 ImageNode {
@@ -250,7 +429,8 @@ fn create_resource_icon(
                     ..default()
                 },
             ),
-            (Text::new(format!("x{}", cost)),)
+            (Text::new(format!("{}x", amount)),),
+            (Text::new(format!("{}$", cost)),)
         ],
     ));
 }
@@ -342,7 +522,6 @@ fn city_hud_setup(mut commands: Commands, mut sylt: Sylt, selected_city: Res<Sel
                 ]
             ),
             (
-                DespawnOnExit(PopupHUD::Buildings),
                 Node {
                     width: percent(100.0),
                     height: percent(100.0),
