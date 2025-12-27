@@ -71,12 +71,12 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
     };
 
     let lake_rects = [
-        rect(-430, 620, 330, 850),
+        rect(-430, 620, 330, 950),
         rect(-700, 340, 360, 620),
         rect(-650, 220, 160, 340),
         rect(-650, 70, -30, 220),
         rect(-390, -40, -250, 70),
-        rect(-250, 270, 130, 70),
+        rect(-250, -270, 130, 70),
         rect(1060, 1200, 1750, 1650),
         rect(1220, 800, 1640, 1200)
     ];
@@ -85,7 +85,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
         let contains = map_rect.contains(p);
         let mut not_underwater = true;
         for rect in lake_rects {
-            not_underwater = not_underwater && rect.contains(p);
+            not_underwater = not_underwater && !rect.contains(p);
         }
         contains && not_underwater
     };
