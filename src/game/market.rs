@@ -191,6 +191,7 @@ pub fn gen_building_tables() -> HashMap<String, Building> {
     generate_building!("Life Extractors", Slaves x 20, Spellwork x 10, ComplexLabour x 10; Vitae x 50; 5);
 
     //Capital buildings
+    current_type = BuildingType::Unique;
     generate_building!("Tower of the Luminous Science", ComplexLabour x 70, Reagents x 75, RefinedValuables x 75; Spellwork x 150; 5);
     generate_building!("The Great Red Forges", CommonAlloys x 25, RefinedValuables x 45, Reagents x 25, Machinery x 25, RareOre x 35, CommonOre x 25, Coal x 15, ComplexLabour x 35; ExoticAlloys x 150; 5);
     generate_building!("Cauldronworks of the Four Clans",  ExoticAlloys x 15, RefinedValuables x 15, Reagents x 15, Glass x 40, RareOre x 25, ComplexLabour x 50; Artifacts x 120; 5);
