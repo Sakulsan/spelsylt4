@@ -1,7 +1,7 @@
 use bevy::math::usize;
 
 use super::market::*;
-use super::strategic_map::{CityData, SelectedCity, StrategicState};
+use super::strategic_map::{Caravan, CityData, PlayerStats, SelectedCity, StrategicState};
 use super::tooltip::Tooltips;
 use crate::prelude::*;
 pub fn plugin(app: &mut App) {
@@ -30,6 +30,8 @@ fn no_popup_button(
     mut interaction_query: Query<(&Interaction, &HudButton), (Changed<Interaction>, With<Button>)>,
     mut menu_state: ResMut<NextState<StrategicState>>,
     mut tab_state: ResMut<NextState<PopupHUD>>,
+    selected_city: Res<SelectedCity>,
+    mut stats: ResMut<PlayerStats>,
 ) {
     for (interaction, menu_button_action) in &interaction_query {
         if *interaction == Interaction::Pressed {
@@ -39,7 +41,10 @@ fn no_popup_button(
                 }
 
                 HudButton::OperationAction => {
-                    tab_state.set(PopupHUD::Caravan);
+                    stats.caravans.push(Caravan {
+                        position_city_id: selected_city.0.id.clone(),
+                        ..default()
+                    });
                 }
                 HudButton::EconomyTabAction => {
                     tab_state.set(PopupHUD::Wares);
@@ -104,7 +109,7 @@ fn popup_window(commands: &mut Commands, row_align: bool) -> Entity {
                 display: Display::Flex,
                 flex_direction: match row_align {
                     true => FlexDirection::Row,
-                    false => FlexDirection::Column,
+                    false => FlexDirection::ColumnReverse,
                 },
                 border: UiRect::all(Val::Px(2.0)),
                 ..default()
@@ -131,7 +136,8 @@ fn popup_window(commands: &mut Commands, row_align: bool) -> Entity {
 
 fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
     let window = popup_window(&mut commands, false);
-    for tiers in 1..(city.0.population + 1) {
+    let population = city.0.population + 1;
+    for tiers in 1..population {
         commands.entity(window).with_children(|parent| {
             parent
                 .spawn((
@@ -147,7 +153,7 @@ fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
                     BackgroundColor(Srgba::new(0.2, 0.2, 1.0, 1.0).into()),
                 ))
                 .with_children(|parent| {
-                    for building_slot in 0..tiers {
+                    for building_slot in 0..population - tiers {
                         //println!("Tier {} has slot {}", tiers, building_slot);
                         if let Some(building) = match tiers {
                             1 => city.buildings_t1.get(building_slot as usize),
@@ -212,20 +218,49 @@ fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
     }
 }
 
-fn caravan_menu(mut commands: Commands) {
+fn caravan_menu(
+    mut commands: Commands,
+    mut selected_caravan: ResMut<super::strategic_map::SelectedCaravan>,
+) {
+    let selected_caravan = selected_caravan.0.clone();
     let window = popup_window(&mut commands, false);
 
     commands.entity(window).with_children(|parent| {
         parent.spawn((
             Node {
                 width: percent(100),
-                height: percent(15),
+                height: percent(10),
                 align_items: AlignItems::FlexEnd,
                 flex_direction: FlexDirection::Row,
                 ..default()
             },
-            BackgroundColor(Srgba::new(0.2, 0.2, 1.0, 1.0).into()),
+            Text::new(format!(
+                "Caravan in {}",
+                selected_caravan.position_city_id.clone()
+            )),
         ));
+        parent
+            .spawn(
+                (Node {
+                    width: percent(100),
+                    height: percent(20),
+                    align_items: AlignItems::FlexEnd,
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                }),
+            )
+            .with_children(|parent| {
+                for _ in 0..5 {
+                    parent.spawn((
+                        Node {
+                            width: px(32),
+                            height: px(32),
+                            ..default()
+                        },
+                        BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
+                    ));
+                }
+            });
     });
 }
 

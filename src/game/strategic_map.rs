@@ -17,20 +17,23 @@ pub struct SelectedCity(pub CityData);
 struct BuildinTable(HashMap<String, Building>);
 
 #[derive(Resource, Default)]
-struct PlayerStats {
-    caravans: Vec<Caravan>,
-    money: isize,
+pub struct PlayerStats {
+    pub caravans: Vec<Caravan>,
+    pub money: isize,
+}
+
+#[derive(Resource)]
+pub struct SelectedCaravan(pub Caravan);
+
+#[derive(Clone, Default, Eq, PartialEq, Debug, Hash)]
+pub struct Caravan {
+    pub orders: Vec<Order>,
+    pub position_city_id: String,
+    pub cargo: Vec<(Resources, usize)>,
 }
 
 #[derive(Clone, Default, Eq, PartialEq, Debug, Hash)]
-struct Caravan {
-    orders: Vec<Order>,
-    position_city_id: String,
-    cargo: Vec<(Resources, usize)>,
-}
-
-#[derive(Clone, Default, Eq, PartialEq, Debug, Hash)]
-struct Order {
+pub struct Order {
     goal_city_id: String,
     trade_order: Vec<(Resources, isize)>,
 }
@@ -48,11 +51,21 @@ pub fn plugin(app: &mut App) {
         money: 5000,
         ..default()
     })
+    .insert_resource(SelectedCaravan(Caravan { ..default() }))
     .insert_resource(BuildinTable(super::market::gen_building_tables()))
     .init_state::<StrategicState>()
     .add_systems(
         Update,
-        (city_interaction_system, check_turn_button).run_if(in_state(PopupHUD::Off)),
+        (update_caravan_hud).run_if(resource_changed::<PlayerStats>),
+    )
+    .add_systems(
+        Update,
+        (
+            city_interaction_system,
+            check_turn_button,
+            check_outline_button,
+        )
+            .run_if(in_state(PopupHUD::Off)),
     )
     .add_systems(Update, update_ui_nodes.run_if(in_state(GameState::Game)));
 }
@@ -96,6 +109,7 @@ fn spawn_map_sprite(mut commands: Commands, mut sylt: Sylt) {
 
     //Outliner menu
     commands.spawn((
+        ZIndex(1),
         Node {
             position_type: PositionType::Absolute,
             top: vw(10),
@@ -103,15 +117,58 @@ fn spawn_map_sprite(mut commands: Commands, mut sylt: Sylt) {
             width: vw(20),
             height: vh(50),
             border: UiRect::all(Val::Px(2.0)),
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
+            align_items: AlignItems::FlexStart,
+            justify_content: JustifyContent::FlexStart,
+            flex_direction: FlexDirection::Column,
             ..default()
         },
         BorderColor::all(Color::BLACK),
         DespawnOnExit(GameState::Game),
         BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 1.0).into()),
-        children![(Text::new("Caravans"))],
+        children![
+            (Text::new("Caravans")),
+            (
+                CaravanHudEntity {},
+                Node {
+                    align_items: AlignItems::FlexStart,
+                    justify_content: JustifyContent::FlexStart,
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                }
+            )
+        ],
     ));
+}
+
+fn update_caravan_hud(
+    caravan_box: Query<Entity, With<CaravanHudEntity>>,
+    stats: Res<PlayerStats>,
+    mut commands: Commands,
+) {
+    for caravan_box in caravan_box.iter() {
+        commands.entity(caravan_box).despawn_children();
+        commands.entity(caravan_box).with_children(|parent| {
+            for caravan in stats.caravans.iter() {
+                parent.spawn((
+                    Button,
+                    CaravanHudItem(caravan.clone()),
+                    Node {
+                        width: vw(20),
+                        height: px(32),
+                        margin: UiRect {
+                            left: px(0),
+                            right: px(0),
+                            top: px(0),
+                            bottom: px(4),
+                        },
+                        ..default()
+                    },
+                    BackgroundColor(Srgba::new(0.8, 0.1, 0.1, 1.0).into()),
+                    Text::new(caravan.position_city_id.clone()),
+                ));
+            }
+        });
+    }
 }
 
 use super::city_graph::Node as CityNode;
@@ -140,12 +197,13 @@ fn spawn_city_ui_nodes(
             BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 0.3).into()),
             related!(
                 Tooltips[(
-                    Text::new("hello\nbevy!"),
+                    Text::new(city_data.0.id.clone()),
                     TextShadow::default(),
                     // Set the justification of the Text
                     TextLayout::new_with_justify(Justify::Center),
                     // Set the style of the Node itself.
-                    Node { ..default() }
+                    Node { ..default() },
+                    BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
                 ),
                 (
                     Text::new("hello\nbevy!"),
@@ -203,6 +261,11 @@ pub enum Faction {
 
 #[derive(Component, Default, Clone, Debug)]
 struct TurnButton {}
+
+#[derive(Component, Default, Clone, Debug)]
+struct CaravanHudEntity {}
+#[derive(Component, Default, Clone, Debug)]
+struct CaravanHudItem(Caravan);
 
 #[derive(Component, Default, Clone, Debug)]
 pub struct CityData {
@@ -326,6 +389,31 @@ fn check_turn_button(
                 *node_color = BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into())
             }
             _ => *node_color = BackgroundColor(Srgba::new(0.2, 0.8, 0.2, 1.0).into()),
+        }
+    }
+}
+
+//Next turn button
+fn check_outline_button(
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor, &mut CaravanHudItem),
+        Changed<Interaction>,
+    >,
+
+    mut tab_state: ResMut<NextState<PopupHUD>>,
+    mut next_caravan: ResMut<SelectedCaravan>,
+    mut commands: Commands,
+) {
+    for (interaction, mut node_color, caravan_data) in interaction_query.iter_mut() {
+        match *interaction {
+            Interaction::Pressed => {
+                *next_caravan = SelectedCaravan(caravan_data.0.clone());
+                tab_state.set(PopupHUD::Caravan);
+            }
+            Interaction::Hovered => {
+                *node_color = BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into())
+            }
+            _ => *node_color = BackgroundColor(Srgba::new(0.8, 0.1, 0.1, 1.0).into()),
         }
     }
 }
