@@ -24,7 +24,7 @@ const CIRCLE_DIST: f32 = 100.0;
 const ANGULAR_CONSTRAINT: f32 = PI / 9.0;
 const JITTER: f32 = 15.0;
 const CITY_COUNTS: [usize; 9] = [3, 4, 4, 5, 8, 12, 15, 20, 15];
-const MIN_CITY_DIST: f32 = 50.0;
+const MIN_CITY_DIST: f32 = 25.0;
 const SCALE: f32 = 1.0;
 
 type CGraph = Graph<Entity, CityEdge, Undirected>;
@@ -33,7 +33,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
     let vec2 = |x, y| Vec2::new(x, y);
 
     let mut random_circle_pos = |i: i32, min: f32, max: f32| {
-        let ang = rng.random_range(-min..=max);
+        let ang = rng.random_range(min..=max);
         let d = (i + 1) as f32 * CIRCLE_DIST;
         let jx = rng.random_range(-JITTER..JITTER);
         let jy = rng.random_range(-JITTER..JITTER);
@@ -55,6 +55,31 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
         ent.insert(Node(idx, pos, color));
     };
 
+    const M: f32 = 2000.0 - 110.0;
+
+    let rect = |a, b, c, d| Rect {
+        min: vec2(a as f32, b as f32),
+        max: vec2(c as f32, d as f32),
+    };
+
+    let map_rect = Rect {
+        min: -vec2(M, M),
+        max: vec2(M, M),
+    };
+
+    let lake_rects = [
+        rect(-280, 220, 320, 650),
+        rect(-570, -50, 150, 250),
+        rect(-400, -500, 300, 0),
+    ];
+
+    let check_boxes = |p| {
+        map_rect.contains(p)
+            && !lake_rects[0].contains(p)
+            && !lake_rects[1].contains(p)
+            && !lake_rects[2].contains(p)
+    };
+
     let colors = [0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0];
 
     let make_color = |c: f32| Color::hsv(c * 2.0, 1.0, 1.0);
@@ -67,7 +92,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
         spawn_city(capital_pos * SCALE, make_color(colors[0]));
 
         let (min, max) = match i {
-            3 => (-PI, PI),
+            3 => (-(260f32.to_radians()), 0.0),
             _ => (-PI, PI),
         };
 
@@ -75,18 +100,26 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
             other_pos.clear();
 
             for _ in 0..j {
-                let mut city_pos = capital_pos + random_circle_pos(c as i32);
+                let mut city_pos = capital_pos + random_circle_pos(c as i32, min, max);
+                let mut attempts = 0;
                 'x: loop {
+                    attempts += 1;
+                    if attempts > 10 {
+                        info!("reached max attempts");
+                        break;
+                    }
                     for v in &other_pos {
                         if city_pos.distance(*v) < MIN_CITY_DIST {
-                            city_pos = capital_pos + random_circle_pos(c as i32);
+                            city_pos = capital_pos + random_circle_pos(c as i32, min, max);
                             continue 'x;
                         }
                     }
                     break;
                 }
-                other_pos.push(city_pos);
-                spawn_city(city_pos, make_color(colors[(1 + c) % colors.len()]));
+                if check_boxes(city_pos) {
+                    other_pos.push(city_pos);
+                    spawn_city(city_pos, make_color(colors[(1 + c) % colors.len()]));
+                }
             }
         }
     }
