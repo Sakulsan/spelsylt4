@@ -15,20 +15,38 @@ pub struct SelectedCity(pub CityData);
 #[derive(Resource, Deref)]
 struct BuildinTable(HashMap<String, Building>);
 
+#[derive(Resource, Default)]
+struct PlayerStats {
+    caravans: Vec<Caravan>,
+    money: isize,
+}
+
+#[derive(Clone, Default, Eq, PartialEq, Debug, Hash)]
+struct Caravan {
+    orders: Vec<Order>,
+    position_city_id: String,
+    cargo: Vec<(Resources, usize)>,
+}
+
+#[derive(Clone, Default, Eq, PartialEq, Debug, Hash)]
+struct Order {
+    goal_city_id: String,
+    trade_order: Vec<(Resources, isize)>,
+}
+
 pub fn plugin(app: &mut App) {
     app.add_systems(
         OnEnter(GameState::Game),
         (crate::kill_music, spawn_map_sprite, spawn_city_ui_nodes),
     )
     .insert_resource(SelectedCity(CityData {
-        id: "Capital".to_string(),
-        population: 3,
-        buildings_t1: vec![
-            ("Automated Clothiers".to_string(), Faction::Neutral),
-            ("Mushroom Farm".to_string(), Faction::Neutral),
-        ],
+        id: "Placeholder".to_string(),
         ..default()
     }))
+    .insert_resource(PlayerStats {
+        money: 5000,
+        ..default()
+    })
     .insert_resource(BuildinTable(super::market::gen_building_tables()))
     .init_state::<StrategicState>()
     .add_systems(
@@ -37,13 +55,6 @@ pub fn plugin(app: &mut App) {
     )
     .add_systems(Update, update_ui_nodes.run_if(in_state(GameState::Game)));
 }
-
-/*#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
-enum StrategicState<T: Send + Sync + Eq + std::fmt::Debug + std::hash::Hash + Clone + 'static> {
-    #[default]
-    Map,
-    HUDOpen(HUDPosition, T),
-}*/
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 pub enum StrategicState {
@@ -61,6 +72,7 @@ fn spawn_map_sprite(mut commands: Commands, mut sylt: Sylt) {
         DespawnOnExit(GameState::Game),
     ));
 
+    //Next turn button
     commands.spawn((
         Button,
         TurnButton {},
@@ -80,6 +92,25 @@ fn spawn_map_sprite(mut commands: Commands, mut sylt: Sylt) {
         BackgroundColor(Srgba::new(0.2, 0.8, 0.2, 1.0).into()),
         children![(Text::new("Next turn"))],
     ));
+
+    //Outliner menu
+    commands.spawn((
+        Node {
+            position_type: PositionType::Absolute,
+            top: vw(10),
+            right: px(0),
+            width: vw(20),
+            height: vh(50),
+            border: UiRect::all(Val::Px(2.0)),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        BorderColor::all(Color::BLACK),
+        DespawnOnExit(GameState::Game),
+        BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 1.0).into()),
+        children![(Text::new("Caravans"))],
+    ));
 }
 
 use super::city_graph::Node as CityNode;
@@ -90,7 +121,6 @@ fn spawn_city_ui_nodes(
     mut sylt: Sylt,
     mut rng: ResMut<GlobalRng>,
 ) {
-    println!("Hi");
     for (ent, node, city_data) in graph_nodes {
         commands.entity(ent).insert(AnchoredUiNodes::spawn_one((
             AnchorUiConfig {
@@ -135,7 +165,6 @@ fn spawn_city_ui_nodes(
             ),
         )));
     }
-    println!("Bye");
 }
 
 fn update_ui_nodes(

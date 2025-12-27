@@ -169,13 +169,7 @@ fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
                                 Button,
                                 related!(
                                     Tooltips[(
-/*                                        Text::new(format!("Owned by {}",match building.1 {
-                                            Faction::Normal => {
-                                                ""
-                                            }
-                                            _ => ""
-
-                                        })),*/
+                                        Text::new(building.0.clone()),
                                         TextShadow::default(),
                                         // Set the justification of the Text
                                         TextLayout::new_with_justify(Justify::Center),
@@ -397,9 +391,9 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt) {
 #[derive(Component)]
 enum HudButton {
     KillHud,
-    OperationAction,
     EconomyTabAction,
     BuldingTabAction,
+    OperationAction,
 }
 
 #[derive(Component)]
