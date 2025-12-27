@@ -110,6 +110,38 @@ impl Resources {
             Self::Artifacts => {5},
         }
     }
+
+    pub fn get_name(&self) -> &str {
+        match &self {
+            Self::Food => {"Food"},
+            Self::Plants => {"Plants"},
+            Self::CommonOre => {"Common Ore"},
+            Self::RareOre => {"Rare Ore"},
+            Self::Lumber => {"Lumber"},
+            Self::Stone => {"Stone"},
+            Self::Water => {"Water"},
+            Self::Glass => {"Glass"},
+            Self::Coal => {"Coal"},
+            Self::RefinedValuables => {"Refined Valuables"},
+            Self::CommonAlloys => {"Common Alloys"},
+            Self::Textiles => {"Textiles"},
+            Self::ManufacturedGoods => {"Manufactured Goods"},
+            Self::Medicines => {"Medicines"},
+            Self::Reagents => {"Reagents"},
+            Self::Machinery => {"Machinery"},
+            Self::Drugs => {"Drugs"},
+            Self::Slaves => {"Slaves"},
+            Self::Vitae => {"Vitae"},
+            Self::SimpleLabour => {"Simple Labour"},
+            Self::Military => {"Military"},
+            Self::Transportation => {"Transportation"},
+            Self::Luxuries => {"Luxuries"},
+            Self::ComplexLabour => {"Complex Labour"},
+            Self::ExoticAlloys => {"Exotic Alloys"},
+            Self::Spellwork => {"Spellwork"},
+            Self::Artifacts => {"Artifacts"},
+        }
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
