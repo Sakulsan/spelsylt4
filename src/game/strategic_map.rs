@@ -34,8 +34,8 @@ pub struct Caravan {
 
 #[derive(Clone, Default, Eq, PartialEq, Debug, Hash)]
 pub struct Order {
-    goal_city_id: String,
-    trade_order: Vec<(Resources, isize)>,
+    pub goal_city_id: String,
+    pub trade_order: Vec<(Resources, isize)>,
 }
 
 pub fn plugin(app: &mut App) {
@@ -180,16 +180,25 @@ fn spawn_city_ui_nodes(
     mut rng: ResMut<GlobalRng>,
 ) {
     for (ent, node, city_data) in graph_nodes {
-        let capitals = vec!("Great Lancastershire",
-                                        //"Jewel of All Creation", These capitals aren't represented on the map  yet.
-                                        //"Terez-e-Palaz",
-                                        "Tevet Pekhep Dered");
-        let mut image = ImageNode::new(sylt.get_image("town_ui_icon"));
+        let capitals = vec![
+            "Great Lancastershire",
+            //"Jewel of All Creation", These capitals aren't represented on the map  yet.
+            //"Terez-e-Palaz",
+            "Tevet Pekhep Dered",
+        ];
+        let mut image = if city_data.0.population < 3 {
+            ImageNode::new(sylt.get_image("town_ui_icon"))
+        } else {
+            ImageNode::new(sylt.get_image("town_map_icon"))
+        };
         let mut background = BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 0.3).into());
         let city_descriptor = match city_data.0.population {
             0..3 => format!("{:?} town", city_data.0.race),
             3..6 => format!("{:?} city", city_data.0.race),
-            _ => format!("GREAT AREA OF {:?} (error in tooltip code btw)", city_data.0.race),
+            _ => format!(
+                "GREAT AREA OF {:?} (error in tooltip code btw)",
+                city_data.0.race
+            ),
         };
         if capitals.contains(&city_data.0.id.as_str()) {
             image.color.set_alpha(0.0);
@@ -204,8 +213,8 @@ fn spawn_city_ui_nodes(
             city_data.0.clone(),
             Transform::from_xyz(0., 0.0, 1.0),
             Node {
-                width: px(32),
-                height: px(32),
+                width: px(16),
+                height: px(16),
                 ..default()
             },
             image,

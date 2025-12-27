@@ -3,10 +3,12 @@
 //! settings for 5 seconds before going back to the menu.
 
 use crate::game::namelists::*;
+use crate::game::strategic_map::CityData;
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
 use bevy_ui_anchor::AnchorUiPlugin;
+use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use std::time::SystemTime;
@@ -45,6 +47,7 @@ fn move_camera(
     keys: Res<ButtonInput<KeyCode>>,
     mut cam_pos: Query<&mut Transform, With<Camera>>,
     mut proj: Query<&mut Projection>,
+    mut city_nodes: Query<&mut Node, With<CityData>>,
 ) {
     let Ok(mut c) = cam_pos.single_mut() else {
         error!("we have multiple cameras or something");
@@ -87,6 +90,15 @@ fn move_camera(
     }
 
     proj.scale = 0.05f32.max(proj.scale);
+
+    //Might be a horrible perforer
+    for mut node in city_nodes.iter_mut() {
+        *node = Node {
+            width: px(16. / proj.scale),
+            height: px(16. / proj.scale),
+            ..default()
+        };
+    }
 }
 
 #[derive(Component)]

@@ -1,7 +1,11 @@
+use std::collections::HashMap;
+
 use bevy::math::usize;
 
 use super::market::*;
-use super::strategic_map::{Caravan, CityData, PlayerStats, SelectedCity, StrategicState};
+use super::strategic_map::{
+    Caravan, CityData, Order, PlayerStats, SelectedCaravan, SelectedCity, StrategicState,
+};
 use super::tooltip::Tooltips;
 use crate::prelude::*;
 pub fn plugin(app: &mut App) {
@@ -11,6 +15,11 @@ pub fn plugin(app: &mut App) {
         .add_systems(OnEnter(PopupHUD::Caravan), caravan_menu)
         .add_systems(OnEnter(PopupHUD::Wares), wares_menu)
         .add_systems(Update, no_popup_button.run_if(in_state(PopupHUD::Off)))
+        .add_systems(Update, caravan_button.run_if(in_state(PopupHUD::Caravan)))
+        .add_systems(
+            Update,
+            (update_caravan_menu).run_if(resource_changed::<super::strategic_map::SelectedCaravan>),
+        )
         .add_systems(Update, popup_button);
 }
 
@@ -215,86 +224,145 @@ fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
     }
 }
 
+#[derive(Component, Default, Clone, Debug)]
+struct CaravanMenu;
+#[derive(Component, Clone, Copy, Eq, PartialEq, Debug, Hash)]
+enum CaravanMenuButtons {
+    NewStop,
+    KillStop,
+    AddTradeToStop,
+    RemoveTradeToStop,
+}
+
 fn caravan_menu(
     mut commands: Commands,
     mut selected_caravan: ResMut<super::strategic_map::SelectedCaravan>,
 ) {
-    let selected_caravan = selected_caravan.0.clone();
-    let window = popup_window(&mut commands, FlexDirection::Column);
-
-    commands.entity(window).with_children(|parent| {
+    let id = popup_window(&mut commands, FlexDirection::Column);
+    commands.entity(id).with_children(|parent| {
         parent.spawn((
             Node {
+                height: percent(100),
                 width: percent(100),
-                height: percent(10),
-                align_items: AlignItems::FlexEnd,
-                flex_direction: FlexDirection::Row,
                 ..default()
             },
-            Text::new(format!(
-                "Caravan in {}",
-                selected_caravan.position_city_id.clone()
-            )),
-        ));
-        parent
-            .spawn(
-                (Node {
-                    width: percent(100),
-                    height: percent(20),
-                    align_items: AlignItems::FlexEnd,
-                    flex_direction: FlexDirection::Column,
-                    ..default()
-                }),
-            )
-            .with_children(|parent| {
-                for _ in selected_caravan.orders {
-                    parent
-                        .spawn((
-                            Node {
-                                width: percent(100),
-                                height: px(64),
-                                margin: UiRect::all(px(4)),
-                                flex_direction: FlexDirection::Row,
-                                ..default()
-                            },
-                            BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
-                        ))
-                        .with_children(|parent| {
-                            for _ in 0..5 {
-                                parent.spawn((
-                                    Node {
-                                        width: px(60),
-                                        height: px(60),
-                                        margin: UiRect::all(px(4)),
-                                        ..default()
-                                    },
-                                    BackgroundColor(Srgba::new(0.1, 1.0, 0.1, 1.0).into()),
-                                ));
-                            }
-                        });
-                }
-            });
-
-        parent.spawn((
-            Node {
-                width: percent(100),
-                height: px(64),
-                margin: UiRect::all(px(4)),
-                flex_direction: FlexDirection::Row,
-                ..default()
-            },
-            Text::new("New order"),
-            BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
+            CaravanMenu,
         ));
     });
 }
 
-fn wares_menu(mut commands: Commands, mut sylt: Sylt) {
+//Redo the caravan menu in case of new buttons and so on
+fn update_caravan_menu(
+    caravan_box: Query<Entity, With<CaravanMenu>>,
+    mut selected_caravan: ResMut<SelectedCaravan>,
+    mut stats: ResMut<PlayerStats>,
+    mut commands: Commands,
+) {
+    for caravan_box in caravan_box.iter() {
+        commands.entity(caravan_box).despawn_children();
+        commands.entity(caravan_box).with_children(|parent| {
+            let selected_caravan = selected_caravan.0.clone();
+            println!("Updating caravan menu");
+            parent.spawn((
+                Node {
+                    width: percent(100),
+                    height: percent(10),
+                    align_items: AlignItems::FlexEnd,
+                    flex_direction: FlexDirection::Row,
+                    ..default()
+                },
+                Text::new(format!(
+                    "Caravan in {}",
+                    selected_caravan.position_city_id.clone()
+                )),
+            ));
+            parent
+                .spawn(
+                    (Node {
+                        width: percent(100),
+                        height: percent(20),
+                        align_items: AlignItems::FlexEnd,
+                        flex_direction: FlexDirection::Column,
+                        ..default()
+                    }),
+                )
+                .with_children(|parent| {
+                    for _ in selected_caravan.orders {
+                        parent
+                            .spawn((
+                                Node {
+                                    width: percent(100),
+                                    height: px(64),
+                                    margin: UiRect::all(px(4)),
+                                    flex_direction: FlexDirection::Row,
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
+                            ))
+                            .with_children(|parent| {
+                                for _ in 0..5 {
+                                    parent.spawn((
+                                        Node {
+                                            width: px(60),
+                                            height: px(60),
+                                            margin: UiRect::all(px(4)),
+                                            ..default()
+                                        },
+                                        BackgroundColor(Srgba::new(0.1, 1.0, 0.1, 1.0).into()),
+                                    ));
+                                }
+                            });
+                    }
+                });
+
+            parent.spawn((
+                Button,
+                CaravanMenuButtons::NewStop,
+                Node {
+                    width: percent(100),
+                    height: px(64),
+                    margin: UiRect::all(px(4)),
+                    flex_direction: FlexDirection::Row,
+                    ..default()
+                },
+                Text::new("New order"),
+                BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
+            ));
+        });
+        //stats.caravans
+    }
+}
+fn caravan_button(
+    mut commands: Commands,
+    mut interaction_query: Query<
+        (&Interaction, &CaravanMenuButtons),
+        (Changed<Interaction>, With<Button>),
+    >,
+    //mut menu_state: ResMut<NextState<StrategicState>>,
+    mut selected_caravan: ResMut<SelectedCaravan>,
+) {
+    for (interaction, menu_button_action) in &interaction_query {
+        if *interaction == Interaction::Pressed {
+            match menu_button_action {
+                CaravanMenuButtons::NewStop => {
+                    selected_caravan.0.orders.push(Order {
+                        goal_city_id: "Placeholder".to_string(),
+                        trade_order: vec![],
+                    });
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>) {
     let window = popup_window(&mut commands, FlexDirection::Row);
 
     //Basic and exotic mats
     commands.entity(window).with_children(|parent| {
         //Basic and exotic mats
+        let city_data = &town.0;
         parent
             .spawn((Node {
                 top: px(32),
@@ -310,7 +378,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt) {
                     .spawn((
                         Node {
                             width: percent(100),
-                            height: percent(60),
+                            height: percent(70),
                             margin: UiRect::all(px(4)),
                             justify_content: JustifyContent::FlexStart,
                             flex_direction: FlexDirection::Column,
@@ -321,29 +389,19 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt) {
                     .with_children(|parent| {
                         create_resource_list(
                             parent,
-                            vec![(Resources::Water, 12, 200), (Resources::Food, 10, 30)],
+                            vec![
+                                Resources::Food,
+                                Resources::Plants,
+                                Resources::CommonOre,
+                                Resources::RareOre,
+                                Resources::Lumber,
+                                Resources::Stone,
+                                Resources::Water,
+                                Resources::Glass,
+                                Resources::Coal,
+                            ],
                             "Basic materials".to_string(),
-                            &mut sylt,
-                        );
-                    });
-
-                parent
-                    .spawn((
-                        Node {
-                            width: percent(100),
-                            height: percent(20),
-                            margin: UiRect::all(px(4)),
-                            justify_content: JustifyContent::FlexStart,
-                            flex_direction: FlexDirection::Column,
-                            ..default()
-                        },
-                        BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
-                    ))
-                    .with_children(|parent| {
-                        create_resource_list(
-                            parent,
-                            vec![(Resources::Stone, 25, 18), (Resources::Food, 10, 30)],
-                            "Exotic materials".to_string(),
+                            &city_data,
                             &mut sylt,
                         );
                     });
@@ -376,8 +434,9 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt) {
                     .with_children(|parent| {
                         create_resource_list(
                             parent,
-                            vec![(Resources::Water, 12, 200), (Resources::Food, 10, 30)],
+                            vec![Resources::Drugs, Resources::Slaves, Resources::Vitae],
                             "Illegal materials".to_string(),
+                            &city_data,
                             &mut sylt,
                         );
                     });
@@ -398,15 +457,16 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt) {
                         create_resource_list(
                             parent,
                             vec![
-                                (Resources::RefinedValuables, 0, 0),
-                                (Resources::CommonAlloys, 0, 0),
-                                (Resources::Textiles, 0, 0),
-                                (Resources::ManufacturedGoods, 0, 0),
-                                (Resources::Medicines, 0, 0),
-                                (Resources::Reagents, 0, 0),
-                                (Resources::Machinery, 0, 0),
+                                Resources::RefinedValuables,
+                                Resources::CommonAlloys,
+                                Resources::Textiles,
+                                Resources::ManufacturedGoods,
+                                Resources::Medicines,
+                                Resources::Reagents,
+                                Resources::Machinery,
                             ],
                             "Advanced materials".to_string(),
+                            &city_data,
                             &mut sylt,
                         );
                     });
@@ -439,8 +499,41 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt) {
                     .with_children(|parent| {
                         create_resource_list(
                             parent,
-                            vec![(Resources::Water, 12, 200), (Resources::Food, 10, 30)],
+                            vec![
+                                Resources::SimpleLabour,
+                                Resources::Military,
+                                Resources::Transportation,
+                                Resources::Luxuries,
+                                Resources::ComplexLabour,
+                            ],
                             "Services".to_string(),
+                            &city_data,
+                            &mut sylt,
+                        );
+                    });
+
+                parent
+                    .spawn((
+                        Node {
+                            width: percent(100),
+                            height: percent(30),
+                            margin: UiRect::all(px(4)),
+                            justify_content: JustifyContent::FlexStart,
+                            flex_direction: FlexDirection::Column,
+                            ..default()
+                        },
+                        BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
+                    ))
+                    .with_children(|parent| {
+                        create_resource_list(
+                            parent,
+                            vec![
+                                Resources::ExoticAlloys,
+                                Resources::Spellwork,
+                                Resources::Artifacts,
+                            ],
+                            "Exotic materials".to_string(),
+                            &city_data,
                             &mut sylt,
                         );
                     });
@@ -464,10 +557,12 @@ enum PopupButton {
 
 fn create_resource_list(
     parent: &mut ChildSpawnerCommands,
-    resources: Vec<(Resources, usize, usize)>,
+    resources: Vec<Resources>,
     box_name: String,
+    town: &CityData,
     mut sylt: &mut Sylt,
 ) {
+    //out.push((resource, data[resource], CALCULATE(data[resource])));
     parent.spawn((
         Node {
             width: percent(100),
@@ -477,16 +572,21 @@ fn create_resource_list(
         Text::new(box_name.clone()),
     ));
 
-    for (resouce_type, cost, available) in resources {
-        create_resource_icon(parent, resouce_type, cost, available, &mut sylt);
+    for resource in resources {
+        create_resource_icon(
+            parent,
+            resource,
+            town.get_resource_value(&resource),
+            &mut sylt,
+        );
     }
 }
 
 fn create_resource_icon(
     parent: &mut ChildSpawnerCommands,
     resource: Resources,
-    cost: usize,
-    amount: usize,
+    cost: f64,
+    //    amount: usize,
     sylt: &mut Sylt,
 ) {
     parent.spawn((
@@ -525,8 +625,9 @@ fn create_resource_icon(
                     ..default()
                 },
             ),
-            (Text::new(format!("{}x", amount)),),
-            (Text::new(format!("{}$", cost)),)
+            (Text::new("Resource Name")),
+            //(Text::new(format!("{}x", amount)),),
+            (Text::new(format!("{:.2}$", cost)),)
         ],
     ));
 }
