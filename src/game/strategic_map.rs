@@ -1,4 +1,5 @@
 use super::strategic_hud::PopupHUD;
+use crate::game::market;
 use crate::prelude::*;
 
 use super::market::*;
@@ -215,6 +216,51 @@ pub struct CityData {
     pub buildings_t5: Vec<(String, Faction)>,
 }
 
+impl CityData {
+    pub fn new(race: BuildingType, tier: u8, mut rng: &mut ResMut<GlobalRng>) -> CityData {
+        let buildings_per_tier = match tier {
+            1 => { (1, 0, 0, 0, 0) },
+            2 => { (1, 1, 0, 0, 0) },
+            3 => { (2, 1, 1, 0, 0) },
+            4 => { (2, 2, 1, 1, 0) },
+            5 => { (3, 2, 2, 1, 1) },
+            _ => { panic!("Tried to generate a city of tier {:?}", tier) }
+        };
+        let (mut t1, mut t2, mut t3, mut t4, mut t5) = (vec!(), vec!(), vec!(), vec!(), vec!());
+
+        for i in 0..buildings_per_tier.0 {
+            t1.push(((market::gen_random_building(1, &mut rng, race)), Faction::Neutral));
+        }
+
+        for i in 0..buildings_per_tier.1 {
+            t2.push(((market::gen_random_building(2, &mut rng, race)), Faction::Neutral));
+        }
+
+        for i in 0..buildings_per_tier.2 {
+            t3.push(((market::gen_random_building(3, &mut rng, race)), Faction::Neutral));
+        }
+
+        for i in 0..buildings_per_tier.3 {
+            t4.push(((market::gen_random_building(4, &mut rng, race)), Faction::Neutral));
+        }
+
+        for i in 0..buildings_per_tier.4 {
+            t5.push(((market::gen_random_building(5, &mut rng, race)), Faction::Neutral));
+        }
+
+        CityData {
+            id: super::namelists::generate_city_name(race, &mut rng),
+            race: race,
+            population: tier,
+            buildings_t1: t1,
+            buildings_t2: t2,
+            buildings_t3: t3,
+            buildings_t4: t4,
+            buildings_t5: t5
+        }
+    }
+}
+
 //#[derive(Component)]
 //struct Market {
 //    population: u8,
@@ -233,7 +279,8 @@ fn city_interaction_system(
         match *interaction {
             Interaction::Pressed => {
                 println!("Pressed the city {}", city.id);
-                selected_city.0 = (*city).clone();
+                println!("The city is tier {}", city.population);
+                selected_city.0 = (*city).clone();  
                 menu_state.set(StrategicState::HUDOpen);
                 popupp_state.set(PopupHUD::Off);
 

@@ -42,6 +42,7 @@ fn gen_rand_circle(i: i32, min: f32, max: f32, rng: &mut ResMut<GlobalRng>) -> V
     Vec2::from_angle(ang) * d + vec2(jx, jy)
 }
 
+<<<<<<< HEAD
 pub fn spawn_city(
     pos: Vec2,
     color: Color,
@@ -51,16 +52,12 @@ pub fn spawn_city(
     mut rng: &mut ResMut<GlobalRng>,
     g: &mut Graph<Entity, CityEdge, Undirected>,
 ) {
+=======
+fn spawn_city(pos: Vec2, color: Color, race: BuildingType, tier: u8, capital: bool, commands: &mut Commands, mut rng: &mut ResMut<GlobalRng>, g: &mut Graph<Entity, CityEdge, Undirected>) {
+>>>>>>> 0171732 (random city gen)
     let mut ent = commands.spawn_empty();
     let idx = g.add_node(ent.id());
-    let data = CityData {
-        id: super::namelists::generate_city_name(race, &mut rng),
-        population: 3,
-        buildings_t1: vec![("Automated Clothiers".to_string(), Faction::Neutral)],
-        buildings_t2: vec![("Mushroom Farm".to_string(), Faction::Neutral)],
-        race: race,
-        ..default()
-    };
+    let data = CityData::new(race, tier, &mut rng);
     ent.insert((
         Transform::from_translation(pos.extend(0.0)),
         Node(idx, pos, color),
@@ -118,15 +115,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
         (BuildingType::Elven, vec2(-30., 1460.)),
         (BuildingType::Dwarven, vec2(-1360., 500.)),
     ] {
-        spawn_city(
-            capital_pos * SCALE,
-            make_color(colors[0]),
-            race,
-            true,
-            &mut commands,
-            &mut rng,
-            &mut g,
-        );
+        spawn_city(capital_pos * SCALE, make_color(colors[0]), race, 5, true, &mut commands, &mut rng, &mut g);
 
         let (min, max) = match race {
             BuildingType::Dwarven => (-(260f32.to_radians()), 0.0),
@@ -154,8 +143,15 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
                     break;
                 }
                 if check_boxes(city_pos) {
+                    let tier = match c {
+                        0 => 4,
+                        1..3 => 3,
+                        3..5 => 2,
+                        _ => 1
+                    };
                     other_pos.push(city_pos);
                     println!("Missing a city spawn");
+<<<<<<< HEAD
                     spawn_city(
                         city_pos,
                         make_color(colors[(1 + c) % colors.len()]),
@@ -165,6 +161,9 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
                         &mut rng,
                         &mut g,
                     );
+=======
+                    spawn_city(city_pos, make_color(colors[(1 + c) % colors.len()]), race, tier, false, &mut commands, &mut rng, &mut g);
+>>>>>>> 0171732 (random city gen)
                 }
             }
         }
