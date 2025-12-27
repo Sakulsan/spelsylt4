@@ -459,6 +459,8 @@ impl CityData {
                 self.market.insert(Resources::ManufacturedGoods, self.market[&Resources::ManufacturedGoods] - 3).expect("error in city market") - 3 >= 0 &&
                 self.market.insert(Resources::Luxuries, self.market[&Resources::Luxuries] - 15).expect("error in city market") - 15 >= 0 &&
                 self.market.insert(Resources::Transportation, self.market[&Resources::Transportation] - 15).expect("error in city market") - 15 >= 0);
+                self.market.insert(Resources::Drugs, self.market[&Resources::Drugs] - 5).expect("error in city market");
+                self.market.insert(Resources::Slaves, self.market[&Resources::Slaves] - 5).expect("error in city market");
                 self.market.insert(Resources::SimpleLabour, self.market[&Resources::SimpleLabour] + 45);
                 self.market.insert(Resources::ComplexLabour, self.market[&Resources::ComplexLabour] + 20);
             },
@@ -474,6 +476,9 @@ impl CityData {
                 self.market.insert(Resources::Luxuries, self.market[&Resources::Luxuries] - 25).expect("error in city market") - 25 >= 0 &&
                 self.market.insert(Resources::Transportation, self.market[&Resources::Transportation] - 25).expect("error in city market") - 25 >= 0 &&
                 self.market.insert(Resources::Military, self.market[&Resources::Military] - 15).expect("error in city market") - 15 >= 0);
+                self.market.insert(Resources::Drugs, self.market[&Resources::Drugs] - 10).expect("error in city market");
+                self.market.insert(Resources::Slaves, self.market[&Resources::Slaves] - 10).expect("error in city market");
+                self.market.insert(Resources::Vitae, self.market[&Resources::Vitae] - 2).expect("error in city market");
                 self.market.insert(Resources::SimpleLabour, self.market[&Resources::SimpleLabour] + 80);
                 self.market.insert(Resources::ComplexLabour, self.market[&Resources::ComplexLabour] + 45);
             },
@@ -489,6 +494,9 @@ impl CityData {
                 self.market.insert(Resources::Luxuries, self.market[&Resources::Luxuries] - 60);
                 self.market.insert(Resources::Transportation, self.market[&Resources::Transportation] - 60);
                 self.market.insert(Resources::Military, self.market[&Resources::Military] - 50);
+                self.market.insert(Resources::Drugs, self.market[&Resources::Drugs] - 20).expect("error in city market");
+                self.market.insert(Resources::Slaves, self.market[&Resources::Slaves] - 20).expect("error in city market");
+                self.market.insert(Resources::Vitae, self.market[&Resources::Vitae] - 5).expect("error in city market");
                 self.market.insert(Resources::SimpleLabour, self.market[&Resources::SimpleLabour] + 125);
                 self.market.insert(Resources::ComplexLabour, self.market[&Resources::ComplexLabour] + 80);
             }
