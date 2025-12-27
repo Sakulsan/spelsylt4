@@ -95,6 +95,8 @@ fn update_ui_nodes(
     nodes: Query<(&mut UiTransform, &CityNode)>,
     camera: Option<Single<(&GlobalTransform, &Camera), With<Camera2d>>>,
 ) {
+    return;
+
     let Some((cam_trans, cam)) = camera.map(|c| c.into_inner()) else {
         error!("Missing camera!");
         return;

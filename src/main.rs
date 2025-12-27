@@ -43,7 +43,7 @@ struct Volume(u32);
 
 fn move_camera(
     keys: Res<ButtonInput<KeyCode>>,
-    mut cam_pos: Query<&mut Transform, With<Camera2d>>,
+    mut cam_pos: Query<&mut Transform, With<Camera>>,
     mut proj: Query<&mut Projection>,
 ) {
     let Ok(mut c) = cam_pos.single_mut() else {
@@ -90,7 +90,7 @@ fn move_camera(
 }
 
 #[derive(Component)]
-struct TheDefaultUiCamera;
+struct DefaultUiCameraMarker;
 
 fn main() {
     App::new()
@@ -98,7 +98,7 @@ fn main() {
             DefaultPlugins,
             FeathersPlugins,
             TextInputPlugin,
-            AnchorUiPlugin::<TheDefaultUiCamera>::new(),
+            AnchorUiPlugin::<DefaultUiCameraMarker>::new(),
         ))
         .add_plugins((
             splash::splash_plugin,
@@ -113,12 +113,6 @@ fn main() {
         .insert_resource(Volume(7))
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
-        .add_systems(Startup, |mut commands: Commands, cam: DefaultUiCamera| {
-            let Some(cam) = cam.get() else {
-                return;
-            };
-            commands.entity(cam).insert(TheDefaultUiCamera);
-        })
         .add_systems(Startup, debug_city_names)
         .add_systems(Startup, setup)
         .add_systems(Update, move_camera)
@@ -144,10 +138,12 @@ fn setup(mut commands: Commands) {
     commands.spawn((
         Camera2d,
         Projection::Orthographic(OrthographicProjection {
-            //scaling_mode: ScalingMode::WindowSize,
             scale: 2.5,
             ..OrthographicProjection::default_2d()
         }),
+        DefaultUiCameraMarker,
+        IsDefaultUiCamera,
+        Transform::default(),
     ));
 }
 
