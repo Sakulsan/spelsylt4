@@ -192,10 +192,13 @@ pub fn gen_building_tables() -> HashMap<String, Building> {
     all_buildings
 }
 
-pub fn gen_random_building(tier: u8, mut rng: &mut ResMut<GlobalRng>, race: BuildingType) -> String {
+pub fn gen_random_building(tier: u8, mut rng: &mut ResMut<GlobalRng>, mut race: BuildingType) -> String {
     if race == BuildingType::Illegal || race == BuildingType::Generic { panic!("generated a random building of race {:?}", race) }
 
     let random_choice: u32 = rng.0.random();
+    if rng.0.random_range(0..3) == 2 {
+        race = BuildingType::Generic;
+    }
 
     let result = match race {
         BuildingType::Dwarven => {
