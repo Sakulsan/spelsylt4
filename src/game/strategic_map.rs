@@ -17,7 +17,7 @@ struct BuildinTable(HashMap<String, Building>);
 pub fn plugin(app: &mut App) {
     app.add_systems(
         OnEnter(GameState::Game),
-        (strategic_setup, crate::kill_music),
+        (crate::kill_music, spawn_map_sprite, spawn_city_ui_nodes),
     )
     .insert_resource(SelectedCity("Unkown".to_string()))
     .insert_resource(BuildinTable(super::market::gen_building_tables()))
@@ -25,7 +25,8 @@ pub fn plugin(app: &mut App) {
     .add_systems(
         Update,
         (city_interaction_system).run_if(in_state(PopupHUD::Off)),
-    );
+    )
+    .add_systems(Update, update_ui_nodes.run_if(in_state(GameState::Game)));
 }
 
 /*#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -42,33 +43,24 @@ pub enum StrategicState {
     HUDOpen,
 }
 
-fn strategic_setup(
-    mut commands: Commands,
-    //    display_quality: Res<DisplayQuality>,
-    //    volume: Res<Volume>,
-    asset_server: Res<AssetServer>,
-    mut sylt: Sylt,
-) {
+fn spawn_map_sprite(mut commands: Commands, mut sylt: Sylt) {
     commands.spawn((
-        AudioPlayer(asset_server.load::<AudioSource>("music/Moneymoneymoney.ogg")),
-        PlaybackSettings {
-            mode: bevy::audio::PlaybackMode::Loop,
-            ..default()
-        },
-    ));
-
-    commands.spawn((
-        Node {
-            width: Val::Vw(100.0),
-            height: Val::Vh(100.0),
-            ..default()
-        },
-        Transform::from_xyz(0., 0.0, -1.0),
         Sprite {
             image: sylt.get_sprite("map").image,
             ..default()
         },
-        children![(
+        DespawnOnExit(GameState::Game),
+    ));
+}
+
+use super::city_graph::Node as CityNode;
+fn spawn_city_ui_nodes(
+    mut commands: Commands,
+    graph_nodes: Query<(Entity, &CityNode)>,
+    mut sylt: Sylt,
+) {
+    for (ent, node) in graph_nodes {
+        commands.entity(ent).insert((
             Button,
             Transform::from_xyz(0., 0.0, 1.0),
             CityData {
@@ -76,23 +68,41 @@ fn strategic_setup(
                 population: 2,
                 buildings: vec![
                     "Automated Clothiers".to_string(),
-                    "Mushroom Farm".to_string()
+                    "Mushroom Farm".to_string(),
                 ],
             },
             CityIcon {
-                id: "Capital".to_string()
+                id: "Capital".to_string(),
             },
             Node {
                 width: px(32),
                 height: px(32),
                 ..default()
-            } //          Sprite {
-              //                color: Srgba::new(1.0, 0.1, 0.1, 1.0).into(),
-              //                custom_size: Some(Vec2::new(75., 75.)),
-              //                ..default()
-              //            }
-        )],
-    ));
+            },
+            BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
+        ));
+    }
+}
+
+fn update_ui_nodes(
+    nodes: Query<(&mut UiTransform, &CityNode)>,
+    camera: Option<Single<(&GlobalTransform, &Camera), With<Camera2d>>>,
+) {
+    let Some((cam_trans, cam)) = camera.map(|c| c.into_inner()) else {
+        error!("Missing camera!");
+        return;
+    };
+
+    for (mut transform, node) in nodes {
+        let Some(ndc_pos) = cam.world_to_ndc(cam_trans, node.1.extend(0.0)) else {
+            continue;
+        };
+        let ndc_pos = ndc_pos / 2.0 + Vec3::splat(0.5);
+        let ndc_pos = Vec2::new(ndc_pos.x, 1.0 - ndc_pos.y) * 100.0;
+
+        transform.translation.x = Val::Vw(ndc_pos.x);
+        transform.translation.y = Val::Vh(ndc_pos.y);
+    }
 }
 
 #[derive(Component)]

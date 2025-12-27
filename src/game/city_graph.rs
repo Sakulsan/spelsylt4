@@ -10,13 +10,13 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(Component, Clone, Debug)]
-struct Node(NodeIndex, Vec2, Color);
+pub struct Node(pub NodeIndex, pub Vec2, pub Color);
 
 #[derive(Component, Clone, Debug)]
 struct CityEdge(f32);
 
 #[derive(Resource)]
-struct CityGraph {
+pub struct CityGraph {
     graph: CGraph,
 }
 
