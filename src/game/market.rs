@@ -33,12 +33,13 @@ pub enum Resources {
     Artifacts,
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 pub enum BuildingType {
     Human,
     Elven,
     Goblin,
     Dwarven,
+    #[default]
     Generic,
     Illegal
 }

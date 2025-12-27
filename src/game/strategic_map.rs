@@ -162,6 +162,7 @@ pub enum Faction {
 #[derive(Component, Default, Clone)]
 pub struct CityData {
     pub id: String,
+    pub race: BuildingType,
     pub population: u8,
     pub buildings_t1: Vec<(String, Faction)>,
     pub buildings_t2: Vec<(String, Faction)>,
@@ -181,14 +182,31 @@ fn city_interaction_system(
     mut menu_state: ResMut<NextState<StrategicState>>,
     mut selected_city: ResMut<SelectedCity>,
     mut popupp_state: ResMut<NextState<PopupHUD>>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>
 ) {
     for (interaction, city) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
                 println!("Pressed the city {}", city.id);
-                selected_city.0 = (*city).clone();
+                selected_city.0 = (*city).clone();  
                 menu_state.set(StrategicState::HUDOpen);
                 popupp_state.set(PopupHUD::Off);
+
+                
+                commands.spawn((
+                    AudioPlayer::new(asset_server.load(match selected_city.0.race {
+                        BuildingType::Dwarven => { "music/Dwarftowneffect.ogg" },
+                        BuildingType::Goblin => { "music/Gnometowneffect.ogg" },
+                        BuildingType::Human => { "music/Humanstowneffect.ogg" },
+                        BuildingType::Elven => { "music/Elvestowneffect.ogg" },
+                        _ => {panic!("Attempted to play city sound effect for non-existent city type.")}
+                    })),
+                    PlaybackSettings {
+                        mode: bevy::audio::PlaybackMode::Once,
+                        ..default()
+                    },
+                ));
             }
             //Interaction::Hovered => *node_color = Srgba::new(1.0, 0.1, 0.1, 1.0).into(),
             _ => {}
