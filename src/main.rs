@@ -6,9 +6,11 @@ use crate::game::namelists::*;
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
+use bevy_ui_anchor::AnchorUiPlugin;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use std::time::SystemTime;
+
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
 mod game;
 
@@ -41,7 +43,7 @@ struct Volume(u32);
 
 fn move_camera(
     keys: Res<ButtonInput<KeyCode>>,
-    mut cam_pos: Query<&mut Transform, With<Camera2d>>,
+    mut cam_pos: Query<&mut Transform, With<Camera>>,
     mut proj: Query<&mut Projection>,
 ) {
     let Ok(mut c) = cam_pos.single_mut() else {
@@ -87,9 +89,17 @@ fn move_camera(
     proj.scale = 0.05f32.max(proj.scale);
 }
 
+#[derive(Component)]
+struct DefaultUiCameraMarker;
+
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, FeathersPlugins, TextInputPlugin))
+        .add_plugins((
+            DefaultPlugins.set(ImagePlugin::default_nearest()),
+            FeathersPlugins,
+            TextInputPlugin,
+            AnchorUiPlugin::<DefaultUiCameraMarker>::new(),
+        ))
         .add_plugins((
             splash::splash_plugin,
             menu::menu_plugin,
@@ -128,10 +138,12 @@ fn setup(mut commands: Commands) {
     commands.spawn((
         Camera2d,
         Projection::Orthographic(OrthographicProjection {
-            //scaling_mode: ScalingMode::WindowSize,
             scale: 2.5,
             ..OrthographicProjection::default_2d()
         }),
+        DefaultUiCameraMarker,
+        IsDefaultUiCamera,
+        Transform::default(),
     ));
 }
 

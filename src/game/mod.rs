@@ -7,11 +7,13 @@ pub mod scene;
 pub mod strategic_hud;
 pub mod strategic_map;
 use bevy::prelude::*;
+pub mod tooltip;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
         strategic_map::plugin,
         city_graph::plugin,
         strategic_hud::plugin,
+        tooltip::plugin,
     ));
 }

@@ -10,13 +10,13 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(Component, Clone, Debug)]
-struct Node(NodeIndex, Vec2, Color);
+pub struct Node(pub NodeIndex, pub Vec2, pub Color);
 
 #[derive(Component, Clone, Debug)]
 struct CityEdge(f32);
 
 #[derive(Resource)]
-struct CityGraph {
+pub struct CityGraph {
     graph: CGraph,
 }
 
@@ -49,10 +49,13 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
         vec2(-1360., 500.),
     ];
 
-    let mut spawn_city = |pos, color| {
+    let mut spawn_city = |pos: Vec2, color| {
         let mut ent = commands.spawn_empty();
         let idx = g.add_node(ent.id());
-        ent.insert(Node(idx, pos, color));
+        ent.insert((
+            Transform::from_translation(pos.extend(0.0)),
+            Node(idx, pos, color),
+        ));
     };
 
     const M: f32 = 2000.0 - 110.0;
@@ -246,7 +249,6 @@ fn remove_random_edges(mut rng: ResMut<GlobalRng>, mut g: ResMut<CityGraph>) {
         g_test.remove_edge(random_edge);
         // where performance goes to die
         if connected_components(&g_test) == starting_components {
-            info!("Successfully removed node, continuing");
             g.remove_edge(random_edge);
             edges.pop();
             removed_edges += 1;

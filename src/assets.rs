@@ -138,6 +138,10 @@ impl<'w> Sylt<'w> {
         conf.atlas_handle = None;
     }
 
+    pub fn get_image(&mut self, name: &str) -> Handle<Image> {
+        self.get_sprite(name).image
+    }
+
     pub fn get_sprite(&mut self, name: &str) -> Sprite {
         let conf = self
             .asset_map
