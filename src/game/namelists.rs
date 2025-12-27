@@ -5,11 +5,9 @@ use rand::seq::IndexedRandom;
 use rand::Rng;
 
 use crate::assets::Sylt;
+use crate::game::market::BuildingType;
 use crate::GameState;
 use crate::GlobalRng;
-use crate::game::market::BuildingType;
-
-
 
 pub fn generate_city_names(
     amount: (usize, usize, usize, usize),

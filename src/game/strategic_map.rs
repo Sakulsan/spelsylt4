@@ -297,33 +297,50 @@ pub struct CityData {
 impl CityData {
     pub fn new(race: BuildingType, tier: u8, mut rng: &mut ResMut<GlobalRng>) -> CityData {
         let buildings_per_tier = match tier {
-            1 => { (1, 0, 0, 0, 0) },
-            2 => { (1, 1, 0, 0, 0) },
-            3 => { (2, 1, 1, 0, 0) },
-            4 => { (2, 2, 1, 1, 0) },
-            5 => { (3, 2, 2, 1, 1) },
-            _ => { panic!("Tried to generate a city of tier {:?}", tier) }
+            1 => (1, 0, 0, 0, 0),
+            2 => (1, 1, 0, 0, 0),
+            3 => (2, 1, 1, 0, 0),
+            4 => (2, 2, 1, 1, 0),
+            5 => (3, 2, 2, 1, 1),
+            _ => {
+                panic!("Tried to generate a city of tier {:?}", tier)
+            }
         };
-        let (mut t1, mut t2, mut t3, mut t4, mut t5) = (vec!(), vec!(), vec!(), vec!(), vec!());
+        let (mut t1, mut t2, mut t3, mut t4, mut t5) = (vec![], vec![], vec![], vec![], vec![]);
 
         for i in 0..buildings_per_tier.0 {
-            t1.push(((market::gen_random_building(1, &mut rng, race)), Faction::Neutral));
+            t1.push((
+                (market::gen_random_building(1, &mut rng, race)),
+                Faction::Neutral,
+            ));
         }
 
         for i in 0..buildings_per_tier.1 {
-            t2.push(((market::gen_random_building(2, &mut rng, race)), Faction::Neutral));
+            t2.push((
+                (market::gen_random_building(2, &mut rng, race)),
+                Faction::Neutral,
+            ));
         }
 
         for i in 0..buildings_per_tier.2 {
-            t3.push(((market::gen_random_building(3, &mut rng, race)), Faction::Neutral));
+            t3.push((
+                (market::gen_random_building(3, &mut rng, race)),
+                Faction::Neutral,
+            ));
         }
 
         for i in 0..buildings_per_tier.3 {
-            t4.push(((market::gen_random_building(4, &mut rng, race)), Faction::Neutral));
+            t4.push((
+                (market::gen_random_building(4, &mut rng, race)),
+                Faction::Neutral,
+            ));
         }
 
         for i in 0..buildings_per_tier.4 {
-            t5.push(((market::gen_random_building(5, &mut rng, race)), Faction::Neutral));
+            t5.push((
+                (market::gen_random_building(5, &mut rng, race)),
+                Faction::Neutral,
+            ));
         }
 
         CityData {
@@ -334,7 +351,7 @@ impl CityData {
             buildings_t2: t2,
             buildings_t3: t3,
             buildings_t4: t4,
-            buildings_t5: t5
+            buildings_t5: t5,
         }
     }
 }
@@ -347,6 +364,7 @@ impl CityData {
 
 fn city_interaction_system(
     mut interaction_query: Query<(&Interaction, &CityData), Changed<Interaction>>,
+    //ui_entities: Query<Entity, With<super::strategic_hud::PopUpItem>>,
     mut menu_state: ResMut<NextState<StrategicState>>,
     mut selected_city: ResMut<SelectedCity>,
     mut popupp_state: ResMut<NextState<PopupHUD>>,
@@ -358,7 +376,16 @@ fn city_interaction_system(
             Interaction::Pressed => {
                 println!("Pressed the city {}", city.id);
                 println!("The city is tier {}", city.population);
-                selected_city.0 = (*city).clone();  
+
+                /*                //Kills the old overlay hud
+                                dbg!(ui_entities);
+                                for ui_entity in ui_entities.iter() {
+                                    println!("Confussion");
+                                    commands.entity(ui_entity).despawn_children();
+                                    //commands.entity(ui_entity).remove();
+                                }
+                */
+                selected_city.0 = (*city).clone();
                 menu_state.set(StrategicState::HUDOpen);
                 popupp_state.set(PopupHUD::Off);
 

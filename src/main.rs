@@ -76,14 +76,14 @@ fn move_camera(
 
     for (key, dir) in x {
         if keys.pressed(key) {
-            *c += dir * if shift { 100.0 } else { 20.0 };
+            *c += dir * if shift { 60.0 } else { 20.0 };
         }
     }
 
     if keys.pressed(K::KeyZ) {
-        proj.scale += 0.05;
+        proj.scale += 0.05 * if shift { 3.0 } else { 1.0 };
     } else if keys.pressed(K::KeyX) {
-        proj.scale -= 0.05;
+        proj.scale -= 0.05 * if shift { 3.0 } else { 1.0 };
     }
 
     proj.scale = 0.05f32.max(proj.scale);

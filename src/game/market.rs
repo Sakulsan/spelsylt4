@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use bevy::pbr::generate;
 use crate::prelude::*;
+use bevy::pbr::generate;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Resources {
@@ -43,7 +43,7 @@ pub enum BuildingType {
     #[default]
     Generic,
     Illegal,
-    Unique
+    Unique,
 }
 
 impl Resources {
@@ -86,7 +86,7 @@ pub struct Building {
     output: HashMap<Resources, isize>,
     tier: usize,
     image_sylt_id: Option<String>,
-    build_type: BuildingType
+    build_type: BuildingType,
 }
 
 pub fn gen_building_tables() -> HashMap<String, Building> {
@@ -181,7 +181,7 @@ pub fn gen_building_tables() -> HashMap<String, Building> {
     generate_building!("Teleportation Circle Network", Spellwork x 25, ComplexLabour x 40; Transportation x 250; 4);
     generate_building!("Strip Mines", ManufacturedGoods x 60, SimpleLabour x 35; CommonOre x 125, RareOre x 125, Coal x 50; 4);
     generate_building!("Relic Hunters", Military x 320, Medicines x 50; ExoticAlloys x 30, Spellwork x 30, Artifacts x 30, RefinedValuables x 50; 5);
-    
+
     //Illegal buildings
     current_type = BuildingType::Illegal;
     generate_building!("Opium Plantation", Water x 10, SimpleLabour x 10; Drugs x 10; 1);
@@ -200,8 +200,14 @@ pub fn gen_building_tables() -> HashMap<String, Building> {
     all_buildings
 }
 
-pub fn gen_random_building(tier: u8, mut rng: &mut ResMut<GlobalRng>, mut race: BuildingType) -> String {
-    if race == BuildingType::Illegal || race == BuildingType::Generic { panic!("generated a random building of race {:?}", race) }
+pub fn gen_random_building(
+    tier: u8,
+    mut rng: &mut ResMut<GlobalRng>,
+    mut race: BuildingType,
+) -> String {
+    if race == BuildingType::Illegal || race == BuildingType::Generic {
+        panic!("generated a random building of race {:?}", race)
+    }
 
     let random_choice: u32 = rng.0.random();
     if rng.0.random_range(0..3) == 2 {
@@ -209,192 +215,159 @@ pub fn gen_random_building(tier: u8, mut rng: &mut ResMut<GlobalRng>, mut race: 
     }
 
     let result = match race {
-        BuildingType::Dwarven => {
-            match tier {
-                1 => {
-                    match random_choice % 3 {
-                        0 => "Mushroom Farm",
-                        1 => "Automated Clothier",
-                        2 => "Gem Cutters",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                2 => {
-                    match random_choice % 3 {
-                        0 => "Preparatory Facilities",
-                        1 => "Core Drill",
-                        2 => "Growth Vats",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                3 => {
-                    match random_choice % 2 {
-                        0 => "Automation Components",
-                        1 => "Megabreweries",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                4 => {
-                    match random_choice % 2 {
-                        0 => "Industrial Smeltery",
-                        1 => "Dwarven Assembly Lines",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                5 => "Adamantium Smeltery",
-                _ => panic!("gen_random_building tried to generate a building of tier {:?}", tier)
-            }
+        BuildingType::Dwarven => match tier {
+            1 => match random_choice % 3 {
+                0 => "Mushroom Farm",
+                1 => "Automated Clothier",
+                2 => "Gem Cutters",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            2 => match random_choice % 3 {
+                0 => "Preparatory Facilities",
+                1 => "Core Drill",
+                2 => "Growth Vats",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            3 => match random_choice % 2 {
+                0 => "Automation Components",
+                1 => "Megabreweries",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            4 => match random_choice % 2 {
+                0 => "Industrial Smeltery",
+                1 => "Dwarven Assembly Lines",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            5 => "Adamantium Smeltery",
+            _ => panic!(
+                "gen_random_building tried to generate a building of tier {:?}",
+                tier
+            ),
         },
-        BuildingType::Elven => {
-            match tier {
-                1 => {
-                    match random_choice % 3 {
-                        0 => "Earth Spirit Aid", 
-                        1 => "Ironwood Forestry",
-                        2 => "Forest Foraging",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                2 => {
-                    match random_choice % 3 {
-                        0 => "Domesticated Orchards",
-                        1 => "Amber Plnatation", 
-                        2 => "Gardens of Wonder",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                3 => {
-                    match random_choice % 2 {
-                        0 => "Elemental Springs",
-                        1 => "Integrated Farms",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                4 => {
-                    match random_choice % 2 {
-                        0 => "Gaian Meadows",
-                        1 => "Self-spinning Weavers",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                5 => "Archmage's Tower",
-                _ => panic!("gen_random_building tried to generate a building of tier {:?}", tier)
-            }
+        BuildingType::Elven => match tier {
+            1 => match random_choice % 3 {
+                0 => "Earth Spirit Aid",
+                1 => "Ironwood Forestry",
+                2 => "Forest Foraging",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            2 => match random_choice % 3 {
+                0 => "Domesticated Orchards",
+                1 => "Amber Plnatation",
+                2 => "Gardens of Wonder",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            3 => match random_choice % 2 {
+                0 => "Elemental Springs",
+                1 => "Integrated Farms",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            4 => match random_choice % 2 {
+                0 => "Gaian Meadows",
+                1 => "Self-spinning Weavers",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            5 => "Archmage's Tower",
+            _ => panic!(
+                "gen_random_building tried to generate a building of tier {:?}",
+                tier
+            ),
         },
-        BuildingType::Goblin => {
-            match tier {
-                1 => {
-                    match random_choice % 3 {
-                        0 => "Deep Mines", 
-                        1 => "Animated Objects", 
-                        2 => "Alchemical Enhancements",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                2 => {
-                    match random_choice % 3 {
-                        0 => "Glaziery", 
-                        1 => "Charcoal Kilns",
-                        2 => "Hill Quarries", 
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                3 => {
-                    match random_choice % 2 {
-                        0 => "Hill Quarries", 
-                        1 => "Artisan District",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                4 => {
-                    match random_choice % 2 {
-                        0 => "Siege-Factories", 
-                        1 => "Golem Automatons",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                5 => "Alchemic Factories",
-                _ => panic!("gen_random_building tried to generate a building of tier {:?}", tier)
-            }
+        BuildingType::Goblin => match tier {
+            1 => match random_choice % 3 {
+                0 => "Deep Mines",
+                1 => "Animated Objects",
+                2 => "Alchemical Enhancements",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            2 => match random_choice % 3 {
+                0 => "Glaziery",
+                1 => "Charcoal Kilns",
+                2 => "Hill Quarries",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            3 => match random_choice % 2 {
+                0 => "Hill Quarries",
+                1 => "Artisan District",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            4 => match random_choice % 2 {
+                0 => "Siege-Factories",
+                1 => "Golem Automatons",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            5 => "Alchemic Factories",
+            _ => panic!(
+                "gen_random_building tried to generate a building of tier {:?}",
+                tier
+            ),
         },
-        BuildingType::Human => {
-            match tier {
-                1 => {
-                    match random_choice % 3 {
-                        0 => "Large Industrial District",
-                        1 => "Fishing Port", 
-                        2 => "Tree Plantations", 
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                2 => {
-                    match random_choice % 3 {
-                        0 => "Water Cleaning Facilities",
-                        1 => "Hired Workforces", 
-                        2 => "Small-scale Forges", 
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                3 => {
-                    match random_choice % 2 {
-                        0 => "Manufactories", 
-                        1 => "Mercenary Guild",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                4 => {
-                    match random_choice % 2 {
-                        0 => "Teleportation Circle Network",
-                        1 => "Strip Mines", 
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                5 => "Relic Hunters",
-                _ => panic!("gen_random_building tried to generate a building of tier {:?}", tier)
-            }
+        BuildingType::Human => match tier {
+            1 => match random_choice % 3 {
+                0 => "Large Industrial District",
+                1 => "Fishing Port",
+                2 => "Tree Plantations",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            2 => match random_choice % 3 {
+                0 => "Water Cleaning Facilities",
+                1 => "Hired Workforces",
+                2 => "Small-scale Forges",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            3 => match random_choice % 2 {
+                0 => "Manufactories",
+                1 => "Mercenary Guild",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            4 => match random_choice % 2 {
+                0 => "Teleportation Circle Network",
+                1 => "Strip Mines",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            5 => "Relic Hunters",
+            _ => panic!(
+                "gen_random_building tried to generate a building of tier {:?}",
+                tier
+            ),
         },
-        BuildingType::Generic => {
-            match tier {
-                1 => {
-                    match random_choice % 5 {
-                        0 => "Standard Farms",
-                        1 => "Standard Mines",
-                        2 => "Quarry", 
-                        3 => "Forestry Site", 
-                        4 => "Workers", 
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                2 => {
-                    match random_choice % 5 {
-                        0 => "Educated Workers",
-                        1 => "Well", 
-                        2 => "Glassworks", 
-                        3 => "Wagons", 
-                        4 => "Cloth Mills", 
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                3 => {
-                    match random_choice % 3 {
-                        0 => "Apothecary's Workshop", 
-                        1 => "Basic Industry", 
-                        2 => "Hired Mercenaries", 
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                4 => {
-                    match random_choice % 2 {
-                        0 => "Modern Artificers",
-                        1 => "Modern Soldiers", 
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                5 => "Modern Comforts",
-                _ => panic!("gen_random_building tried to generate a building of tier {:?}", tier)
-            }
+        BuildingType::Generic => match tier {
+            1 => match random_choice % 5 {
+                0 => "Standard Farms",
+                1 => "Standard Mines",
+                2 => "Quarry",
+                3 => "Forestry Site",
+                4 => "Workers",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            2 => match random_choice % 5 {
+                0 => "Educated Workers",
+                1 => "Well",
+                2 => "Glassworks",
+                3 => "Wagons",
+                4 => "Cloth Mills",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            3 => match random_choice % 3 {
+                0 => "Apothecary's Workshop",
+                1 => "Basic Industry",
+                2 => "Hired Mercenaries",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            4 => match random_choice % 2 {
+                0 => "Modern Artificers",
+                1 => "Modern Soldiers",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            5 => "Modern Comforts",
+            _ => panic!(
+                "gen_random_building tried to generate a building of tier {:?}",
+                tier
+            ),
+        },
+        _ => {
+            panic!("fucky wucky code in gen_random_building.")
         }
-        _ => {panic!("fucky wucky code in gen_random_building.")}
     };
 
     result.to_string()

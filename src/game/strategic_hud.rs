@@ -15,7 +15,7 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(Component)]
-struct PopUpItem;
+pub struct PopUpItem;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 pub enum PopupHUD {
@@ -84,7 +84,7 @@ fn popup_button(
     }
 }
 
-fn popup_window(commands: &mut Commands, row_align: bool) -> Entity {
+fn popup_window(commands: &mut Commands, direction: FlexDirection) -> Entity {
     commands.spawn((
         ZIndex(1),
         PopUpItem,
@@ -107,10 +107,7 @@ fn popup_window(commands: &mut Commands, row_align: bool) -> Entity {
                 align_items: AlignItems::Stretch,
                 justify_content: JustifyContent::FlexStart,
                 display: Display::Flex,
-                flex_direction: match row_align {
-                    true => FlexDirection::Row,
-                    false => FlexDirection::ColumnReverse,
-                },
+                flex_direction: direction,
                 border: UiRect::all(Val::Px(2.0)),
                 ..default()
             },
@@ -135,7 +132,7 @@ fn popup_window(commands: &mut Commands, row_align: bool) -> Entity {
 }
 
 fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
-    let window = popup_window(&mut commands, false);
+    let window = popup_window(&mut commands, FlexDirection::ColumnReverse);
     let population = city.0.population + 1;
     for tiers in 1..population {
         commands.entity(window).with_children(|parent| {
@@ -223,7 +220,7 @@ fn caravan_menu(
     mut selected_caravan: ResMut<super::strategic_map::SelectedCaravan>,
 ) {
     let selected_caravan = selected_caravan.0.clone();
-    let window = popup_window(&mut commands, false);
+    let window = popup_window(&mut commands, FlexDirection::Column);
 
     commands.entity(window).with_children(|parent| {
         parent.spawn((
@@ -250,22 +247,50 @@ fn caravan_menu(
                 }),
             )
             .with_children(|parent| {
-                for _ in 0..5 {
-                    parent.spawn((
-                        Node {
-                            width: px(32),
-                            height: px(32),
-                            ..default()
-                        },
-                        BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
-                    ));
+                for _ in selected_caravan.orders {
+                    parent
+                        .spawn((
+                            Node {
+                                width: percent(100),
+                                height: px(64),
+                                margin: UiRect::all(px(4)),
+                                flex_direction: FlexDirection::Row,
+                                ..default()
+                            },
+                            BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
+                        ))
+                        .with_children(|parent| {
+                            for _ in 0..5 {
+                                parent.spawn((
+                                    Node {
+                                        width: px(60),
+                                        height: px(60),
+                                        margin: UiRect::all(px(4)),
+                                        ..default()
+                                    },
+                                    BackgroundColor(Srgba::new(0.1, 1.0, 0.1, 1.0).into()),
+                                ));
+                            }
+                        });
                 }
             });
+
+        parent.spawn((
+            Node {
+                width: percent(100),
+                height: px(64),
+                margin: UiRect::all(px(4)),
+                flex_direction: FlexDirection::Row,
+                ..default()
+            },
+            Text::new("New order"),
+            BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
+        ));
     });
 }
 
 fn wares_menu(mut commands: Commands, mut sylt: Sylt) {
-    let window = popup_window(&mut commands, true);
+    let window = popup_window(&mut commands, FlexDirection::Row);
 
     //Basic and exotic mats
     commands.entity(window).with_children(|parent| {
@@ -506,10 +531,14 @@ fn create_resource_icon(
     ));
 }
 
-fn city_hud_setup(mut commands: Commands, mut sylt: Sylt, selected_city: Res<SelectedCity>) {
+#[derive(Clone, Default, Eq, PartialEq, Hash, Component)]
+pub struct BottomBar;
+
+pub fn city_hud_setup(mut commands: Commands, mut sylt: Sylt, selected_city: ResMut<SelectedCity>) {
     let city = selected_city.0.clone();
     //Map quit upon click
     commands.spawn((
+        BottomBar,
         DespawnOnExit(StrategicState::HUDOpen),
         Node {
             top: Val::Vh(0.0),
@@ -523,6 +552,7 @@ fn city_hud_setup(mut commands: Commands, mut sylt: Sylt, selected_city: Res<Sel
 
     //Action menu
     commands.spawn((
+        BottomBar,
         DespawnOnExit(StrategicState::HUDOpen),
         Node {
             top: Val::Vh(70.0),
