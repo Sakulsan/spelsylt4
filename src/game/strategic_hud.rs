@@ -1,3 +1,4 @@
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
@@ -572,14 +573,20 @@ fn caravan_button(
                     window_state.set(StrategicState::DestinationPicker);
                 }
                 CaravanMenuButtons::AddTradeToStop(stop_name) => {
-                    //Hashmap here?
-                    selected_caravan
+                    let mut order = &mut selected_caravan
                         .orders
                         .iter_mut()
                         .find(|order| order.goal_city_id == *stop_name)
                         .expect(format!("Couldn't find city named {}", stop_name).as_str())
-                        .trade_order
-                        .insert(Resources::Food, 0);
+                        .trade_order;
+                    for resource in Resources::all_resources() {
+                        match order.entry(resource) {
+                            Entry::Occupied(_) => continue,
+                            Entry::Vacant(e) => {
+                                e.insert(0);
+                            }
+                        }
+                    }
                 }
                 CaravanMenuButtons::RemoveStop(stop_name) => {
                     selected_caravan
