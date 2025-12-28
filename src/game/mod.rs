@@ -22,4 +22,5 @@ pub(super) fn plugin(app: &mut App) {
     ));
     app.add_observer(market_updater);
     app.add_observer(caravan_updater);
+    app.add_observer(debt_collector);
 }

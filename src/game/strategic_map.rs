@@ -113,7 +113,7 @@ impl Caravan {
                         .insert(trade, amount_available + amount_sold);
                 }
             }
-
+            
             self.order_idx = (self.order_idx + 1) % self.orders.len();
         }
     }
