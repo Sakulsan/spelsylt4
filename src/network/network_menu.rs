@@ -45,9 +45,15 @@ pub fn plugin(app: &mut App) {
     .add_systems(Update, handle_events_system)
     .add_systems(
         Update,
-        (send_message_system, receive_message_system).run_if(resource_exists::<RenetClient>),
+        (send_message_system_client, receive_message_system_client)
+            .run_if(resource_exists::<RenetClient>),
     )
-    .add_observer(squad_up);
+    .add_observer(squad_up)
+    .add_systems(
+        Update,
+        (send_message_system_server, receive_message_system_server)
+            .run_if(resource_exists::<RenetServer>),
+    );
 }
 
 fn handle_events_system(mut server_events: MessageReader<ServerEvent>) {
@@ -243,14 +249,31 @@ fn squad_up(join: On<JoinEvent>, mut commands: Commands) {
     commands.insert_resource(transport);
 }
 
-fn send_message_system(mut client: ResMut<RenetClient>) {
+fn send_message_system_client(mut client: ResMut<RenetClient>) {
     // Send a text message to the server
     client.send_message(DefaultChannel::ReliableOrdered, "server message");
 }
 
-fn receive_message_system(mut client: ResMut<RenetClient>) {
+fn receive_message_system_client(mut client: ResMut<RenetClient>) {
     while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
         // Handle received message
+    }
+}
+
+fn send_message_system_server(mut server: ResMut<RenetServer>) {
+    let channel_id = 0;
+    // Send a text message for all clients
+    // The enum DefaultChannel describe the channels used by the default configuration
+    server.broadcast_message(DefaultChannel::ReliableOrdered, "server message");
+}
+
+fn receive_message_system_server(mut server: ResMut<RenetServer>) {
+    // Receive message from all clients
+    for client_id in server.clients_id() {
+        while let Some(message) = server.receive_message(client_id, DefaultChannel::ReliableOrdered)
+        {
+            // Handle received message
+        }
     }
 }
 
@@ -476,9 +499,6 @@ fn host_server(mut commands: Commands, field: Query<Entity, With<IPField>>) {
 
     let server_addr = SocketAddr::new(local_ip, 5000);
 
-    commands
-        .entity(field.single().unwrap())
-        .insert(Text(format!("Hosting server on: {}", server_addr)));
     let socket = UdpSocket::bind(server_addr).unwrap();
     let server_config = ServerConfig {
         current_time: SystemTime::now()
@@ -491,4 +511,7 @@ fn host_server(mut commands: Commands, field: Query<Entity, With<IPField>>) {
     };
     let transport = NetcodeServerTransport::new(server_config, socket).unwrap();
     commands.insert_resource(transport);
+    commands
+        .entity(field.single().unwrap())
+        .insert(Text(format!("Hosting server on: {}", server_addr)));
 }
