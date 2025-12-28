@@ -210,7 +210,7 @@ fn popup_window(commands: &mut Commands, direction: FlexDirection) -> Entity {
                 width: Val::Vw(90.0),
                 height: Val::Vh(90.0),
                 align_items: AlignItems::Stretch,
-                justify_content: JustifyContent::FlexStart,
+                justify_content: JustifyContent::Center,
                 display: Display::Flex,
                 flex_direction: direction,
                 border: UiRect::all(Val::Px(2.0)),
@@ -242,13 +242,13 @@ fn building_menu(
     building_table: Res<BuildinTable>,
 ) {
     let window = popup_window(&mut commands, FlexDirection::ColumnReverse);
-    let population = city.0.population + 1;
-    for tiers in 1..population {
-        commands.entity(window).with_children(|parent| {
+    commands.entity(window).with_children(|parent| {
+        let population = city.0.population + 1;
+        for tiers in 1..population {
             parent
                 .spawn((
                     Node {
-                        width: percent(100),
+                        width: percent(50),
                         height: percent(15),
                         align_items: AlignItems::Center,
                         justify_content: JustifyContent::Center,
@@ -256,7 +256,7 @@ fn building_menu(
                         ..default()
                     },
                     Text::new(format!("Tier {}", tiers)),
-                    BackgroundColor(Srgba::new(0.2, 0.2, 1.0, 1.0).into()),
+                    //BackgroundColor(Srgba::new(0.2, 0.2, 1.0, 1.0).into()),
                 ))
                 .with_children(|parent| {
                     for building_slot in 0..population - tiers {
@@ -417,8 +417,8 @@ fn building_menu(
                         }
                     }
                 });
-        });
-    }
+        }
+    });
 }
 
 #[derive(Component, Default, Clone, Debug)]

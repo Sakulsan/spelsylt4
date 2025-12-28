@@ -589,11 +589,13 @@ fn check_outline_button(
                 tab_state.set(PopupHUD::Caravan);
             }
             Interaction::Hovered => {
-                caravan_node.width = px(40.0);
+                caravan_node.width = px(60.0);
+                caravan_node.height = px(60.0);
                 *node_color = BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into())
             }
             Interaction::None => {
                 caravan_node.width = px(30.0);
+                caravan_node.height = px(30.0);
                 *node_color = BackgroundColor(Srgba::new(0.8, 0.1, 0.1, 1.0).into())
             }
         }
