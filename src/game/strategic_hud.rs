@@ -44,7 +44,9 @@ pub fn plugin(app: &mut App) {
         .add_systems(
             Update,
             update_caravan_menu.run_if(
-                any_match_filter::<Changed<Caravan>>.or(resource_changed::<SelectedCaravan>),
+                any_match_filter::<Changed<Caravan>>
+                    .or(resource_changed::<SelectedCaravan>)
+                    .or(state_changed::<PopupHUD>),
             ),
         )
         .add_systems(Update, update_caravan_order_idx)
@@ -377,6 +379,7 @@ enum CaravanMenuButtons {
 }
 
 fn caravan_menu(mut commands: Commands) {
+    info!("In caravan menu");
     let id = popup_window(&mut commands, FlexDirection::Column);
     commands.entity(id).with_children(|parent| {
         parent.spawn((
@@ -399,7 +402,8 @@ fn update_caravan_menu(
     caravans: Query<&Caravan>,
     mut commands: Commands,
 ) {
-    let Ok(selected_caravan) = caravans.get(selected_caravan.0) else {
+    info!("updating caravan menu");
+    let Ok(selected_caravan) = caravans.get(dbg!(selected_caravan.0)) else {
         error!("No selected caravan to display");
         return;
     };

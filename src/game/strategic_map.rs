@@ -35,7 +35,7 @@ pub struct BelongsTo(pub Entity);
 #[relationship_target(relationship = BelongsTo)]
 pub struct Owns(Vec<Entity>);
 
-#[derive(Resource)]
+#[derive(Resource, Deref, DerefMut)]
 pub struct SelectedCaravan(pub Entity);
 
 #[derive(Component, Clone, Default, Eq, PartialEq, Debug)]
@@ -160,7 +160,7 @@ pub fn plugin(app: &mut App) {
     )
     .add_systems(
         Update,
-        (update_ui_nodes, update_miku_cat).run_if(in_state(GameState::Game)),
+        (update_ui_nodes, update_miku_cat, open_miku_cat).run_if(in_state(GameState::Game)),
     )
     .add_observer(Caravan::update_orders);
 }
@@ -175,6 +175,21 @@ pub enum StrategicState {
 
 #[derive(Component)]
 struct MikuCaravanSlot(String);
+
+fn open_miku_cat(
+    interactions: Query<(Entity, &Interaction, &Caravan), (With<Caravan>, Changed<Interaction>)>,
+    mut sel: ResMut<SelectedCaravan>,
+    mut state: ResMut<NextState<PopupHUD>>,
+) {
+    for (ent, interaction, caravan) in interactions {
+        if *interaction == Interaction::Pressed {
+            **sel = ent;
+            info!("Selecting {:?}", ent);
+            info!("caravan: {:?}", caravan);
+            state.set(PopupHUD::Caravan);
+        }
+    }
+}
 
 fn update_miku_cat(
     mut commands: Commands,
@@ -193,6 +208,7 @@ fn update_miku_cat(
         };
 
         commands.entity(c_ent).insert((
+            Button,
             ChildOf(city),
             Node {
                 width: px(30.0),
@@ -380,6 +396,7 @@ fn spawn_city_ui_nodes(
                 flex_wrap: FlexWrap::NoWrap,
                 height: px(30.0),
                 width: px(400.0),
+                column_gap: px(10.0),
                 ..default()
             },
             MikuCaravanSlot(city_data.id.clone()),
@@ -544,20 +561,26 @@ fn check_outline_button(
         (&Interaction, &mut BackgroundColor, &mut CaravanHudItem),
         Changed<Interaction>,
     >,
-
+    mut caravans: Query<&mut Node, With<Caravan>>,
     mut tab_state: ResMut<NextState<PopupHUD>>,
     mut next_caravan: ResMut<SelectedCaravan>,
 ) {
     for (interaction, mut node_color, caravan_data) in interaction_query.iter_mut() {
+        let mut caravan_node = caravans.get_mut(caravan_data.0).unwrap();
+
         match *interaction {
             Interaction::Pressed => {
                 next_caravan.0 = caravan_data.0;
                 tab_state.set(PopupHUD::Caravan);
             }
             Interaction::Hovered => {
+                caravan_node.width = px(40.0);
                 *node_color = BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into())
             }
-            _ => *node_color = BackgroundColor(Srgba::new(0.8, 0.1, 0.1, 1.0).into()),
+            Interaction::None => {
+                caravan_node.width = px(30.0);
+                *node_color = BackgroundColor(Srgba::new(0.8, 0.1, 0.1, 1.0).into())
+            }
         }
     }
 }
