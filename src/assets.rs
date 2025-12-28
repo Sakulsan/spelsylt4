@@ -34,18 +34,18 @@ impl LoadedAssetMap {
     }
 }
 
-impl Into<AssetMap> for LoadedAssetMap {
-    fn into(self) -> AssetMap {
+impl From<LoadedAssetMap> for AssetMap {
+    fn from(val: LoadedAssetMap) -> Self {
         AssetMap {
-            assets: self.assets.into_values().collect(),
+            assets: val.assets.into_values().collect(),
         }
     }
 }
 
-impl Into<LoadedAssetMap> for AssetMap {
-    fn into(self) -> LoadedAssetMap {
+impl From<AssetMap> for LoadedAssetMap {
+    fn from(val: AssetMap) -> Self {
         LoadedAssetMap {
-            assets: self
+            assets: val
                 .assets
                 .into_iter()
                 .map(|x| (x.name.clone(), x))
@@ -143,11 +143,12 @@ impl<'w> Sylt<'w> {
     }
 
     pub fn get_sprite(&mut self, name: &str) -> Sprite {
-        let conf = self
-            .asset_map
-            .assets
-            .get_mut(name)
-            .expect("This asset hasn't been defined in the map yet!");
+        let Some(conf) = self.asset_map.assets.get_mut(name) else {
+            return Sprite {
+                image: self.error_tex.0.clone(),
+                ..Default::default()
+            };
+        };
         let AssetConfig {
             name: _,
             path,
@@ -158,13 +159,10 @@ impl<'w> Sylt<'w> {
         if let Some(handle) = image_handle {
             Sprite {
                 image: handle.clone(),
-                texture_atlas: match atlas_handle {
-                    Some(handle) => Some(TextureAtlas {
-                        layout: handle.clone(),
-                        index: 0,
-                    }),
-                    _ => None,
-                },
+                texture_atlas: atlas_handle.as_mut().map(|handle| TextureAtlas {
+                    layout: handle.clone(),
+                    index: 0,
+                }),
                 ..Default::default()
             }
         } else if let Some(path) = path {
@@ -188,13 +186,10 @@ impl<'w> Sylt<'w> {
 
             Sprite {
                 image: handle,
-                texture_atlas: match atlas_handle {
-                    Some(handle) => Some(TextureAtlas {
-                        layout: handle.clone(),
-                        index: 0,
-                    }),
-                    _ => None,
-                },
+                texture_atlas: atlas_handle.as_mut().map(|handle| TextureAtlas {
+                    layout: handle.clone(),
+                    index: 0,
+                }),
                 ..Default::default()
             }
         } else {

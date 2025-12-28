@@ -1,10 +1,13 @@
+use super::city_data::*;
 use super::strategic_hud::PopupHUD;
+use super::turn::TurnEnd;
+use crate::game::city_graph::{get_path, CityGraph, Node as CityNode};
 use crate::game::market;
 use crate::prelude::*;
 
 use super::market::*;
 use crate::GameState;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
 
@@ -14,49 +17,137 @@ use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
 pub struct SelectedCity(pub CityData);
 
 #[derive(Resource, Deref, Debug)]
-pub struct BuildinTable(HashMap<String, Building>);
+pub struct BuildinTable(pub HashMap<String, Building>);
 
-#[derive(Resource, Default)]
-pub struct PlayerStats {
-    pub caravans: Vec<Caravan>,
-    pub money: isize,
+#[derive(Component, Default)]
+pub struct Player {
+    pub money: f64,
 }
 
-#[derive(Resource)]
-pub struct SelectedCaravan(pub Caravan);
+#[derive(Component, Default)]
+pub struct ActivePlayer;
 
-#[derive(Clone, Default, Eq, PartialEq, Debug, Hash)]
+#[derive(Component, Debug)]
+#[relationship(relationship_target = Owns)]
+pub struct BelongsTo(pub Entity);
+
+#[derive(Component, Debug)]
+#[relationship_target(relationship = BelongsTo)]
+pub struct Owns(Vec<Entity>);
+
+#[derive(Resource, Deref, DerefMut)]
+pub struct SelectedCaravan(pub Entity);
+
+#[derive(Component, Clone, Default, Eq, PartialEq, Debug)]
 pub struct Caravan {
     pub orders: Vec<Order>,
+    pub order_idx: usize,
+    pub time_travelled: usize,
     pub position_city_id: String,
     pub cargo: Vec<(Resources, usize)>,
 }
 
-#[derive(Clone, Default, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Default, Eq, PartialEq, Debug)]
 pub struct Order {
-    goal_city_id: String,
-    trade_order: Vec<(Resources, isize)>,
+    pub goal_city_id: String,
+    pub trade_order: BTreeMap<Resources, isize>,
+}
+
+impl Caravan {
+    pub fn update_orders(
+        _: On<TurnEnd>,
+        players: Query<(&mut Player, &Owns)>,
+        mut caravans: Query<&mut Caravan>,
+        city: Res<CityGraph>,
+        mut nodes: Query<(&CityNode, &mut CityData)>,
+        building_table: Res<BuildinTable>,
+    ) {
+        for (mut player, owned_entities) in players {
+            for ent in owned_entities.collection() {
+                let Ok(mut caravan) = caravans.get_mut(*ent) else {
+                    continue;
+                };
+                if caravan.orders.len() == 0 {
+                    return;
+                }
+                let city_by_id = |id| {
+                    nodes
+                        .iter()
+                        .find(|(_, city)| &city.id == id)
+                        .unwrap_or_else(|| panic!("Attempted to get nonexistent city {id}"))
+                };
+                let current_node = city_by_id(&caravan.position_city_id);
+                let next_node = city_by_id(&caravan.orders[caravan.order_idx].goal_city_id);
+                let (_, path) = get_path(&city, current_node.0 .0, next_node.0 .0);
+                let mut current_city = nodes
+                    .get_mut(path[0])
+                    .expect("failed to get a path in order updater????");
+                if path.len() > 1 {
+                    current_city = nodes
+                        .get_mut(path[1])
+                        .expect("Caravan travelling to a city that doesnt exist");
+                    caravan.position_city_id = current_city.1.id.to_string();
+                    info!("Caravan travels to {0:?}", current_city.1.id.to_string());
+                }
+                info!("Caravan wants to get to {0:?}", caravan.orders[caravan.order_idx].goal_city_id);
+                if caravan.orders[caravan.order_idx].goal_city_id == current_city.1.id {
+                    let available_commodies = current_city.1.available_commodities(&building_table);
+                    for (trade, amount) in caravan.orders[caravan.order_idx].trade_order.clone() {
+                        if amount > 0 && available_commodies.contains(&trade) {
+                            let amount_available = current_city.1.market[&trade];
+                            let amount_bought = amount.abs().min(amount_available);
+                            let price = current_city
+                                .1
+                                .get_bulk_buy_price(&trade, amount_bought as usize);
+                            player.money -= price;
+                            current_city
+                                .1
+                                .market
+                                .insert(trade, amount_available - amount_bought);
+                        }
+                        if amount > 0 {
+                            let amount_available = current_city.1.market[&trade];
+                            let amount_sold = amount.abs();
+                            let price = current_city
+                                .1
+                                .get_bulk_sell_price(&trade, amount_sold as usize);
+                            player.money += price;
+                            current_city
+                                .1
+                                .market
+                                .insert(trade, amount_available + amount_sold);
+                        }
+                    }
+
+                    info!("Caravan finished trading, new goal is {0:?}", caravan.orders[(caravan.order_idx + 1) % caravan.orders.len()].goal_city_id);
+                    caravan.order_idx = (caravan.order_idx + 1) % caravan.orders.len();
+                }
+            }
+        }
+    }
 }
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
         OnEnter(GameState::Game),
-        (crate::kill_music, spawn_map_sprite, spawn_city_ui_nodes),
+        (
+            crate::kill_music,
+            spawn_map_sprite,
+            spawn_city_ui_nodes,
+            spawn_player,
+        ),
     )
     .insert_resource(SelectedCity(CityData {
         id: "Placeholder".to_string(),
         ..default()
     }))
-    .insert_resource(PlayerStats {
-        money: 5000,
-        ..default()
-    })
-    .insert_resource(SelectedCaravan(Caravan { ..default() }))
+    .insert_resource(SelectedCaravan(Entity::PLACEHOLDER))
     .insert_resource(BuildinTable(super::market::gen_building_tables()))
     .init_state::<StrategicState>()
     .add_systems(
         Update,
-        (update_caravan_hud).run_if(resource_changed::<PlayerStats>),
+        update_caravan_outliner
+            .run_if(any_match_filter::<Changed<Caravan>>.or(resource_changed::<SelectedCaravan>)),
     )
     .add_systems(
         Update,
@@ -67,7 +158,11 @@ pub fn plugin(app: &mut App) {
         )
             .run_if(in_state(PopupHUD::Off)),
     )
-    .add_systems(Update, update_ui_nodes.run_if(in_state(GameState::Game)));
+    .add_systems(
+        Update,
+        (update_ui_nodes, update_miku_cat, open_miku_cat).run_if(in_state(GameState::Game)),
+    )
+    .add_observer(Caravan::update_orders);
 }
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -75,6 +170,57 @@ pub enum StrategicState {
     #[default]
     Map,
     HUDOpen,
+    DestinationPicker,
+}
+
+#[derive(Component)]
+struct MikuCaravanSlot(String);
+
+fn open_miku_cat(
+    interactions: Query<(Entity, &Interaction, &Caravan), (With<Caravan>, Changed<Interaction>)>,
+    mut sel: ResMut<SelectedCaravan>,
+    mut state: ResMut<NextState<PopupHUD>>,
+) {
+    for (ent, interaction, caravan) in interactions {
+        if *interaction == Interaction::Pressed {
+            **sel = ent;
+            info!("Selecting {:?}", ent);
+            info!("caravan: {:?}", caravan);
+            state.set(PopupHUD::Caravan);
+        }
+    }
+}
+
+fn update_miku_cat(
+    mut commands: Commands,
+    caravans: Query<(Entity, &Caravan), Changed<Caravan>>,
+    cities: Query<(Entity, &MikuCaravanSlot)>,
+    mut sylt: Sylt,
+) {
+    let image = sylt.get_image("lmao3");
+
+    for (c_ent, caravan) in caravans {
+        let Some((city, _)) = cities
+            .iter()
+            .find(|(_, data)| data.0 == caravan.position_city_id)
+        else {
+            continue;
+        };
+
+        commands.entity(c_ent).insert((
+            Button,
+            ChildOf(city),
+            Node {
+                width: px(30.0),
+                ..default()
+            },
+            ImageNode::new(image.clone()),
+        ));
+    }
+}
+
+fn spawn_player(mut commands: Commands) {
+    commands.spawn((Player { money: 5000.0 }, ActivePlayer));
 }
 
 fn spawn_map_sprite(mut commands: Commands, mut sylt: Sylt) {
@@ -140,18 +286,26 @@ fn spawn_map_sprite(mut commands: Commands, mut sylt: Sylt) {
     ));
 }
 
-fn update_caravan_hud(
+fn update_caravan_outliner(
     caravan_box: Query<Entity, With<CaravanHudEntity>>,
-    stats: Res<PlayerStats>,
+    player: Option<Single<Entity, With<ActivePlayer>>>,
+    caravans: Query<(Entity, &Caravan, &BelongsTo)>,
     mut commands: Commands,
 ) {
+    let Some(player) = player.map(|x| x.into_inner()) else {
+        error!("No active player");
+        return;
+    };
     for caravan_box in caravan_box.iter() {
         commands.entity(caravan_box).despawn_children();
         commands.entity(caravan_box).with_children(|parent| {
-            for caravan in stats.caravans.iter() {
+            for (ent, caravan, owner) in caravans {
+                if owner.0 != player {
+                    continue;
+                }
                 parent.spawn((
                     Button,
-                    CaravanHudItem(caravan.clone()),
+                    CaravanHudItem(ent),
                     Node {
                         width: vw(20),
                         height: px(32),
@@ -171,73 +325,108 @@ fn update_caravan_hud(
     }
 }
 
-use super::city_graph::Node as CityNode;
 use super::tooltip::Tooltips;
+
+#[derive(Component)]
+pub struct CityNodeMarker(pub(crate) Entity);
+#[derive(Component)]
+pub struct CityImageMarker;
+
 fn spawn_city_ui_nodes(
     mut commands: Commands,
-    graph_nodes: Query<(Entity, &CityNode, &super::city_graph::CityTypeComponent)>,
+    graph_nodes: Query<(Entity, &CityNode, &CityData)>,
     mut sylt: Sylt,
     mut rng: ResMut<GlobalRng>,
 ) {
     for (ent, node, city_data) in graph_nodes {
-        let capitals = vec!("Great Lancastershire",
-                                        //"Jewel of All Creation", These capitals aren't represented on the map  yet.
-                                        //"Terez-e-Palaz",
-                                        "Tevet Pekhep Dered");
+        let capitals = vec![
+            "Great Lancastershire",
+            //"Jewel of All Creation", These capitals aren't represented on the map yet.
+            //"Terez-e-Palaz",
+            "Tevet Pekhep Dered",
+        ];
         let mut image = ImageNode::new(sylt.get_image("town_ui_icon"));
         let mut background = BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 0.3).into());
-        let city_descriptor = match city_data.0.population {
-            0..3 => format!("{:?} town", city_data.0.race),
-            3..6 => format!("{:?} city", city_data.0.race),
-            _ => format!("GREAT AREA OF {:?} (error in tooltip code btw)", city_data.0.race),
+        let city_descriptor = match city_data.population {
+            0..3 => format!("{:?} town", city_data.race),
+            3..6 => format!("{:?} city", city_data.race),
+            _ => format!(
+                "GREAT AREA OF {:?} (error in tooltip code btw)",
+                city_data.race
+            ),
         };
-        if capitals.contains(&city_data.0.id.as_str()) {
+        if capitals.contains(&city_data.id.as_str()) {
             image.color.set_alpha(0.0);
             background.0.set_alpha(0.0);
         }
-        commands.entity(ent).insert(AnchoredUiNodes::spawn_one((
-            AnchorUiConfig {
-                anchorpoint: AnchorPoint::middle(),
-                ..default()
-            },
+
+        let text_node = |text: String| {
+            (
+                Text::new(text),
+                TextLayout::new_with_justify(Justify::Center),
+                Node { ..default() },
+                BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
+            )
+        };
+
+        let city_ui_node = (
             Button,
-            city_data.0.clone(),
-            Transform::from_xyz(0., 0.0, 1.0),
             Node {
                 width: px(32),
                 height: px(32),
                 ..default()
             },
+            AnchorUiConfig {
+                anchorpoint: AnchorPoint::middle(),
+                ..default()
+            },
+            CityImageMarker,
             image,
             background,
+        );
+
+        let miku_slot = (
+            AnchorUiConfig {
+                anchorpoint: AnchorPoint::bottomleft(),
+                offset: Some(Vec3::new(10.0, 10.0, 0.0)),
+                ..default()
+            },
+            Node {
+                flex_direction: FlexDirection::Row,
+                flex_wrap: FlexWrap::NoWrap,
+                height: px(30.0),
+                width: px(400.0),
+                column_gap: px(10.0),
+                ..default()
+            },
+            MikuCaravanSlot(city_data.id.clone()),
+        );
+
+        let clickable_node = (
+            AnchorUiConfig {
+                anchorpoint: AnchorPoint::middle(),
+                ..default()
+            },
+            Button,
+            CityNodeMarker(ent),
+            Node {
+                width: px(32),
+                height: px(32),
+                ..default()
+            },
+            BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 0.5).into()),
             related!(
-                Tooltips[(
-                    Text::new(city_data.0.id.clone()),
-                    TextShadow::default(),
-                    // Set the justification of the Text
-                    TextLayout::new_with_justify(Justify::Center),
-                    // Set the style of the Node itself.
-                    Node { ..default() },
-                    BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
-                ),
-                (
-                    Text::new(format!("Tier: {}", city_data.0.population)),
-                    TextShadow::default(),
-                    // Set the justification of the Text
-                    TextLayout::new_with_justify(Justify::Center),
-                    // Set the style of the Node itself.
-                    Node { ..default() }
-                ),
-                (
-                    Text::new(city_descriptor),
-                    TextShadow::default(),
-                    // Set the justification of the Text
-                    TextLayout::new_with_justify(Justify::Center),
-                    // Set the style of the Node itself.
-                    Node { ..default() }
-                )]
+                Tooltips[
+                    text_node(city_data.id.clone()),
+                    text_node(format!("Tier: {}", city_data.population)),
+                    text_node(city_descriptor),
+                ]
             ),
-        )));
+        );
+
+        commands
+            .entity(ent)
+            .insert(related!(AnchoredUiNodes[miku_slot, city_ui_node, clickable_node]));
     }
 }
 
@@ -279,193 +468,8 @@ struct TurnButton {}
 
 #[derive(Component, Default, Clone, Debug)]
 struct CaravanHudEntity {}
-#[derive(Component, Default, Clone, Debug)]
-struct CaravanHudItem(Caravan);
-
-#[derive(Component, Default, Clone, Debug)]
-pub struct CityData {
-    pub id: String,
-    pub race: BuildingType,
-    pub population: u8,
-    pub buildings_t1: Vec<(String, Faction)>,
-    pub buildings_t2: Vec<(String, Faction)>,
-    pub buildings_t3: Vec<(String, Faction)>,
-    pub buildings_t4: Vec<(String, Faction)>,
-    pub buildings_t5: Vec<(String, Faction)>,
-    pub market: HashMap<Resources, isize>,
-    pub tier_up_counter: u8,
-}
-
-impl CityData {
-    pub fn new(race: BuildingType, tier: u8, mut rng: &mut ResMut<GlobalRng>) -> CityData {
-        let buildings_per_tier = match tier {
-            1 => (1, 0, 0, 0, 0),
-            2 => (1, 1, 0, 0, 0),
-            3 => (2, 1, 1, 0, 0),
-            4 => (2, 2, 1, 1, 0),
-            5 => (3, 2, 2, 1, 1),
-            _ => {
-                panic!("Tried to generate a city of tier {:?}", tier)
-            }
-        };
-        let (mut t1, mut t2, mut t3, mut t4, mut t5) = (vec![], vec![], vec![], vec![], vec![]);
-
-        for i in 0..buildings_per_tier.0 {
-            t1.push((
-                (market::gen_random_building(1, &mut rng, race)),
-                Faction::Neutral,
-            ));
-        }
-
-        for i in 0..buildings_per_tier.1 {
-            t2.push((
-                (market::gen_random_building(2, &mut rng, race)),
-                Faction::Neutral,
-            ));
-        }
-
-        for i in 0..buildings_per_tier.2 {
-            t3.push((
-                (market::gen_random_building(3, &mut rng, race)),
-                Faction::Neutral,
-            ));
-        }
-
-        for i in 0..buildings_per_tier.3 {
-            t4.push((
-                (market::gen_random_building(4, &mut rng, race)),
-                Faction::Neutral,
-            ));
-        }
-
-        for i in 0..buildings_per_tier.4 {
-            t5.push((
-                (market::gen_random_building(5, &mut rng, race)),
-                Faction::Neutral,
-            ));
-        }
-
-        let mut market = HashMap::new();
-        for res in Resources::all_resources() {
-            market.insert(res, 0);
-        }
-
-        CityData {
-            id: super::namelists::generate_city_name(race, &mut rng),
-            race: race,
-            population: tier,
-            buildings_t1: t1,
-            buildings_t2: t2,
-            buildings_t3: t3,
-            buildings_t4: t4,
-            buildings_t5: t5,
-            market: market,
-            tier_up_counter: 0
-        }
-    }
-
-    pub fn update_market(&mut self, building_table: &Res<BuildinTable>) {
-        macro_rules! update_market_over_buildings {
-            ($list:expr) => {
-                for b in &$list {
-                    println!("{:?}", b);
-                    if b.1 != Faction::Neutral { continue; }
-                    for (res, amount) in &building_table.0.get(&b.0).expect(format!("Couldn't retrieve value for {:?}", &b.0).as_str()).input {
-                        self.market.insert(*res, self.market[&res] - amount);
-                    }
-                    for (res, amount) in &building_table.0.get(&b.0).expect(format!("Couldn't retrieve value for {:?}", &b.0).as_str()).output {
-                        self.market.insert(*res, self.market[&res] + amount);
-                    }
-                }
-            };
-        }
-
-        update_market_over_buildings!(self.buildings_t1);
-        update_market_over_buildings!(self.buildings_t2);
-        update_market_over_buildings!(self.buildings_t3);
-        update_market_over_buildings!(self.buildings_t4);
-        update_market_over_buildings!(self.buildings_t5);
-
-        let match_condition = self.population;
-
-        let mut tier_up = |condition: bool| {
-            if condition {
-                if self.tier_up_counter == 5 {
-                    self.tier_up_counter = 0;
-                    self.population += 1;
-                } else {
-                    self.tier_up_counter += 1;
-                }
-            } else {
-                self.tier_up_counter = 0;
-            }
-        };
-
-        match match_condition {
-            1 => {
-                tier_up(self.market.insert(Resources::Food, self.market[&Resources::Food] - 5).expect("error in city market") - 5 >= 0 &&
-                self.market.insert(Resources::Water, self.market[&Resources::Water] - 3).expect("error in city market") - 3 >= 0 &&
-                self.market.insert(Resources::Lumber, self.market[&Resources::Lumber] - 2).expect("error in city market") - 2 >= 0);
-                self.market.insert(Resources::SimpleLabour, self.market[&Resources::SimpleLabour] + 5);
-            },
-            2 => {
-                tier_up(self.market.insert(Resources::Food, self.market[&Resources::Food] - 15).expect("error in city market") - 15 >= 0 &&
-                self.market.insert(Resources::Water, self.market[&Resources::Water] - 10).expect("error in city market") - 10 >= 0 &&
-                self.market.insert(Resources::Lumber, self.market[&Resources::Lumber] - 5).expect("error in city market") - 5 >= 0 &&
-                self.market.insert(Resources::Stone, self.market[&Resources::Stone] - 3).expect("error in city market") - 3 >= 0 &&
-                self.market.insert(Resources::Glass, self.market[&Resources::Glass] - 3).expect("error in city market") - 3 >= 0 &&
-                self.market.insert(Resources::Textiles, self.market[&Resources::Textiles] - 3).expect("error in city market") - 3 >= 0);
-                self.market.insert(Resources::SimpleLabour, self.market[&Resources::SimpleLabour] + 20);
-                self.market.insert(Resources::ComplexLabour, self.market[&Resources::ComplexLabour] + 5);
-            },
-            3 => {
-                tier_up(self.market.insert(Resources::Food, self.market[&Resources::Food] - 20).expect("error in city market") - 20 >= 0 &&
-                self.market.insert(Resources::Water, self.market[&Resources::Water] - 15).expect("error in city market") - 15 >= 0 &&
-                self.market.insert(Resources::Lumber, self.market[&Resources::Lumber] - 10).expect("error in city market") - 10 >= 0 &&
-                self.market.insert(Resources::Stone, self.market[&Resources::Stone] - 6).expect("error in city market") - 6 >= 0 &&
-                self.market.insert(Resources::Glass, self.market[&Resources::Glass] - 6).expect("error in city market") - 6 >= 0 &&
-                self.market.insert(Resources::Textiles, self.market[&Resources::Textiles] - 6).expect("error in city market") - 6 >= 0 &&
-                self.market.insert(Resources::Medicines, self.market[&Resources::Medicines] - 3).expect("error in city market") - 3 >= 0 &&
-                self.market.insert(Resources::ManufacturedGoods, self.market[&Resources::ManufacturedGoods] - 3).expect("error in city market") - 3 >= 0 &&
-                self.market.insert(Resources::Luxuries, self.market[&Resources::Luxuries] - 15).expect("error in city market") - 15 >= 0 &&
-                self.market.insert(Resources::Transportation, self.market[&Resources::Transportation] - 15).expect("error in city market") - 15 >= 0);
-                self.market.insert(Resources::SimpleLabour, self.market[&Resources::SimpleLabour] + 45);
-                self.market.insert(Resources::ComplexLabour, self.market[&Resources::ComplexLabour] + 20);
-            },
-            4 => {
-                tier_up(self.market.insert(Resources::Food, self.market[&Resources::Food] - 50).expect("error in city market") - 50 >= 0 &&
-                self.market.insert(Resources::Water, self.market[&Resources::Water] - 30).expect("error in city market") - 30 >= 0 &&
-                self.market.insert(Resources::Lumber, self.market[&Resources::Lumber] - 20).expect("error in city market") - 20 >= 0 &&
-                self.market.insert(Resources::Stone, self.market[&Resources::Stone] - 15).expect("error in city market") - 15 >= 0 &&
-                self.market.insert(Resources::Glass, self.market[&Resources::Glass] - 15).expect("error in city market") - 15 >= 0 &&
-                self.market.insert(Resources::Textiles, self.market[&Resources::Textiles] - 15).expect("error in city market") - 15 >= 0 &&
-                self.market.insert(Resources::Medicines, self.market[&Resources::Medicines] - 10).expect("error in city market") - 10 >= 0 &&
-                self.market.insert(Resources::ManufacturedGoods, self.market[&Resources::ManufacturedGoods] - 10).expect("error in city market") - 10 >= 0 &&
-                self.market.insert(Resources::Luxuries, self.market[&Resources::Luxuries] - 25).expect("error in city market") - 25 >= 0 &&
-                self.market.insert(Resources::Transportation, self.market[&Resources::Transportation] - 25).expect("error in city market") - 25 >= 0 &&
-                self.market.insert(Resources::Military, self.market[&Resources::Military] - 15).expect("error in city market") - 15 >= 0);
-                self.market.insert(Resources::SimpleLabour, self.market[&Resources::SimpleLabour] + 80);
-                self.market.insert(Resources::ComplexLabour, self.market[&Resources::ComplexLabour] + 45);
-            },
-            5 => {
-                self.market.insert(Resources::Food, self.market[&Resources::Food] - 100);
-                self.market.insert(Resources::Water, self.market[&Resources::Water] - 50);
-                self.market.insert(Resources::Lumber, self.market[&Resources::Lumber] - 40);
-                self.market.insert(Resources::Stone, self.market[&Resources::Stone] - 30);
-                self.market.insert(Resources::Glass, self.market[&Resources::Glass] - 30);
-                self.market.insert(Resources::Textiles, self.market[&Resources::Textiles] - 20);
-                self.market.insert(Resources::Medicines, self.market[&Resources::Medicines] - 20);
-                self.market.insert(Resources::ManufacturedGoods, self.market[&Resources::ManufacturedGoods] - 20);
-                self.market.insert(Resources::Luxuries, self.market[&Resources::Luxuries] - 60);
-                self.market.insert(Resources::Transportation, self.market[&Resources::Transportation] - 60);
-                self.market.insert(Resources::Military, self.market[&Resources::Military] - 50);
-                self.market.insert(Resources::SimpleLabour, self.market[&Resources::SimpleLabour] + 125);
-                self.market.insert(Resources::ComplexLabour, self.market[&Resources::ComplexLabour] + 80);
-            }
-            _ => { panic!("Tried to update markets on a city of tier {:?}", self.population) }
-        }
-    }
-}
+#[derive(Component, Clone, Debug)]
+struct CaravanHudItem(Entity);
 
 //#[derive(Component)]
 //struct Market {
@@ -474,7 +478,8 @@ impl CityData {
 //}
 
 fn city_interaction_system(
-    mut interaction_query: Query<(&Interaction, &CityData), Changed<Interaction>>,
+    mut interaction_query: Query<(&Interaction, &CityNodeMarker), Changed<Interaction>>,
+    mut city_data: Query<&CityData>,
     //ui_entities: Query<Entity, With<super::strategic_hud::PopUpItem>>,
     mut menu_state: ResMut<NextState<StrategicState>>,
     mut selected_city: ResMut<SelectedCity>,
@@ -482,7 +487,11 @@ fn city_interaction_system(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
 ) {
-    for (interaction, city) in &mut interaction_query {
+    for (interaction, city_id) in &mut interaction_query {
+        let Ok(city) = city_data.get(city_id.0) else {
+            continue;
+        };
+
         match *interaction {
             Interaction::Pressed => {
                 println!("Pressed the city {}", city.id);
@@ -536,7 +545,7 @@ fn check_turn_button(
         match *interaction {
             Interaction::Pressed => {
                 println!("New turn");
-                commands.trigger(super::turn::TurnEnd);
+                commands.trigger(TurnEnd);
             }
             Interaction::Hovered => {
                 *node_color = BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into())
@@ -552,21 +561,26 @@ fn check_outline_button(
         (&Interaction, &mut BackgroundColor, &mut CaravanHudItem),
         Changed<Interaction>,
     >,
-
+    mut caravans: Query<&mut Node, With<Caravan>>,
     mut tab_state: ResMut<NextState<PopupHUD>>,
     mut next_caravan: ResMut<SelectedCaravan>,
-    mut commands: Commands,
 ) {
     for (interaction, mut node_color, caravan_data) in interaction_query.iter_mut() {
+        let mut caravan_node = caravans.get_mut(caravan_data.0).unwrap();
+
         match *interaction {
             Interaction::Pressed => {
-                *next_caravan = SelectedCaravan(caravan_data.0.clone());
+                next_caravan.0 = caravan_data.0;
                 tab_state.set(PopupHUD::Caravan);
             }
             Interaction::Hovered => {
+                caravan_node.width = px(40.0);
                 *node_color = BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into())
             }
-            _ => *node_color = BackgroundColor(Srgba::new(0.8, 0.1, 0.1, 1.0).into()),
+            Interaction::None => {
+                caravan_node.width = px(30.0);
+                *node_color = BackgroundColor(Srgba::new(0.8, 0.1, 0.1, 1.0).into())
+            }
         }
     }
 }

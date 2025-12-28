@@ -2,17 +2,22 @@
 //! change some settings or quit. There is no actual game, it will just display the current
 //! settings for 5 seconds before going back to the menu.
 
+use crate::game::city_data::CityData;
 use crate::game::namelists::*;
+use crate::game::strategic_map::{CityImageMarker, CityNodeMarker};
+use crate::Val::Px;
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
 use bevy_ui_anchor::AnchorUiPlugin;
+use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use std::time::SystemTime;
 
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
 mod game;
+mod network;
 
 mod assets;
 mod prelude;
@@ -27,6 +32,16 @@ enum GameState {
     Splash,
     Menu,
     Game,
+    NetworkMenu,
+}
+
+// Enum that will be used as a global state for the game
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+enum NetworkState {
+    #[default]
+    SinglePlayer,
+    Client,
+    Host,
 }
 
 // One of the two settings that can be set through the menu. It will be a resource in the app
@@ -51,15 +66,6 @@ fn move_camera(
         return;
     };
 
-    let Ok(mut proj) = proj.single_mut() else {
-        error!("we have multiple cameras or something");
-        return;
-    };
-    let Projection::Orthographic(proj) = &mut *proj else {
-        error!("projection wasn't orthographic :(");
-        return;
-    };
-
     let c = &mut c.translation;
 
     let v = |x, y| Vec3::new(x, y, 0.0);
@@ -79,6 +85,21 @@ fn move_camera(
             *c += dir * if shift { 60.0 } else { 20.0 };
         }
     }
+}
+
+fn zoom_camera(keys: Res<ButtonInput<KeyCode>>, mut proj: Query<&mut Projection>) {
+    use KeyCode as K;
+
+    let Ok(mut proj) = proj.single_mut() else {
+        error!("we have multiple cameras or something");
+        return;
+    };
+    let Projection::Orthographic(proj) = &mut *proj else {
+        error!("projection wasn't orthographic :(");
+        return;
+    };
+
+    let shift = keys.pressed(K::ShiftLeft);
 
     if keys.pressed(K::KeyZ) {
         proj.scale += 0.05 * if shift { 3.0 } else { 1.0 };
@@ -87,6 +108,40 @@ fn move_camera(
     }
 
     proj.scale = 0.05f32.max(proj.scale);
+}
+
+fn scale_city_nodes(
+    proj: Query<&Projection>,
+    city_nodes: Query<&AnchoredUiNodes, With<CityData>>,
+    mut city_image_nodes: Query<(&mut Node, Option<&CityNodeMarker>, Option<&CityImageMarker>)>,
+) {
+    let Ok(proj) = proj.single() else {
+        error!("we have multiple cameras or something");
+        return;
+    };
+    let Projection::Orthographic(proj) = proj else {
+        error!("projection wasn't orthographic :(");
+        return;
+    };
+
+    let Vec2 { x: w, y: h } = Vec2::splat(16.0) / proj.scale;
+    //Might be a horrible perforer
+    for city in city_nodes {
+        for node in city.collection() {
+            let Ok((mut node, clickable, sprite)) = city_image_nodes.get_mut(*node) else {
+                error!("child wasn't real");
+                continue;
+            };
+
+            if sprite.is_some() {
+                node.width = px(w);
+                node.height = px(h);
+            } else if clickable.is_some() {
+                node.width = px(w.max(32.0));
+                node.height = px(h.max(32.0));
+            }
+        }
+    }
 }
 
 #[derive(Component)]
@@ -105,6 +160,7 @@ fn main() {
             menu::menu_plugin,
             game::plugin,
             assets::plugin,
+            network::plugin,
         ))
         // Insert as resource the initial value for the settings resources
         .insert_resource(DisplayQuality::Medium)
@@ -113,9 +169,18 @@ fn main() {
         .insert_resource(Volume(7))
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
-        .add_systems(Startup, debug_city_names)
+        .init_state::<NetworkState>()
+        //.add_systems(Startup, debug_city_names)
         .add_systems(Startup, setup)
-        .add_systems(Update, move_camera)
+        .add_systems(
+            Update,
+            (
+                move_camera,
+                zoom_camera,
+                scale_city_nodes.run_if(any_match_filter::<Changed<Projection>>),
+            )
+                .run_if(in_state(GameState::Game)),
+        )
         // Adds the plugins for each state
         .run();
 }
@@ -295,7 +360,8 @@ mod menu {
     // All actions that can be triggered from a button click
     #[derive(Component)]
     enum MenuButtonAction {
-        Play,
+        SinglePlayer,
+        Multiplayer,
         Settings,
         Credits,
         SettingsDisplay,
@@ -419,11 +485,25 @@ mod menu {
                         Button,
                         button_node.clone(),
                         BackgroundColor(NORMAL_BUTTON),
-                        MenuButtonAction::Play,
+                        MenuButtonAction::SinglePlayer,
                         children![
                             (ImageNode::new(right_icon), button_icon_node.clone()),
                             (
-                                Text::new("New Game"),
+                                Text::new("Singleplayer"),
+                                button_text_font.clone(),
+                                TextColor(TEXT_COLOR),
+                            ),
+                        ]
+                    ),
+                    (
+                        Button,
+                        button_node.clone(),
+                        BackgroundColor(NORMAL_BUTTON),
+                        MenuButtonAction::Multiplayer,
+                        children![
+                            //                            (ImageNode::new(right_icon), button_icon_node.clone()),
+                            (
+                                Text::new("Multiplayer"),
                                 button_text_font.clone(),
                                 TextColor(TEXT_COLOR),
                             ),
@@ -707,8 +787,12 @@ mod menu {
                     MenuButtonAction::Quit => {
                         app_exit_writer.write(AppExit::Success);
                     }
-                    MenuButtonAction::Play => {
+                    MenuButtonAction::SinglePlayer => {
                         game_state.set(GameState::Game);
+                        menu_state.set(MenuState::Disabled);
+                    }
+                    MenuButtonAction::Multiplayer => {
+                        game_state.set(GameState::NetworkMenu);
                         menu_state.set(MenuState::Disabled);
                     }
                     MenuButtonAction::Settings => menu_state.set(MenuState::Settings),

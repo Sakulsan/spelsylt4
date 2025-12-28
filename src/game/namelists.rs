@@ -1,8 +1,10 @@
 use std::default;
+use std::sync::MutexGuard;
 
 use bevy::prelude::*;
 use rand::seq::IndexedRandom;
 use rand::Rng;
+use std::collections::HashSet;
 
 use crate::assets::Sylt;
 use crate::game::market::BuildingType;
@@ -23,6 +25,27 @@ pub fn generate_city_names(
     city_iter(BuildingType::Elven, amount.1, 1);
     city_iter(BuildingType::Goblin, amount.2, 2);
     city_iter(BuildingType::Human, amount.3, 3);
+
+    let mut remove_duplicates = |x: &mut Vec<String>, t: BuildingType| {
+        let mut hash = HashSet::new();
+        for elem in x.clone() {
+            hash.insert(elem.clone());
+        }
+        loop {
+            if hash.len() >= x.len() {
+                *x = vec![];
+                let _ = hash.into_iter().map(|e| x.push(e));
+                break;
+            }
+            println!("removing duplicates...");
+            hash.insert(generate_city_name(t, &mut rng));
+        }
+    };
+
+    remove_duplicates(&mut names[0], BuildingType::Dwarven);
+    remove_duplicates(&mut names[1], BuildingType::Elven);
+    remove_duplicates(&mut names[2], BuildingType::Goblin);
+    remove_duplicates(&mut names[3], BuildingType::Human);
 
     names
 }
