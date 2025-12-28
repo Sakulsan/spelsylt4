@@ -331,8 +331,6 @@ fn update_caravan_menu(
     caravans: Query<&Caravan>,
     mut commands: Commands,
 ) {
-    info!("Updating menu");
-
     let Ok(selected_caravan) = caravans.get(selected_caravan.0) else {
         error!("No selected caravan to display");
         return;
@@ -341,8 +339,6 @@ fn update_caravan_menu(
     for caravan_box in caravan_box.iter() {
         commands.entity(caravan_box).despawn_children();
         commands.entity(caravan_box).with_children(|parent| {
-            println!("Updating caravan menu");
-            dbg!(&selected_caravan);
             parent.spawn((
                 Node {
                     width: percent(100),
@@ -623,10 +619,11 @@ fn caravan_button(
                         .remove(resource);
                 }
                 CaravanMenuButtons::ChangeTrade(city_id, resource) => {
+                    info!("hmm 1");
                     for entity in hudNode.iter() {
                         let mut order: HashSet<_> = selected_caravan
                             .orders
-                            .iter_mut()
+                            .iter()
                             .find(|order| order.goal_city_id == *city_id)
                             .expect(format!("Couldn't find city named {}", city_id).as_str())
                             .trade_order
@@ -653,13 +650,13 @@ fn caravan_button(
                                     BackgroundColor(Color::srgb(0.25, 0.25, 0.25)),
                                 ))
                                 .with_children(|parent| {
-                                    for res in resources.difference(&order) {
+                                    for &res in resources.difference(&order) {
                                         parent.spawn((
                                             Button,
                                             CaravanMenuButtons::ChangeTradeConfirm(
                                                 city_id.clone(),
                                                 *resource,
-                                                *res,
+                                                res,
                                             ),
                                             Node {
                                                 min_height: px(32),
@@ -674,6 +671,8 @@ fn caravan_button(
                     }
                 }
                 CaravanMenuButtons::ChangeTradeConfirm(city_id, from_res, to_res) => {
+                    info!("hmm");
+
                     for entity in hudNode.iter() {
                         commands.entity(entity).despawn_children();
                     }
