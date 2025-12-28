@@ -22,7 +22,7 @@ pub fn plugin(app: &mut App) {
     .init_state::<NetworkMenuState>() //Feels weird to have duplicate names, but it works
     .add_systems(
         Update,
-        (button_hover_system, button_functionality).run_if(in_state(GameState::NetworkMenu)),
+        (button_hover_system, button_functionality).run_if(in_state(GameState::NetworkMenu))
     );
 }
 
@@ -34,7 +34,7 @@ enum NetworkMenuButton {
     JoinButton,
     StartButton,
     ConnectToServerButton,
-    QuitButton,
+    QuitButton
 }
 
 // State used for the current menu screen
@@ -44,7 +44,7 @@ enum NetworkMenuState {
     Join,
     Lobby,
     #[default]
-    Disabled,
+    Disabled
 }
 
 fn spawn_network_menu(
