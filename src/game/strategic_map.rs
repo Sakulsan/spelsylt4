@@ -10,6 +10,7 @@ use crate::GameState;
 use std::collections::{BTreeMap, HashMap};
 
 use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
+use serde::{Deserialize, Serialize};
 
 // This plugin will contain the game. In this case, it's just be a screen that will
 // display the current settings for 5 seconds before returning to the menu
@@ -38,7 +39,7 @@ pub struct Owns(Vec<Entity>);
 #[derive(Resource, Deref, DerefMut)]
 pub struct SelectedCaravan(pub Entity);
 
-#[derive(Component, Clone, Default, Eq, PartialEq, Debug)]
+#[derive(Component, Clone, Default, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Caravan {
     pub orders: Vec<Order>,
     pub order_idx: usize,
@@ -47,7 +48,7 @@ pub struct Caravan {
     pub cargo: HashMap<Resources, usize>,
 }
 
-#[derive(Clone, Default, Eq, PartialEq, Debug)]
+#[derive(Clone, Default, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Order {
     pub goal_city_id: String,
     pub trade_order: BTreeMap<Resources, isize>,

@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use crate::prelude::*;
 use bevy::pbr::generate;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum Resources {
     Artifacts,
     Coal,
@@ -35,46 +36,43 @@ pub enum Resources {
 }
 
 pub const BASIC_RESOURCES: [Resources; 9] = [
-                                Resources::Food,
-                                Resources::Plants,
-                                Resources::CommonOre,
-                                Resources::RareOre,
-                                Resources::Lumber,
-                                Resources::Stone,
-                                Resources::Water,
-                                Resources::Glass,
-                                Resources::Coal,
-                            ];
+    Resources::Food,
+    Resources::Plants,
+    Resources::CommonOre,
+    Resources::RareOre,
+    Resources::Lumber,
+    Resources::Stone,
+    Resources::Water,
+    Resources::Glass,
+    Resources::Coal,
+];
 
 pub const ADVANCED_RESOURCES: [Resources; 7] = [
-                                Resources::RefinedValuables,
-                                Resources::CommonAlloys,
-                                Resources::Textiles,
-                                Resources::ManufacturedGoods,
-                                Resources::Medicines,
-                                Resources::Reagents,
-                                Resources::Machinery,
-                            ];
+    Resources::RefinedValuables,
+    Resources::CommonAlloys,
+    Resources::Textiles,
+    Resources::ManufacturedGoods,
+    Resources::Medicines,
+    Resources::Reagents,
+    Resources::Machinery,
+];
 
 pub const SERVICE_RESOURCES: [Resources; 5] = [
-                                Resources::SimpleLabour,
-                                Resources::Military,
-                                Resources::Transportation,
-                                Resources::Luxuries,
-                                Resources::ComplexLabour,
-                            ];
+    Resources::SimpleLabour,
+    Resources::Military,
+    Resources::Transportation,
+    Resources::Luxuries,
+    Resources::ComplexLabour,
+];
 
-pub const EXOTIC_RESOURCES: [Resources; 3] = [  
-                                Resources::ExoticAlloys, 
-                                Resources::Spellwork, 
-                                Resources::Artifacts
-                            ];
+pub const EXOTIC_RESOURCES: [Resources; 3] = [
+    Resources::ExoticAlloys,
+    Resources::Spellwork,
+    Resources::Artifacts,
+];
 
-pub const ILLEGAL_RESOURCES: [Resources; 3] = [  
-                                Resources::Drugs, 
-                                Resources::Slaves, 
-                                Resources::Vitae
-                            ];
+pub const ILLEGAL_RESOURCES: [Resources; 3] =
+    [Resources::Drugs, Resources::Slaves, Resources::Vitae];
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
 pub enum BuildingType {
