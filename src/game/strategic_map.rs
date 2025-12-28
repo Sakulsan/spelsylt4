@@ -25,17 +25,17 @@ pub struct PlayerStats {
 #[derive(Resource)]
 pub struct SelectedCaravan(pub Caravan);
 
-#[derive(Clone, Default, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Default, Eq, PartialEq, Debug)]
 pub struct Caravan {
     pub orders: Vec<Order>,
     pub position_city_id: String,
     pub cargo: Vec<(Resources, usize)>,
 }
 
-#[derive(Clone, Default, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Default, Eq, PartialEq, Debug)]
 pub struct Order {
     pub goal_city_id: String,
-    pub trade_order: Vec<(Resources, isize)>,
+    pub trade_order: HashMap<Resources, isize>,
 }
 
 pub fn plugin(app: &mut App) {
@@ -75,6 +75,7 @@ pub enum StrategicState {
     #[default]
     Map,
     HUDOpen,
+    DestinationPicker,
 }
 
 fn spawn_map_sprite(mut commands: Commands, mut sylt: Sylt) {

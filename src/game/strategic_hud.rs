@@ -14,6 +14,18 @@ pub fn plugin(app: &mut App) {
         .add_systems(OnEnter(PopupHUD::Buildings), building_menu)
         .add_systems(OnEnter(PopupHUD::Caravan), caravan_menu)
         .add_systems(OnEnter(PopupHUD::Wares), wares_menu)
+        .add_systems(
+            OnEnter(StrategicState::DestinationPicker),
+            on_destination_pick,
+        )
+        .add_systems(
+            OnExit(StrategicState::DestinationPicker),
+            off_destination_pick,
+        )
+        .add_systems(
+            Update,
+            caravan_destination_buttons.run_if(in_state(StrategicState::DestinationPicker)),
+        )
         .add_systems(Update, no_popup_button.run_if(in_state(PopupHUD::Off)))
         .add_systems(Update, caravan_button.run_if(in_state(PopupHUD::Caravan)))
         .add_systems(
@@ -52,6 +64,10 @@ fn no_popup_button(
                 HudButton::OperationAction => {
                     stats.caravans.push(Caravan {
                         position_city_id: selected_city.0.id.clone(),
+                        orders: vec![Order {
+                            goal_city_id: selected_city.0.id.clone(),
+                            ..default()
+                        }],
                         ..default()
                     });
                 }
@@ -226,24 +242,30 @@ fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
 
 #[derive(Component, Default, Clone, Debug)]
 struct CaravanMenu;
-#[derive(Component, Clone, Copy, Eq, PartialEq, Debug, Hash)]
+#[derive(Component, Clone, Eq, PartialEq, Debug, Hash)]
 enum CaravanMenuButtons {
     NewStop,
-    KillStop,
-    AddTradeToStop,
-    RemoveTradeToStop,
+    RemoveStop(String),
+    AddTradeToStop(String),
+    ChangeTrade {
+        city_id: String,
+        from: Resources,
+        to: Resources,
+    },
+    IncTradeAmount(String, Resources),
+    DecTradeAmount(String, Resources),
+    KillTrade(String, Resources),
 }
 
-fn caravan_menu(
-    mut commands: Commands,
-    mut selected_caravan: ResMut<super::strategic_map::SelectedCaravan>,
-) {
+fn caravan_menu(mut commands: Commands) {
     let id = popup_window(&mut commands, FlexDirection::Column);
     commands.entity(id).with_children(|parent| {
         parent.spawn((
             Node {
                 height: percent(100),
                 width: percent(100),
+                align_items: AlignItems::FlexStart,
+                flex_direction: FlexDirection::Column,
                 ..default()
             },
             CaravanMenu,
@@ -267,8 +289,6 @@ fn update_caravan_menu(
                 Node {
                     width: percent(100),
                     height: percent(10),
-                    align_items: AlignItems::FlexEnd,
-                    flex_direction: FlexDirection::Row,
                     ..default()
                 },
                 Text::new(format!(
@@ -277,61 +297,183 @@ fn update_caravan_menu(
                 )),
             ));
             parent
-                .spawn(
-                    (Node {
-                        width: percent(100),
-                        height: percent(20),
-                        align_items: AlignItems::FlexEnd,
-                        flex_direction: FlexDirection::Column,
-                        ..default()
-                    }),
-                )
-                .with_children(|parent| {
-                    for _ in selected_caravan.orders {
-                        parent
-                            .spawn((
-                                Node {
-                                    width: percent(100),
-                                    height: px(64),
-                                    margin: UiRect::all(px(4)),
-                                    flex_direction: FlexDirection::Row,
-                                    ..default()
-                                },
-                                BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
-                            ))
-                            .with_children(|parent| {
-                                for _ in 0..5 {
-                                    parent.spawn((
-                                        Node {
-                                            width: px(60),
-                                            height: px(60),
-                                            margin: UiRect::all(px(4)),
-                                            ..default()
-                                        },
-                                        BackgroundColor(Srgba::new(0.1, 1.0, 0.1, 1.0).into()),
-                                    ));
-                                }
-                            });
-                    }
-                });
-
-            parent.spawn((
-                Button,
-                CaravanMenuButtons::NewStop,
-                Node {
+                .spawn((Node {
                     width: percent(100),
-                    height: px(64),
-                    margin: UiRect::all(px(4)),
-                    flex_direction: FlexDirection::Row,
+                    height: percent(90),
+                    align_items: AlignItems::FlexStart,
+                    flex_direction: FlexDirection::Column,
+
                     ..default()
-                },
-                Text::new("New order"),
-                BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
-            ));
+                },))
+                //Actually content
+                .with_children(|parent| {
+                    create_route_showcase(parent, &selected_caravan.orders);
+                    parent.spawn((
+                        Button,
+                        CaravanMenuButtons::NewStop,
+                        Node {
+                            width: percent(100),
+                            height: px(64),
+                            margin: UiRect::all(px(4)),
+                            flex_direction: FlexDirection::Row,
+                            ..default()
+                        },
+                        Text::new("New stop"),
+                        BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
+                    ));
+                });
         });
-        //stats.caravans
     }
 }
+
+fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>) {
+    for stop in orders {
+        let transaction_count = stop.trade_order.len();
+
+        parent
+            .spawn((
+                Node {
+                    left: percent(5),
+                    width: percent(90),
+                    height: px(72 + 48 * transaction_count),
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },
+                BackgroundColor(Srgba::new(0.1, 0.1, 0.1, 1.0).into()),
+            ))
+            .with_children(|parent| {
+                parent.spawn((
+                    Node {
+                        height: px(64),
+                        margin: UiRect::all(px(4)),
+                        flex_direction: FlexDirection::Row,
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::SpaceBetween,
+                        ..default()
+                    },
+                    children![
+                        (Text::new(stop.goal_city_id.clone()),),
+                        (
+                            Button,
+                            CaravanMenuButtons::AddTradeToStop(stop.goal_city_id.clone()),
+                            Node {
+                                position_type: PositionType::Absolute,
+                                width: px(256),
+                                height: px(60),
+                                top: px(0),
+                                right: px(76),
+                                border: UiRect::all(px(2)),
+                                ..default()
+                            },
+                            Text::new("New transaction"),
+                            BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into()),
+                        ),
+                        (
+                            Button,
+                            CaravanMenuButtons::RemoveStop(stop.goal_city_id.clone()),
+                            Node {
+                                position_type: PositionType::Absolute,
+                                width: px(64),
+                                height: px(60),
+                                top: px(0),
+                                right: px(0),
+                                border: UiRect::all(px(2)),
+                                ..default()
+                            },
+                            BackgroundColor(Srgba::new(0.9, 0.1, 0.1, 1.0).into()),
+                        )
+                    ],
+                ));
+                for (resource, amount) in &stop.trade_order {
+                    parent
+                        .spawn((
+                            Node {
+                                width: percent(85),
+                                left: percent(10),
+                                height: px(48),
+                                border: UiRect::all(px(4)),
+                                ..default()
+                            },
+                            BackgroundColor(Srgba::new(0.1, 1.0, 0.1, 1.0).into()),
+                            BorderColor::all(Color::BLACK),
+                            Text::new("Buys something"),
+                        ))
+                        .with_children(|parent|
+
+                                     //HUD buttons
+                                     {
+                                         parent.spawn((
+                                             Button, //TODO
+                                             CaravanMenuButtons::ChangeTrade {
+                                                 city_id: stop.goal_city_id.clone(),
+                                                 from: Resources::Food,
+                                                 to: Resources::Food,
+                                             },
+                                             Node {
+                                                 width: px(256),
+                                                 height: px(44),
+                                                 border: UiRect::all(px(2)),
+                                                 ..default()
+                                             },
+                                             BackgroundColor(Srgba::new(0.9, 0.2, 0.2, 1.0).into()),
+                                             Text::new("Select type")
+                                         ));
+
+
+                                         parent.spawn((
+                                             Button,
+                                             CaravanMenuButtons::DecTradeAmount (stop.goal_city_id.clone(),*resource
+),
+                                             Node {
+                                                 width: px(44),
+                                                 height: px(44),
+                                                 border: UiRect::all(px(2)),
+                                                 ..default()
+                                             },
+                                             BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
+                                             BorderColor::all(Color::BLACK),
+                                             Text::new("-")
+                                         ));
+                                         parent.spawn((
+                                             Node {
+                                                 width: px(44),
+                                                 height: px(44),
+                                                 ..default()
+                                             },
+                                             BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
+                                             Text::new(format!("{}",amount))
+                                         ));
+                                         parent.spawn((
+                                             Button,
+                                             CaravanMenuButtons::IncTradeAmount(stop.goal_city_id.clone(),*resource
+                                             ),
+                                             Node {
+                                                 width: px(44),
+                                                 height: px(44),
+                                                 ..default()
+                                             },
+                                             BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
+                                             Text::new("+")
+                                         ));
+                                         parent.spawn((
+                                             Button,
+                                             CaravanMenuButtons::KillTrade(stop.goal_city_id.clone(),*resource
+),
+                                             Node {
+                                                 width: px(44),
+                                                 height: px(44),
+                                                 border: UiRect::all(px(2)),
+                                                 ..default()
+                                             },
+                                             BackgroundColor(Srgba::new(0.9, 0.1, 0.1, 1.0).into()),
+                                             Text::new("")
+                                         ));
+                                     });
+                }
+            });
+    }
+}
+
 fn caravan_button(
     mut commands: Commands,
     mut interaction_query: Query<
@@ -340,18 +482,142 @@ fn caravan_button(
     >,
     //mut menu_state: ResMut<NextState<StrategicState>>,
     mut selected_caravan: ResMut<SelectedCaravan>,
+    mut window_state: ResMut<NextState<StrategicState>>,
 ) {
     for (interaction, menu_button_action) in &interaction_query {
         if *interaction == Interaction::Pressed {
             match menu_button_action {
                 CaravanMenuButtons::NewStop => {
-                    selected_caravan.0.orders.push(Order {
-                        goal_city_id: "Placeholder".to_string(),
-                        trade_order: vec![],
-                    });
+                    window_state.set(StrategicState::DestinationPicker);
+                }
+                CaravanMenuButtons::AddTradeToStop(stop_name) => {
+                    //Hashmap here?
+                    if let Some(pos) = selected_caravan
+                        .0
+                        .orders
+                        .iter()
+                        .position(|order| order.goal_city_id == *stop_name)
+                    {
+                        selected_caravan
+                            .0
+                            .orders
+                            .get_mut(pos)
+                            .unwrap()
+                            .trade_order
+                            .insert(Resources::Food, 0);
+                    } else {
+                        error!("Couldn't find city named {}", stop_name);
+                        continue;
+                    }
+                }
+                CaravanMenuButtons::RemoveStop(stop_name) => {
+                    if let Some(pos) = selected_caravan
+                        .0
+                        .orders
+                        .iter()
+                        .position(|order| order.goal_city_id == *stop_name)
+                    {
+                        selected_caravan.0.orders.remove(pos);
+                    } else {
+                        error!("Couldn't find city named {}", stop_name);
+                        continue;
+                    }
+                }
+                CaravanMenuButtons::IncTradeAmount(city_id, resource) => {
+                    if let Some(pos) = selected_caravan
+                        .0
+                        .orders
+                        .iter()
+                        .position(|order| order.goal_city_id == *city_id)
+                    {
+                        *selected_caravan
+                            .0
+                            .orders
+                            .get_mut(pos)
+                            .unwrap()
+                            .trade_order
+                            .get_mut(resource) //Should never call a undefined resource
+                            .unwrap() += 1;
+                    } else {
+                        error!("Couldn't find city named {}", city_id);
+                        continue;
+                    }
+                }
+                CaravanMenuButtons::DecTradeAmount(city_id, resource) => {
+                    if let Some(pos) = selected_caravan
+                        .0
+                        .orders
+                        .iter()
+                        .position(|order| order.goal_city_id == *city_id)
+                    {
+                        *selected_caravan
+                            .0
+                            .orders
+                            .get_mut(pos)
+                            .unwrap()
+                            .trade_order
+                            .get_mut(resource) //Should never call a undefined resource
+                            .unwrap() -= 1;
+                    } else {
+                        error!("Couldn't find city named {}", city_id);
+                        continue;
+                    }
+                }
+                CaravanMenuButtons::KillTrade(city_id, resource) => {
+                    if let Some(pos) = selected_caravan
+                        .0
+                        .orders
+                        .iter()
+                        .position(|order| order.goal_city_id == *city_id)
+                    {
+                        selected_caravan
+                            .0
+                            .orders
+                            .get_mut(pos)
+                            .unwrap() //Should never call a undefined resource
+                            .trade_order
+                            .remove(resource);
+                    } else {
+                        error!("Couldn't find city named {}", city_id);
+                        continue;
+                    }
                 }
                 _ => {}
             }
+        }
+    }
+}
+
+//removes all hud elements
+fn on_destination_pick(mut node_hider: Query<&mut Visibility, (With<Node>, Without<CityData>)>) {
+    for mut node in node_hider.iter_mut() {
+        *node = Visibility::Hidden;
+    }
+}
+
+//re-adds all hud elements
+fn off_destination_pick(
+    mut node_hider: Query<&mut Visibility, (With<Node>, Without<CityData>, Without<Tooltips>)>,
+) {
+    for mut node in node_hider.iter_mut() {
+        *node = Visibility::Visible;
+    }
+}
+
+fn caravan_destination_buttons(
+    mut commands: Commands,
+    mut interaction_query: Query<(&Interaction, &CityData), (Changed<Interaction>, With<Button>)>,
+    //mut menu_state: ResMut<NextState<StrategicState>>,
+    mut selected_caravan: ResMut<SelectedCaravan>,
+    mut window_state: ResMut<NextState<StrategicState>>,
+) {
+    for (interaction, city_data) in &interaction_query {
+        if *interaction == Interaction::Pressed {
+            selected_caravan.0.orders.push(Order {
+                goal_city_id: city_data.id.clone(),
+                ..default()
+            });
+            window_state.set(StrategicState::HUDOpen);
         }
     }
 }
