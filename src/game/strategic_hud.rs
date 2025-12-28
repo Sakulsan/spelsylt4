@@ -2,11 +2,11 @@ use std::collections::HashMap;
 
 use bevy::math::usize;
 
+use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::{
     Caravan, Order, PlayerStats, SelectedCaravan, SelectedCity, StrategicState,
 };
-use super::city_data::CityData;
 use super::tooltip::Tooltips;
 use crate::game::tooltip::TooltipOf;
 use crate::prelude::*;
@@ -16,14 +16,6 @@ pub fn plugin(app: &mut App) {
         .add_systems(OnEnter(PopupHUD::Buildings), building_menu)
         .add_systems(OnEnter(PopupHUD::Caravan), caravan_menu)
         .add_systems(OnEnter(PopupHUD::Wares), wares_menu)
-        .add_systems(
-            OnEnter(StrategicState::DestinationPicker),
-            on_destination_pick,
-        )
-        .add_systems(
-            OnExit(StrategicState::DestinationPicker),
-            off_destination_pick,
-        )
         .add_systems(
             Update,
             caravan_destination_buttons.run_if(in_state(StrategicState::DestinationPicker)),
@@ -283,6 +275,13 @@ fn update_caravan_menu(
     mut commands: Commands,
 ) {
     //stats.caravans.iter()
+    if let Some(stats_caravan) = stats
+        .caravans
+        .iter_mut()
+        .find(|n| n.position_city_id == selected_caravan.0.position_city_id)
+    {
+        *stats_caravan = selected_caravan.0.clone();
+    }
     for caravan_box in caravan_box.iter() {
         commands.entity(caravan_box).despawn_children();
         commands.entity(caravan_box).with_children(|parent| {
@@ -506,12 +505,12 @@ fn caravan_button(
                         .trade_order
                         .insert(Resources::Food, 0);
                 }
-                /*                CaravanMenuButtons::RemoveStop(stop_name) => {
+                CaravanMenuButtons::RemoveStop(stop_name) => {
                     selected_caravan
                         .0
                         .orders
-                        .remove(|order| order.goal_city_id == *stop_name);
-                }*/
+                        .retain(|position| position.goal_city_id != *stop_name);
+                }
                 CaravanMenuButtons::IncTradeAmount(city_id, resource) => {
                     *selected_caravan
                         .0
@@ -553,24 +552,6 @@ fn caravan_button(
                 _ => {}
             }
         }
-    }
-}
-
-//removes all hud elements
-fn on_destination_pick(
-    mut node_hider: Query<&mut Visibility, (With<Node>, Without<CityData>, Without<TooltipOf>)>,
-) {
-    for mut node in node_hider.iter_mut() {
-        *node = Visibility::Hidden;
-    }
-}
-
-//re-adds all hud elements
-fn off_destination_pick(
-    mut node_hider: Query<&mut Visibility, (With<Node>, Without<CityData>, Without<TooltipOf>)>,
-) {
-    for mut node in node_hider.iter_mut() {
-        *node = Visibility::Visible;
     }
 }
 
