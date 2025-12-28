@@ -1,4 +1,4 @@
-use bevy::color::palettes::css::CRIMSON;
+use bevy::color::palettes::css::{CRIMSON, LIGHT_SLATE_GRAY};
 
 use crate::{prelude::*, GameState};
 
@@ -13,7 +13,10 @@ pub fn plugin(app: &mut App) {
         OnEnter(GameState::NetworkMenu),
         (crate::kill_music, spawn_network_menu),
     )
-    .add_systems(OnEnter(NetworkMenuState::Lobby), lobby_menu_setup)
+    .add_systems(
+        OnEnter(NetworkMenuState::Lobby),
+        (lobby_menu_setup, update_players),
+    )
     .add_systems(OnEnter(NetworkMenuState::Join), join_menu_setup)
     .init_state::<NetworkMenuState>() //Feels weird to have duplicate names, but it works
     .add_systems(
@@ -210,6 +213,7 @@ fn lobby_menu_setup(mut commands: Commands) {
         margin: UiRect::all(px(20)),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
+        flex_direction: FlexDirection::Column,
         ..default()
     };
 
@@ -224,24 +228,62 @@ fn lobby_menu_setup(mut commands: Commands) {
     commands.spawn((
         DespawnOnExit(NetworkMenuState::Lobby),
         Node {
-            width: percent(100),
-            height: percent(100),
+            width: vw(100),
+            height: vh(100),
             align_items: AlignItems::Center,
             justify_content: JustifyContent::Center,
+            flex_direction: FlexDirection::Column,
             ..default()
         },
+        BackgroundColor(LIGHT_SLATE_GRAY.into()),
         //OnSettingsMenuScreen,
-        children![(
-            Text::new("Server on 192.128......"),
-            Node {
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                ..default()
-            },
-            BackgroundColor(CRIMSON.into()),
-        )],
+        children![
+            (
+                Text::new("Lobby"),
+                Node {
+                    width: vw(100),
+                    height: vh(20),
+                    ..default()
+                },
+                BackgroundColor(CRIMSON.into()),
+            ),
+            (Text::new("IP: 192.128......")),
+            (Text::new("World seed: SEED")),
+            (
+                PlayerContainer,
+                Node {
+                    width: vw(100),
+                    height: vh(70),
+                    ..default()
+                },
+            )
+        ],
     ));
 }
+
+fn update_players(mut commands: Commands, players_container: Query<Entity, With<PlayerContainer>>) {
+    for container in players_container.iter() {
+        let mut container = commands.get_entity(container).unwrap();
+
+        container.despawn_children();
+        container.with_children(|parent| {
+            for player in vec!["Player one", "Player two"] {
+                parent.spawn((
+                    Node {
+                        left: vw(10),
+                        width: vw(80),
+                        height: px(128),
+                        ..default()
+                    },
+                    Text::new(player),
+                ));
+            }
+        });
+    }
+}
+
+#[derive(Component, Default)]
+pub struct PlayerContainer;
 
 fn join_menu_setup(mut commands: Commands) {
     let button_node = Node {
