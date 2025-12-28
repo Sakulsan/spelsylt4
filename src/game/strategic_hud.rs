@@ -630,7 +630,6 @@ fn caravan_button(
 
                     if to_res != from_res {
                         let order = selected_caravan
-                            .0
                             .orders
                             .iter_mut()
                             .find(|order| &order.goal_city_id == city_id)

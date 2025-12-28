@@ -1,6 +1,6 @@
 use super::city_data::CityData;
 use crate::game::city_graph::{CityGraph, Node as CityNode};
-use crate::game::strategic_map::BuildinTable;
+use crate::game::strategic_map::{ActivePlayer, BuildinTable, Player};
 use crate::prelude::*;
 
 #[derive(Event)]
@@ -24,12 +24,16 @@ pub fn market_updater(
     }
 }
 
-pub fn debt_collector(ev: On<TurnEnd>, mut player: ResMut<PlayerStats>, mut commands: Commands) {
+pub fn debt_collector(
+    ev: On<TurnEnd>,
+    mut player: Single<&mut Player, With<ActivePlayer>>,
+    mut commands: Commands,
+) {
     if player.money < 0.0 {
         player.money = player.money * 1.1;
     }
 
-    if player.money < 10000.0 {
+    if player.money < -10000.0 {
         commands.trigger(GameEnd);
     }
 }
