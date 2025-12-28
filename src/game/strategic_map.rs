@@ -115,7 +115,10 @@ impl Caravan {
                                 .get_bulk_buy_price(&trade, amount_bought as usize);
                             info!("Caravan paid {0} for {1}", price, trade.get_name());
                             player.money -= price;
-                            caravan.cargo.insert(trade, cargo_access.get(&trade).unwrap_or(&0) + amount_bought as usize);
+                            caravan.cargo.insert(
+                                trade,
+                                cargo_access.get(&trade).unwrap_or(&0) + amount_bought as usize,
+                            );
                             current_city
                                 .1
                                 .market
@@ -123,12 +126,17 @@ impl Caravan {
                         }
                         if amount < 0 {
                             let amount_available = current_city.1.market[&trade];
-                            let amount_sold = amount.abs().min(*cargo_access.get(&trade).unwrap_or(&0) as isize);
+                            let amount_sold = amount
+                                .abs()
+                                .min(*cargo_access.get(&trade).unwrap_or(&0) as isize);
                             let price = current_city
                                 .1
                                 .get_bulk_sell_price(&trade, amount_sold as usize);
                             player.money += price;
-                            caravan.cargo.insert(trade, cargo_access.get(&trade).unwrap_or(&0) - amount_sold as usize);
+                            caravan.cargo.insert(
+                                trade,
+                                cargo_access.get(&trade).unwrap_or(&0) - amount_sold as usize,
+                            );
                             info!("Caravan sold {0} for {1}", price, trade.get_name());
                             current_city
                                 .1
@@ -403,7 +411,7 @@ fn spawn_city_ui_nodes(
             },
             CityImageMarker,
             image,
-            background,
+            //background,
         );
 
         let miku_slot = (
