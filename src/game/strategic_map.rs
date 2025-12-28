@@ -10,6 +10,7 @@ use crate::GameState;
 use std::collections::{BTreeMap, HashMap};
 
 use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
+use serde::{Deserialize, Serialize};
 
 // This plugin will contain the game. In this case, it's just be a screen that will
 // display the current settings for 5 seconds before returning to the menu
@@ -38,7 +39,7 @@ pub struct Owns(Vec<Entity>);
 #[derive(Resource, Deref, DerefMut)]
 pub struct SelectedCaravan(pub Entity);
 
-#[derive(Component, Clone, Default, Eq, PartialEq, Debug)]
+#[derive(Component, Clone, Default, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Caravan {
     pub orders: Vec<Order>,
     pub order_idx: usize,
@@ -47,7 +48,7 @@ pub struct Caravan {
     pub cargo: HashMap<Resources, usize>,
 }
 
-#[derive(Clone, Default, Eq, PartialEq, Debug)]
+#[derive(Clone, Default, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Order {
     pub goal_city_id: String,
     pub trade_order: BTreeMap<Resources, isize>,
@@ -115,7 +116,10 @@ impl Caravan {
                                 .get_bulk_buy_price(&trade, amount_bought as usize);
                             info!("Caravan paid {0} for {1}", price, trade.get_name());
                             player.money -= price;
-                            caravan.cargo.insert(trade, cargo_access.get(&trade).unwrap_or(&0) + amount_bought as usize);
+                            caravan.cargo.insert(
+                                trade,
+                                cargo_access.get(&trade).unwrap_or(&0) + amount_bought as usize,
+                            );
                             current_city
                                 .1
                                 .market
@@ -123,12 +127,17 @@ impl Caravan {
                         }
                         if amount < 0 {
                             let amount_available = current_city.1.market[&trade];
-                            let amount_sold = amount.abs().min(*cargo_access.get(&trade).unwrap_or(&0) as isize);
+                            let amount_sold = amount
+                                .abs()
+                                .min(*cargo_access.get(&trade).unwrap_or(&0) as isize);
                             let price = current_city
                                 .1
                                 .get_bulk_sell_price(&trade, amount_sold as usize);
                             player.money += price;
-                            caravan.cargo.insert(trade, cargo_access.get(&trade).unwrap_or(&0) - amount_sold as usize);
+                            caravan.cargo.insert(
+                                trade,
+                                cargo_access.get(&trade).unwrap_or(&0) - amount_sold as usize,
+                            );
                             info!("Caravan sold {0} for {1}", price, trade.get_name());
                             current_city
                                 .1
@@ -156,7 +165,9 @@ pub fn plugin(app: &mut App) {
             spawn_map_sprite,
             spawn_city_ui_nodes,
             spawn_player,
-        ),
+        )
+            .in_set(MapGenSet)
+            .after(NodeGenSet),
     )
     .insert_resource(SelectedCity(CityData {
         id: "Placeholder".to_string(),
@@ -403,7 +414,7 @@ fn spawn_city_ui_nodes(
             },
             CityImageMarker,
             image,
-            background,
+            //background,
         );
 
         let miku_slot = (
@@ -477,7 +488,7 @@ fn update_ui_nodes(
 //#[derive(Component)]
 //struct Demographic<T>();
 
-#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States, Serialize, Deserialize)]
 pub enum Faction {
     #[default]
     Neutral,
