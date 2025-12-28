@@ -91,10 +91,34 @@ impl CityData {
         }
     }
 
-    pub fn get_resource_value(&self, res: &Resources) -> f64 {
-        let total = self.market.get(res).expect(format!("tried to find resource {:?} but the resource was missing", res).as_str());
-        let sigmoid = 2.0/(1.0 + (std::f64::consts::E).powf(*total as f64 / 200.0)) * res.get_base_value() as f64;
+    pub fn get_resource_value_modifier(&self, res: &Resources) -> f64 {
+        let total = self.market.get(res).expect(format!("tried to find resource {:?} but the resource was missing in internal market", res).as_str());
+        let sigmoid = 2.0/(1.0 + (std::f64::consts::E).powf(*total as f64 / 200.0));
         sigmoid.max(0.3)
+    }
+
+    fn get_theoretical_resource_value_modifier(&self, res: &Resources, amount: isize) -> f64 {
+        let sigmoid = 2.0/(1.0 + (std::f64::consts::E).powf(amount as f64 / 200.0));
+        sigmoid.max(0.3)
+    }
+
+    pub fn get_resource_value(&self, res: &Resources) -> f64 {
+        self.get_resource_value_modifier(res) * res.get_base_value() as f64
+    }
+
+    fn get_theoretical_resource_value(&self, res: &Resources, amount: isize) -> f64 {
+        self.get_theoretical_resource_value_modifier(res, amount) * res.get_base_value() as f64
+    }
+
+    pub fn get_bulk_price(&self, res: &Resources, amount: usize) -> f64 {
+        let mut amount_available = *self.market.get(res).expect(format!("tried to find resource {:?} but the resource was missing in internal market", res).as_str());
+        let mut total_cost = 0.0;
+        for i in 0..amount {
+            let price = self.get_theoretical_resource_value(res, amount_available);
+            total_cost += price;
+            amount_available -= 1;
+        };
+        total_cost
     }
 
     pub fn available_commodities(&self, building_table: &Res<BuildinTable>) -> Vec<Resources> {
