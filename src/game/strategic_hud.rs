@@ -718,6 +718,10 @@ fn caravan_button(
                     selected_caravan
                         .orders
                         .retain(|position| position.goal_city_id != *stop_name);
+
+                    if selected_caravan.order_idx == selected_caravan.orders.len() {
+                        selected_caravan.order_idx -= 1;
+                    }
                 }
                 CaravanMenuButtons::IncTradeAmount(city_id, resource) => {
                     *selected_caravan
