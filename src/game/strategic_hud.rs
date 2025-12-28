@@ -80,13 +80,33 @@ pub enum PopupHUD {
     Wares,
 }
 
-fn on_city_scout(mut interaction_query: Query<&mut Visibility, With<PopUpItem>>) {
+#[derive(Component)]
+struct CaravanPickerText;
+fn on_city_scout(
+    mut commands: Commands,
+    mut interaction_query: Query<&mut Visibility, With<PopUpItem>>,
+) {
+    commands.spawn((
+        Node { ..default() },
+        Text("Click on the city to add to the schedule".to_string()),
+        BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+        CaravanPickerText,
+    ));
+
     for mut node_vis in interaction_query.iter_mut() {
         *node_vis = Visibility::Hidden;
     }
 }
 
-fn off_city_scout(mut interaction_query: Query<&mut Visibility, With<PopUpItem>>) {
+fn off_city_scout(
+    mut commands: Commands,
+    mut interaction_query: Query<&mut Visibility, With<PopUpItem>>,
+    text: Option<Single<Entity, With<CaravanPickerText>>>,
+) {
+    if let Some(e) = text {
+        commands.entity(*e).despawn();
+    }
+
     for mut node_vis in interaction_query.iter_mut() {
         *node_vis = Visibility::Visible;
     }

@@ -158,7 +158,10 @@ pub fn plugin(app: &mut App) {
         )
             .run_if(in_state(PopupHUD::Off)),
     )
-    .add_systems(Update, update_ui_nodes.run_if(in_state(GameState::Game)))
+    .add_systems(
+        Update,
+        (update_ui_nodes, update_miku_cat).run_if(in_state(GameState::Game)),
+    )
     .add_observer(Caravan::update_orders);
 }
 
@@ -168,6 +171,36 @@ pub enum StrategicState {
     Map,
     HUDOpen,
     DestinationPicker,
+}
+
+#[derive(Component)]
+struct MikuCaravanSlot(String);
+
+fn update_miku_cat(
+    mut commands: Commands,
+    caravans: Query<(Entity, &Caravan), Changed<Caravan>>,
+    cities: Query<(Entity, &MikuCaravanSlot)>,
+    mut sylt: Sylt,
+) {
+    let image = sylt.get_image("lmao3");
+
+    for (c_ent, caravan) in caravans {
+        let Some((city, _)) = cities
+            .iter()
+            .find(|(_, data)| data.0 == caravan.position_city_id)
+        else {
+            continue;
+        };
+
+        commands.entity(c_ent).insert((
+            ChildOf(city),
+            Node {
+                width: px(30.0),
+                ..default()
+            },
+            ImageNode::new(image.clone()),
+        ));
+    }
 }
 
 fn spawn_player(mut commands: Commands) {
@@ -336,6 +369,22 @@ fn spawn_city_ui_nodes(
             background,
         );
 
+        let miku_slot = (
+            AnchorUiConfig {
+                anchorpoint: AnchorPoint::bottomleft(),
+                offset: Some(Vec3::new(10.0, 10.0, 0.0)),
+                ..default()
+            },
+            Node {
+                flex_direction: FlexDirection::Row,
+                flex_wrap: FlexWrap::NoWrap,
+                height: px(30.0),
+                width: px(400.0),
+                ..default()
+            },
+            MikuCaravanSlot(city_data.id.clone()),
+        );
+
         let clickable_node = (
             AnchorUiConfig {
                 anchorpoint: AnchorPoint::middle(),
@@ -360,7 +409,7 @@ fn spawn_city_ui_nodes(
 
         commands
             .entity(ent)
-            .insert(related!(AnchoredUiNodes[city_ui_node, clickable_node]));
+            .insert(related!(AnchoredUiNodes[miku_slot, city_ui_node, clickable_node]));
     }
 }
 
