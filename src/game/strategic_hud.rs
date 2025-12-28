@@ -1,5 +1,5 @@
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::math::usize;
@@ -37,7 +37,6 @@ pub fn plugin(app: &mut App) {
                 .run_if(in_state(PopupHUD::Off)),
         )
         .add_systems(OnExit(PopupHUD::Off), set_interaction(false))
-        .add_systems(Update, no_popup_button.run_if(in_state(PopupHUD::Off)))
         .add_systems(
             Update,
             (caravan_button, send_scroll_events).run_if(in_state(PopupHUD::Caravan)),
@@ -584,6 +583,7 @@ fn caravan_button(
                             Entry::Occupied(_) => continue,
                             Entry::Vacant(e) => {
                                 e.insert(0);
+                                break;
                             }
                         }
                     }
@@ -624,6 +624,19 @@ fn caravan_button(
                 }
                 CaravanMenuButtons::ChangeTrade(city_id, resource) => {
                     for entity in hudNode.iter() {
+                        let mut order: HashSet<_> = selected_caravan
+                            .orders
+                            .iter_mut()
+                            .find(|order| order.goal_city_id == *city_id)
+                            .expect(format!("Couldn't find city named {}", city_id).as_str())
+                            .trade_order
+                            .keys()
+                            .cloned()
+                            .collect();
+
+                        let resources: HashSet<_> =
+                            Resources::all_resources().into_iter().collect();
+
                         commands.entity(entity).with_children(|parent| {
                             parent
                                 .spawn((
@@ -640,13 +653,13 @@ fn caravan_button(
                                     BackgroundColor(Color::srgb(0.25, 0.25, 0.25)),
                                 ))
                                 .with_children(|parent| {
-                                    for res in Resources::all_resources() {
+                                    for res in resources.difference(&order) {
                                         parent.spawn((
                                             Button,
                                             CaravanMenuButtons::ChangeTradeConfirm(
                                                 city_id.clone(),
                                                 *resource,
-                                                res,
+                                                *res,
                                             ),
                                             Node {
                                                 min_height: px(32),
