@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::math::usize;
 use bevy::picking::hover::HoverMap;
+use bevy::ui::InteractionDisabled;
 
 use super::city_data::CityData;
 use super::market::*;
@@ -22,6 +23,8 @@ pub fn plugin(app: &mut App) {
             Update,
             caravan_destination_buttons.run_if(in_state(StrategicState::DestinationPicker)),
         )
+        .add_systems(OnEnter(PopupHUD::Off), set_interaction(true))
+        .add_systems(OnExit(PopupHUD::Off), set_interaction(false))
         .add_systems(Update, no_popup_button.run_if(in_state(PopupHUD::Off)))
         .add_systems(
             Update,
@@ -33,6 +36,19 @@ pub fn plugin(app: &mut App) {
         )
         .add_observer(on_scroll_handler)
         .add_systems(Update, popup_button);
+}
+
+fn set_interaction(show: bool) -> impl Fn(Commands, Query<Entity, With<Node>>) {
+    move |mut commands: Commands, query: Query<Entity, With<Node>>| {
+        for ent in query {
+            let mut cmd = commands.entity(ent);
+            if show {
+                cmd.remove::<InteractionDisabled>();
+            } else {
+                cmd.insert(InteractionDisabled);
+            }
+        }
+    }
 }
 
 #[derive(Component)]
