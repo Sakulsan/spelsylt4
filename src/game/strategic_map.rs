@@ -44,7 +44,7 @@ pub struct Caravan {
     pub order_idx: usize,
     pub time_travelled: usize,
     pub position_city_id: String,
-    pub cargo: Vec<(Resources, usize)>,
+    pub cargo: HashMap<Resources, usize>,
 }
 
 #[derive(Clone, Default, Eq, PartialEq, Debug)]
@@ -104,6 +104,8 @@ impl Caravan {
                 );
                 if caravan.orders[caravan.order_idx].goal_city_id == current_city.1.id {
                     let available_commodies = current_city.1.available_commodities(&building_table);
+                    let cargo_access = caravan.cargo.clone();
+                    info!("Caravan currently has {:?} stored", cargo_access);
                     for (trade, amount) in caravan.orders[caravan.order_idx].trade_order.clone() {
                         if amount > 0 && available_commodies.contains(&trade) {
                             let amount_available = current_city.1.market[&trade];
@@ -111,19 +113,23 @@ impl Caravan {
                             let price = current_city
                                 .1
                                 .get_bulk_buy_price(&trade, amount_bought as usize);
+                            info!("Caravan paid {0} for {1}", price, trade.get_name());
                             player.money -= price;
+                            caravan.cargo.insert(trade, cargo_access.get(&trade).unwrap_or(&0) + amount_bought as usize);
                             current_city
                                 .1
                                 .market
                                 .insert(trade, amount_available - amount_bought);
                         }
-                        if amount > 0 {
+                        if amount < 0 {
                             let amount_available = current_city.1.market[&trade];
-                            let amount_sold = amount.abs();
+                            let amount_sold = amount.abs().min(*cargo_access.get(&trade).unwrap_or(&0) as isize);
                             let price = current_city
                                 .1
                                 .get_bulk_sell_price(&trade, amount_sold as usize);
                             player.money += price;
+                            caravan.cargo.insert(trade, cargo_access.get(&trade).unwrap_or(&0) - amount_sold as usize);
+                            info!("Caravan sold {0} for {1}", price, trade.get_name());
                             current_city
                                 .1
                                 .market
