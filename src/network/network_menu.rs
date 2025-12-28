@@ -1,5 +1,15 @@
 use bevy::color::palettes::css::{CRIMSON, LIGHT_SLATE_GRAY};
+use bevy_renet::netcode::{
+    ClientAuthentication, NetcodeClientPlugin, NetcodeClientTransport, NetcodeServerPlugin,
+    NetcodeServerTransport, NetcodeTransportError, ServerAuthentication, ServerConfig,
+};
+use bevy_renet::{
+    renet::{ConnectionConfig, RenetServer},
+    RenetClientPlugin, RenetServerPlugin,
+};
 use bevy_simple_text_input::{TextInput, TextInputValue};
+use std::net::{SocketAddr, UdpSocket};
+use std::time::SystemTime;
 
 use crate::{prelude::*, GameState};
 
@@ -10,13 +20,15 @@ const HOVERED_PRESSED_BUTTON: Color = Color::srgb(0.25, 0.65, 0.25);
 const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
 
 pub fn plugin(app: &mut App) {
+    app.add_plugins((RenetServerPlugin, RenetClientPlugin, NetcodeClientPlugin));
+
     app.add_systems(
         OnEnter(GameState::NetworkMenu),
         (crate::kill_music, spawn_network_menu),
     )
     .add_systems(
         OnEnter(NetworkMenuState::Lobby),
-        (lobby_menu_setup, update_players),
+        (lobby_menu_setup, update_players, host_server),
     )
     .add_systems(OnEnter(NetworkMenuState::Join), join_menu_setup)
     .init_state::<NetworkMenuState>() //Feels weird to have duplicate names, but it works
@@ -365,4 +377,34 @@ fn join_menu_setup(mut commands: Commands) {
             ]
         ),],
     ));
+}
+
+fn host_server(mut commands: Commands) {
+    let server = RenetServer::new(ConnectionConfig::default());
+    commands.insert_resource(server);
+
+    let server = RenetServer::new(ConnectionConfig::default());
+    commands.insert_resource(server);
+
+    let local_ip = match local_ip_address::local_ip() {
+        Ok(ip) => ip,
+        Err(e) => {
+            error!("Server failed to start: couldn't get local IP address");
+            return;
+        }
+    };
+
+    let server_addr = SocketAddr::new(local_ip, 5000);
+    let socket = UdpSocket::bind(server_addr).unwrap();
+    let server_config = ServerConfig {
+        current_time: SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap(),
+        max_clients: 64,
+        protocol_id: 0,
+        public_addresses: vec![server_addr],
+        authentication: ServerAuthentication::Unsecure,
+    };
+    let transport = NetcodeServerTransport::new(server_config, socket).unwrap();
+    commands.insert_resource(transport);
 }
