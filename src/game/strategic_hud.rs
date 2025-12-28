@@ -9,6 +9,7 @@ use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::{Caravan, Order, Player, SelectedCaravan, SelectedCity, StrategicState};
 use super::tooltip::Tooltips;
+use crate::game::strategic_map::CityNodeMarker;
 use crate::game::strategic_map::{ActivePlayer, BelongsTo};
 use crate::game::tooltip::TooltipOf;
 use crate::prelude::*;
@@ -24,6 +25,8 @@ pub fn plugin(app: &mut App) {
             Update,
             caravan_destination_buttons.run_if(in_state(StrategicState::DestinationPicker)),
         )
+        .add_systems(OnEnter(StrategicState::DestinationPicker), on_city_scout)
+        .add_systems(OnExit(StrategicState::DestinationPicker), off_city_scout)
         .add_systems(OnEnter(PopupHUD::Off), set_interaction(true))
         .add_systems(OnExit(PopupHUD::Off), set_interaction(false))
         .add_systems(
@@ -32,6 +35,8 @@ pub fn plugin(app: &mut App) {
                 .run_if(in_state(GameState::Game))
                 .run_if(in_state(PopupHUD::Off)),
         )
+        .add_systems(OnExit(PopupHUD::Off), set_interaction(false))
+        .add_systems(Update, no_popup_button.run_if(in_state(PopupHUD::Off)))
         .add_systems(
             Update,
             (caravan_button, send_scroll_events).run_if(in_state(PopupHUD::Caravan)),
@@ -72,6 +77,18 @@ pub enum PopupHUD {
     Buildings,
     Caravan,
     Wares,
+}
+
+fn on_city_scout(mut interaction_query: Query<&mut Visibility, With<PopUpItem>>) {
+    for mut node_vis in interaction_query.iter_mut() {
+        *node_vis = Visibility::Hidden;
+    }
+}
+
+fn off_city_scout(mut interaction_query: Query<&mut Visibility, With<PopUpItem>>) {
+    for mut node_vis in interaction_query.iter_mut() {
+        *node_vis = Visibility::Visible;
+    }
 }
 
 fn no_popup_button(
@@ -663,7 +680,11 @@ fn caravan_button(
 
 fn caravan_destination_buttons(
     mut commands: Commands,
-    mut interaction_query: Query<(&Interaction, &CityData), (Changed<Interaction>, With<Button>)>,
+    mut interaction_query: Query<
+        (&Interaction, &CityNodeMarker),
+        (Changed<Interaction>, With<Button>),
+    >,
+    city_data_query: Query<&CityData>,
     selected_caravan: Res<SelectedCaravan>,
     mut caravans: Query<&mut Caravan>,
     mut window_state: ResMut<NextState<StrategicState>>,
@@ -673,14 +694,21 @@ fn caravan_destination_buttons(
         return;
     };
 
-    for (interaction, city_data) in &interaction_query {
-        if *interaction == Interaction::Pressed {
-            selected_caravan.orders.push(Order {
-                goal_city_id: city_data.id.clone(),
-                ..default()
-            });
-            window_state.set(StrategicState::HUDOpen);
-        }
+    for (interaction, city_entity) in &interaction_query {
+        if let Ok(city) = city_data_query.get(city_entity.0) {
+            println!("Found a city that was touched");
+            if *interaction == Interaction::Pressed {
+                println!("Found a city that was clicked");
+                selected_caravan.orders.push(Order {
+                    goal_city_id: city.id.clone(),
+                    ..default()
+                });
+                window_state.set(StrategicState::HUDOpen);
+            }
+        } else {
+            error!("Clicked a non existing city");
+            return;
+        };
     }
 }
 

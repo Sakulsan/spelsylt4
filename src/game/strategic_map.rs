@@ -276,7 +276,7 @@ fn update_caravan_hud(
 use super::tooltip::Tooltips;
 
 #[derive(Component)]
-pub struct CityNodeMarker(Entity);
+pub struct CityNodeMarker(pub(crate) Entity);
 #[derive(Component)]
 pub struct CityImageMarker;
 
