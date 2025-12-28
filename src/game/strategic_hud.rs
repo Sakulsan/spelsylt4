@@ -8,6 +8,7 @@ use super::strategic_map::{
 };
 use super::city_data::CityData;
 use super::tooltip::Tooltips;
+use crate::game::tooltip::TooltipOf;
 use crate::prelude::*;
 pub fn plugin(app: &mut App) {
     app.init_state::<PopupHUD>()
@@ -281,6 +282,7 @@ fn update_caravan_menu(
     mut stats: ResMut<PlayerStats>,
     mut commands: Commands,
 ) {
+    //stats.caravans.iter()
     for caravan_box in caravan_box.iter() {
         commands.entity(caravan_box).despawn_children();
         commands.entity(caravan_box).with_children(|parent| {
@@ -493,95 +495,60 @@ fn caravan_button(
                 }
                 CaravanMenuButtons::AddTradeToStop(stop_name) => {
                     //Hashmap here?
-                    if let Some(pos) = selected_caravan
+                    selected_caravan
                         .0
                         .orders
-                        .iter()
-                        .position(|order| order.goal_city_id == *stop_name)
-                    {
-                        selected_caravan
-                            .0
-                            .orders
-                            .get_mut(pos)
-                            .unwrap()
-                            .trade_order
-                            .insert(Resources::Food, 0);
-                    } else {
-                        error!("Couldn't find city named {}", stop_name);
-                        continue;
-                    }
+                        .iter_mut()
+                        .filter(|order| order.goal_city_id == *stop_name)
+                        .collect::<Vec<&mut Order>>()
+                        .get_mut(0)
+                        .expect(format!("Couldn't find city named {}", stop_name).as_str())
+                        .trade_order
+                        .insert(Resources::Food, 0);
                 }
-                CaravanMenuButtons::RemoveStop(stop_name) => {
-                    if let Some(pos) = selected_caravan
+                /*                CaravanMenuButtons::RemoveStop(stop_name) => {
+                    selected_caravan
                         .0
                         .orders
-                        .iter()
-                        .position(|order| order.goal_city_id == *stop_name)
-                    {
-                        selected_caravan.0.orders.remove(pos);
-                    } else {
-                        error!("Couldn't find city named {}", stop_name);
-                        continue;
-                    }
-                }
+                        .remove(|order| order.goal_city_id == *stop_name);
+                }*/
                 CaravanMenuButtons::IncTradeAmount(city_id, resource) => {
-                    if let Some(pos) = selected_caravan
+                    *selected_caravan
                         .0
                         .orders
-                        .iter()
-                        .position(|order| order.goal_city_id == *city_id)
-                    {
-                        *selected_caravan
-                            .0
-                            .orders
-                            .get_mut(pos)
-                            .unwrap()
-                            .trade_order
-                            .get_mut(resource) //Should never call a undefined resource
-                            .unwrap() += 1;
-                    } else {
-                        error!("Couldn't find city named {}", city_id);
-                        continue;
-                    }
+                        .iter_mut()
+                        .filter(|order| order.goal_city_id == *city_id)
+                        .collect::<Vec<&mut Order>>()
+                        .get_mut(0)
+                        .expect(format!("Couldn't find city named {}", city_id).as_str())
+                        .trade_order
+                        .get_mut(resource) //Should never call a undefined resource
+                        .expect("Couldn't find resource, should never happen") += 1;
                 }
                 CaravanMenuButtons::DecTradeAmount(city_id, resource) => {
-                    if let Some(pos) = selected_caravan
+                    *selected_caravan
                         .0
                         .orders
-                        .iter()
-                        .position(|order| order.goal_city_id == *city_id)
-                    {
-                        *selected_caravan
-                            .0
-                            .orders
-                            .get_mut(pos)
-                            .unwrap()
-                            .trade_order
-                            .get_mut(resource) //Should never call a undefined resource
-                            .unwrap() -= 1;
-                    } else {
-                        error!("Couldn't find city named {}", city_id);
-                        continue;
-                    }
+                        .iter_mut()
+                        .filter(|order| order.goal_city_id == *city_id)
+                        .collect::<Vec<&mut Order>>()
+                        .get_mut(0)
+                        .expect(format!("Couldn't find city named {}", city_id).as_str())
+                        .trade_order
+                        .get_mut(resource) //Should never call a undefined resource
+                        .expect("Couldn't find resource, should never happen") -= 1;
                 }
                 CaravanMenuButtons::KillTrade(city_id, resource) => {
-                    if let Some(pos) = selected_caravan
+                    selected_caravan
                         .0
                         .orders
-                        .iter()
-                        .position(|order| order.goal_city_id == *city_id)
-                    {
-                        selected_caravan
-                            .0
-                            .orders
-                            .get_mut(pos)
-                            .unwrap() //Should never call a undefined resource
-                            .trade_order
-                            .remove(resource);
-                    } else {
-                        error!("Couldn't find city named {}", city_id);
-                        continue;
-                    }
+                        .iter_mut()
+                        .filter(|order| order.goal_city_id == *city_id)
+                        .collect::<Vec<&mut Order>>()
+                        .get_mut(0)
+                        .expect(format!("Couldn't find city named {}", city_id).as_str())
+                        .trade_order
+                        .remove(resource);
                 }
                 _ => {}
             }
@@ -590,7 +557,9 @@ fn caravan_button(
 }
 
 //removes all hud elements
-fn on_destination_pick(mut node_hider: Query<&mut Visibility, (With<Node>, Without<CityData>)>) {
+fn on_destination_pick(
+    mut node_hider: Query<&mut Visibility, (With<Node>, Without<CityData>, Without<TooltipOf>)>,
+) {
     for mut node in node_hider.iter_mut() {
         *node = Visibility::Hidden;
     }
@@ -598,7 +567,7 @@ fn on_destination_pick(mut node_hider: Query<&mut Visibility, (With<Node>, Witho
 
 //re-adds all hud elements
 fn off_destination_pick(
-    mut node_hider: Query<&mut Visibility, (With<Node>, Without<CityData>, Without<Tooltips>)>,
+    mut node_hider: Query<&mut Visibility, (With<Node>, Without<CityData>, Without<TooltipOf>)>,
 ) {
     for mut node in node_hider.iter_mut() {
         *node = Visibility::Visible;
