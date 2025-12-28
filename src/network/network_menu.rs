@@ -3,6 +3,7 @@ use bevy_renet::netcode::{
     ClientAuthentication, NetcodeClientPlugin, NetcodeClientTransport, NetcodeServerPlugin,
     NetcodeServerTransport, NetcodeTransportError, ServerAuthentication, ServerConfig,
 };
+use bevy_renet::renet::RenetClient;
 use bevy_renet::{
     renet::{ConnectionConfig, RenetServer},
     RenetClientPlugin, RenetServerPlugin,
@@ -20,7 +21,12 @@ const HOVERED_PRESSED_BUTTON: Color = Color::srgb(0.25, 0.65, 0.25);
 const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins((RenetServerPlugin, RenetClientPlugin, NetcodeClientPlugin));
+    app.add_plugins((
+        RenetServerPlugin,
+        RenetClientPlugin,
+        NetcodeServerPlugin,
+        NetcodeClientPlugin,
+    ));
 
     app.add_systems(
         OnEnter(GameState::NetworkMenu),
@@ -28,7 +34,7 @@ pub fn plugin(app: &mut App) {
     )
     .add_systems(
         OnEnter(NetworkMenuState::Lobby),
-        (lobby_menu_setup, update_players, host_server),
+        (lobby_menu_setup, update_players, host_server).chain(),
     )
     .add_systems(OnEnter(NetworkMenuState::Join), join_menu_setup)
     .init_state::<NetworkMenuState>() //Feels weird to have duplicate names, but it works
@@ -189,8 +195,26 @@ fn button_hover_system(
         }
     }
 }
+#[derive(Event)]
+struct JoinEvent(String);
+
+fn squad_up(mut commands: Commands, join: On<JoinEvent>) {
+    let authentication = ClientAuthentication::Unsecure {
+        server_addr: SocketAddr::new(join.0.parse().unwrap(), 5000),
+        client_id: 0,
+        user_data: None,
+        protocol_id: 0,
+    };
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let current_time = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
+    let mut transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
+    commands.insert_resource(transport);
+}
 
 fn button_functionality(
+    mut commands: Commands,
     interaction_query: Query<
         (&Interaction, &NetworkMenuButton),
         (Changed<Interaction>, With<Button>),
@@ -213,10 +237,8 @@ fn button_functionality(
                     menu_state.set(NetworkMenuState::Join);
                 }
                 NetworkMenuButton::ConnectToServerButton => {
-                    println!(
-                        "Connecting to ip: {}",
-                        &ip_address_field.as_ref().unwrap().0
-                    );
+                    commands.trigger(JoinEvent(ip_address_field.as_ref().unwrap().0.to_string()));
+                    info!("Connecting to ip: {}", ip_address_field.as_ref().unwrap().0);
                 }
                 NetworkMenuButton::StartButton => {
                     todo!()
@@ -272,7 +294,7 @@ fn lobby_menu_setup(mut commands: Commands) {
                 },
                 BackgroundColor(CRIMSON.into()),
             ),
-            (Text::new("IP: 192.128......")),
+            (Text::new("IP: 192.128......"), IPField),
             (Text::new("World seed: SEED")),
             (
                 PlayerContainer,
@@ -331,6 +353,9 @@ fn join_menu_setup(mut commands: Commands) {
         TextColor(TEXT_COLOR),
     );
 
+    let client = RenetClient::new(ConnectionConfig::default());
+    commands.insert_resource(client);
+
     commands.spawn((
         DespawnOnExit(NetworkMenuState::Join),
         Node {
@@ -379,7 +404,7 @@ fn join_menu_setup(mut commands: Commands) {
     ));
 }
 
-fn host_server(mut commands: Commands) {
+fn host_server(mut commands: Commands, field: Query<Entity, With<IPField>>) {
     let server = RenetServer::new(ConnectionConfig::default());
     commands.insert_resource(server);
 
@@ -395,6 +420,10 @@ fn host_server(mut commands: Commands) {
     };
 
     let server_addr = SocketAddr::new(local_ip, 5000);
+
+    commands
+        .entity(field.single().unwrap())
+        .insert(Text(format!("Hosting server on: {}", server_addr)));
     let socket = UdpSocket::bind(server_addr).unwrap();
     let server_config = ServerConfig {
         current_time: SystemTime::now()
