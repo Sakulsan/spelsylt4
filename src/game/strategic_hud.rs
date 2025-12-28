@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
+use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::math::usize;
+use bevy::picking::hover::HoverMap;
 
 use super::city_data::CityData;
 use super::market::*;
@@ -21,11 +23,15 @@ pub fn plugin(app: &mut App) {
             caravan_destination_buttons.run_if(in_state(StrategicState::DestinationPicker)),
         )
         .add_systems(Update, no_popup_button.run_if(in_state(PopupHUD::Off)))
-        .add_systems(Update, caravan_button.run_if(in_state(PopupHUD::Caravan)))
+        .add_systems(
+            Update,
+            (caravan_button, send_scroll_events).run_if(in_state(PopupHUD::Caravan)),
+        )
         .add_systems(
             Update,
             (update_caravan_menu).run_if(resource_changed::<super::strategic_map::SelectedCaravan>),
         )
+        .add_observer(on_scroll_handler)
         .add_systems(Update, popup_button);
 }
 
@@ -241,11 +247,7 @@ enum CaravanMenuButtons {
     NewStop,
     RemoveStop(String),
     AddTradeToStop(String),
-    ChangeTrade {
-        city_id: String,
-        from: Resources,
-        to: Resources,
-    },
+    ChangeTrade(String, Resources),
     IncTradeAmount(String, Resources),
     DecTradeAmount(String, Resources),
     KillTrade(String, Resources),
@@ -328,16 +330,20 @@ fn update_caravan_menu(
     }
 }
 
+#[derive(Component, Default, Clone, Debug)]
+struct CaravanCityUINode(String);
+
 fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>) {
     for stop in orders {
         let transaction_count = stop.trade_order.len();
 
         parent
             .spawn((
+                CaravanCityUINode(stop.goal_city_id.clone()),
                 Node {
                     left: percent(5),
                     width: percent(90),
-                    height: px(72 + 48 * transaction_count),
+                    min_height: px(72 + 48 * transaction_count),
                     flex_direction: FlexDirection::Column,
                     ..default()
                 },
@@ -405,20 +411,17 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>)
                                      //HUD buttons
                                      {
                                          parent.spawn((
-                                             Button, //TODO
-                                             CaravanMenuButtons::ChangeTrade {
-                                                 city_id: stop.goal_city_id.clone(),
-                                                 from: Resources::Food,
-                                                 to: Resources::Food,
-                                             },
+                                             Button,
+                                             CaravanMenuButtons::ChangeTrade(stop.goal_city_id.clone(),*resource),
                                              Node {
                                                  width: px(256),
                                                  height: px(44),
+                                                 margin: UiRect::all(px(2)),
                                                  border: UiRect::all(px(2)),
                                                  ..default()
                                              },
                                              BackgroundColor(Srgba::new(0.9, 0.2, 0.2, 1.0).into()),
-                                             Text::new("Select type")
+                                             Text::new(resource.get_name())
                                          ));
 
 
@@ -429,7 +432,7 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>)
                                              Node {
                                                  width: px(44),
                                                  height: px(44),
-                                                 border: UiRect::all(px(2)),
+                                                 margin: UiRect::all(px(2)),
                                                  ..default()
                                              },
                                              BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
@@ -440,6 +443,7 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>)
                                              Node {
                                                  width: px(44),
                                                  height: px(44),
+                                                 margin: UiRect::all(px(2)),
                                                  ..default()
                                              },
                                              BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
@@ -452,6 +456,7 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>)
                                              Node {
                                                  width: px(44),
                                                  height: px(44),
+                                                 margin: UiRect::all(px(2)),
                                                  ..default()
                                              },
                                              BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
@@ -464,11 +469,10 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>)
                                              Node {
                                                  width: px(44),
                                                  height: px(44),
-                                                 border: UiRect::all(px(2)),
+                                                 margin: UiRect::all(px(2)),
                                                  ..default()
                                              },
                                              BackgroundColor(Srgba::new(0.9, 0.1, 0.1, 1.0).into()),
-                                             Text::new("")
                                          ));
                                      });
                 }
@@ -482,6 +486,7 @@ fn caravan_button(
         (&Interaction, &CaravanMenuButtons),
         (Changed<Interaction>, With<Button>),
     >,
+    mut hudNode: Query<Entity, With<CaravanCityUINode>>,
     //mut menu_state: ResMut<NextState<StrategicState>>,
     mut selected_caravan: ResMut<SelectedCaravan>,
     mut window_state: ResMut<NextState<StrategicState>>,
@@ -548,6 +553,39 @@ fn caravan_button(
                         .expect(format!("Couldn't find city named {}", city_id).as_str())
                         .trade_order
                         .remove(resource);
+                }
+                CaravanMenuButtons::ChangeTrade(city_id, resource) => {
+                    for entity in hudNode.iter() {
+                        commands.entity(entity).with_children(|parent| {
+                            parent
+                                .spawn((
+                                    // Scrolling list
+                                    ZIndex(10),
+                                    Node {
+                                        flex_direction: FlexDirection::Column,
+                                        align_self: AlignSelf::Stretch,
+                                        height: px(200),
+                                        width: px(400),
+                                        overflow: Overflow::scroll_y(), // n.b.
+                                        ..default()
+                                    },
+                                    BackgroundColor(Color::srgb(0.25, 0.25, 0.25)),
+                                ))
+                                .with_children(|parent| {
+                                    for res in Resources::all_resources() {
+                                        parent.spawn((
+                                            Button,
+                                            Node {
+                                                min_height: px(32),
+                                                max_height: px(32),
+                                                ..default()
+                                            },
+                                            children![(Text::new(res.get_name()))],
+                                        ));
+                                    }
+                                });
+                        });
+                    }
                 }
                 _ => {}
             }
@@ -990,4 +1028,86 @@ pub fn city_hud_setup(mut commands: Commands, mut sylt: Sylt, selected_city: Res
             ),
         ],
     ));
+}
+
+/// Injects scroll events into the UI hierarchy.
+fn send_scroll_events(
+    mut mouse_wheel_reader: MessageReader<MouseWheel>,
+    hover_map: Res<HoverMap>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut commands: Commands,
+) {
+    for mouse_wheel in mouse_wheel_reader.read() {
+        let mut delta = -Vec2::new(mouse_wheel.x, mouse_wheel.y);
+
+        if mouse_wheel.unit == MouseScrollUnit::Line {
+            delta *= 32.;
+        }
+
+        if keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]) {
+            std::mem::swap(&mut delta.x, &mut delta.y);
+        }
+
+        for pointer_map in hover_map.values() {
+            for entity in pointer_map.keys().copied() {
+                commands.trigger(Scroll { entity, delta });
+            }
+        }
+    }
+}
+
+/// UI scrolling event.
+#[derive(EntityEvent, Debug)]
+#[entity_event(propagate, auto_propagate)]
+struct Scroll {
+    entity: Entity,
+    /// Scroll delta in logical coordinates.
+    delta: Vec2,
+}
+
+fn on_scroll_handler(
+    mut scroll: On<Scroll>,
+    mut query: Query<(&mut ScrollPosition, &Node, &ComputedNode)>,
+) {
+    let Ok((mut scroll_position, node, computed)) = query.get_mut(scroll.entity) else {
+        return;
+    };
+
+    let max_offset = (computed.content_size() - computed.size()) * computed.inverse_scale_factor();
+
+    let delta = &mut scroll.delta;
+    if node.overflow.x == OverflowAxis::Scroll && delta.x != 0. {
+        // Is this node already scrolled all the way in the direction of the scroll?
+        let max = if delta.x > 0. {
+            scroll_position.x >= max_offset.x
+        } else {
+            scroll_position.x <= 0.
+        };
+
+        if !max {
+            scroll_position.x += delta.x;
+            // Consume the X portion of the scroll delta.
+            delta.x = 0.;
+        }
+    }
+
+    if node.overflow.y == OverflowAxis::Scroll && delta.y != 0. {
+        // Is this node already scrolled all the way in the direction of the scroll?
+        let max = if delta.y > 0. {
+            scroll_position.y >= max_offset.y
+        } else {
+            scroll_position.y <= 0.
+        };
+
+        if !max {
+            scroll_position.y += delta.y;
+            // Consume the Y portion of the scroll delta.
+            delta.y = 0.;
+        }
+    }
+
+    // Stop propagating when the delta is fully consumed.
+    if *delta == Vec2::ZERO {
+        scroll.propagate(false);
+    }
 }
