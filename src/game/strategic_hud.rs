@@ -47,6 +47,7 @@ pub fn plugin(app: &mut App) {
                 any_match_filter::<Changed<Caravan>>.or(resource_changed::<SelectedCaravan>),
             ),
         )
+        .add_systems(Update, update_caravan_order_idx)
         .add_observer(on_scroll_handler)
         .add_systems(Update, popup_button);
 }
@@ -690,6 +691,16 @@ fn caravan_button(
                 }
                 _ => {}
             }
+        }
+    }
+}
+
+fn update_caravan_order_idx(
+    mut caravan_query: Query<(&mut Caravan), (Changed<Caravan>)>
+) {
+    for mut caravan in caravan_query {
+        if caravan.orders[caravan.order_idx].goal_city_id == caravan.position_city_id && caravan.orders.len() > 1 {
+            caravan.order_idx = (caravan.order_idx + 1) % caravan.orders.len();
         }
     }
 }
