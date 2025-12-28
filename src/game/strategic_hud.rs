@@ -442,6 +442,7 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>)
                     left: percent(5),
                     width: percent(90),
                     min_height: px(72 + 48 * transaction_count),
+                    margin: UiRect::all(px(4)),
                     flex_direction: FlexDirection::Column,
                     ..default()
                 },

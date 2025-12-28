@@ -159,9 +159,9 @@ impl<'w> Sylt<'w> {
             Sprite {
                 image: handle.clone(),
                 texture_atlas: atlas_handle.as_mut().map(|handle| TextureAtlas {
-                        layout: handle.clone(),
-                        index: 0,
-                    }),
+                    layout: handle.clone(),
+                    index: 0,
+                }),
                 ..Default::default()
             }
         } else if let Some(path) = path {
@@ -186,9 +186,9 @@ impl<'w> Sylt<'w> {
             Sprite {
                 image: handle,
                 texture_atlas: atlas_handle.as_mut().map(|handle| TextureAtlas {
-                        layout: handle.clone(),
-                        index: 0,
-                    }),
+                    layout: handle.clone(),
+                    index: 0,
+                }),
                 ..Default::default()
             }
         } else {
