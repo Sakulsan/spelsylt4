@@ -5,7 +5,7 @@ use crate::prelude::*;
 
 use super::market::*;
 use crate::GameState;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
 
@@ -96,12 +96,12 @@ impl CityData {
             panic!("tried to find resource {res:?} but the resource was missing")
         };
 
-        let sigmoid = 2.0 / (1.0 + (std::f64::consts::E).powf(*total as f64 / 200.0)) as f64;
+        let sigmoid = 2.0 / (1.0 + (std::f64::consts::E).powf((*total) as f64 * 1.0 / 200.0)) as f64;
         sigmoid.max(0.3)
     }
 
     fn get_theoretical_resource_value_modifier(&self, res: &Resources, amount: isize) -> f64 {
-        let sigmoid = 2.0 / (1.0 + (std::f64::consts::E).powf(amount as f64 / 200.0));
+        let sigmoid = 2.0 / (1.0 + (std::f64::consts::E).powf(amount as f64 * 1.0 / 200.0));
         sigmoid.max(0.3)
     }
 
@@ -167,7 +167,7 @@ impl CityData {
                                 .get(res)
                                 .or_else(|| -> Option<&isize> { Some(&0) })
                                 .expect(format!("bruh value {:?}", res).as_str())
-                                + amount,
+                                - amount,
                         );
                     }
                     for (res, amount) in &building_table
@@ -182,7 +182,7 @@ impl CityData {
                                 .get(res)
                                 .or_else(|| -> Option<&isize> { Some(&0) })
                                 .expect(format!("bruh value {:?}", res).as_str())
-                                - amount,
+                                + amount,
                         );
                     }
                 }
@@ -195,11 +195,19 @@ impl CityData {
         get_outputs!(self.buildings_t4);
         get_outputs!(self.buildings_t5);
 
-        resources
+        let mut hash = resources
             .iter()
             .filter(|(k, v)| v >= &&0)
             .map(|(k, v)| *k)
-            .collect::<Vec<Resources>>()
+            .collect::<HashSet<Resources>>();
+
+        for (res, amount) in self.market.clone() {
+            if amount > 0 {
+                hash.insert(res);
+            }
+        }
+
+        hash.iter().map(|x| *x).collect::<Vec<_>>()
     }
 
     #[rustfmt::skip]

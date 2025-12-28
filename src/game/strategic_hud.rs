@@ -883,6 +883,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>, b
                                                                     .iter()
                                                                     .map(|x| *x)
                                                                     .collect::<Vec<Resources>>());
+        info!("{0:?}\n{1:?}", town.market, town.available_commodities(&building_table));
         let basic_resources = HashSet::from(market::BASIC_RESOURCES);
         let advanced_resources = HashSet::from(market::ADVANCED_RESOURCES);
         let exotic_resources = HashSet::from(market::EXOTIC_RESOURCES);
@@ -890,7 +891,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>, b
         let illegal_resources = HashSet::from(market::ILLEGAL_RESOURCES);
         let color_coded_basics = basic_resources.iter()
                         .map(|x| 
-                            if basic_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
+                            if basic_resources.intersection(&available_resources).collect::<Vec<_>>().contains(&x) {
                                 TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
                             } else {
                                 TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
@@ -902,7 +903,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>, b
 
         let color_coded_advanced = advanced_resources.iter()
                         .map(|x|
-                            if advanced_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
+                            if advanced_resources.intersection(&available_resources).collect::<Vec<_>>().contains(&x) {
                                 TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
                             } else {
                                 TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
@@ -914,7 +915,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>, b
 
         let color_coded_exotics = exotic_resources.iter()
                         .map(|x|
-                            if exotic_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
+                            if exotic_resources.intersection(&available_resources).collect::<Vec<_>>().contains(&x) {
                                 TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
                             } else {
                                 TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
@@ -926,7 +927,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>, b
 
         let color_coded_service = service_resources.iter()
                         .map(|x|
-                            if service_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
+                            if service_resources.intersection(&available_resources).collect::<Vec<_>>().contains(&x) {
                                 TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
                             } else {
                                 TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
@@ -938,7 +939,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>, b
 
         let color_coded_illegal = illegal_resources.iter()
                         .map(|x|
-                            if illegal_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
+                            if illegal_resources.intersection(&available_resources).collect::<Vec<_>>().contains(&x) {
                                 TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
                             } else {
                                 TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
