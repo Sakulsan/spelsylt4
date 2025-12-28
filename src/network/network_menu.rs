@@ -3,7 +3,7 @@ use bevy_renet::netcode::{
     ClientAuthentication, NetcodeClientPlugin, NetcodeClientTransport, NetcodeServerPlugin,
     NetcodeServerTransport, NetcodeTransportError, ServerAuthentication, ServerConfig,
 };
-use bevy_renet::renet::{RenetClient, ServerEvent};
+use bevy_renet::renet::{DefaultChannel, RenetClient, ServerEvent};
 use bevy_renet::{
     renet::{ConnectionConfig, RenetServer},
     RenetClientPlugin, RenetServerPlugin,
@@ -42,7 +42,12 @@ pub fn plugin(app: &mut App) {
         Update,
         (button_hover_system, button_functionality).run_if(in_state(GameState::NetworkMenu)),
     )
-    .add_systems(Update, handle_events_system);
+    .add_systems(Update, handle_events_system)
+    .add_systems(
+        Update,
+        (send_message_system, receive_message_system).run_if(resource_exists::<RenetClient>),
+    )
+    .add_observer(squad_up);
 }
 
 fn handle_events_system(mut server_events: MessageReader<ServerEvent>) {
@@ -212,19 +217,41 @@ fn button_hover_system(
 #[derive(Event)]
 struct JoinEvent(String);
 
-fn squad_up(mut commands: Commands, join: On<JoinEvent>) {
+fn squad_up(join: On<JoinEvent>, mut commands: Commands) {
     let authentication = ClientAuthentication::Unsecure {
         server_addr: SocketAddr::new(join.0.parse().unwrap(), 5000),
         client_id: 0,
         user_data: None,
         protocol_id: 0,
     };
-    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+
+    let local_ip = match local_ip_address::local_ip() {
+        Ok(ip) => ip,
+        Err(e) => {
+            error!("Server failed to start: couldn't get local IP address");
+            return;
+        }
+    };
+
+    let socket = UdpSocket::bind(SocketAddr::new(local_ip, 5000)).unwrap();
     let current_time = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap();
+
+    info!("set up client on ip {}", local_ip);
     let mut transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
     commands.insert_resource(transport);
+}
+
+fn send_message_system(mut client: ResMut<RenetClient>) {
+    // Send a text message to the server
+    client.send_message(DefaultChannel::ReliableOrdered, "server message");
+}
+
+fn receive_message_system(mut client: ResMut<RenetClient>) {
+    while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
+        // Handle received message
+    }
 }
 
 fn button_functionality(
@@ -234,7 +261,7 @@ fn button_functionality(
         (Changed<Interaction>, With<Button>),
     >,
     mut menu_state: ResMut<NextState<NetworkMenuState>>,
-    ip_address_field: Option<Single<&TextInputValue, (With<IPField>, Changed<TextInputValue>)>>,
+    ip_address_field: Option<Single<&TextInputValue, With<IPField>>>,
     mut game_state: ResMut<NextState<GameState>>,
 ) {
     for (interaction, menu_button_action) in &interaction_query {
