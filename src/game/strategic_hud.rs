@@ -267,6 +267,7 @@ enum CaravanMenuButtons {
     IncTradeAmount(String, Resources),
     DecTradeAmount(String, Resources),
     KillTrade(String, Resources),
+    ChangeTradeConfirm(String, Resources, Resources),
 }
 
 fn caravan_menu(mut commands: Commands) {
@@ -591,6 +592,11 @@ fn caravan_button(
                                     for res in Resources::all_resources() {
                                         parent.spawn((
                                             Button,
+                                            CaravanMenuButtons::ChangeTradeConfirm(
+                                                city_id.clone(),
+                                                *resource,
+                                                res,
+                                            ),
                                             Node {
                                                 min_height: px(32),
                                                 max_height: px(32),
