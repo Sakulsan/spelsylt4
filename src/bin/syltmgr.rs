@@ -24,7 +24,6 @@ pub fn main() {
 
 //demo recs
 use bevy::{
-    color::palettes,
     feathers::{
         controls::{button, checkbox, ButtonProps},
         dark_theme::create_dark_theme,
@@ -130,7 +129,7 @@ fn demo_root(sylt: Sylt) -> impl Bundle {
                         selected_sprite: Res<SelectedSprite>,
                         mut query_sprite: Single<&mut ImageNode, With<PreviewSprite>>,
                         text_box: Single<&TextInputValue, With<FileFinder>>| {
-                            if text_box.0 == "" {
+                            if text_box.0.is_empty() {
                                 sylt.update_path(&selected_sprite.0, None);
                             }
                             else {
@@ -263,7 +262,7 @@ const FONT_SIZE: f32 = 20.;
 
 #[derive(Component)]
 struct SpriteMenuButton(String);
-fn vertically_scrolling_list(mut sylt: Sylt) -> impl Bundle {
+fn vertically_scrolling_list(sylt: Sylt) -> impl Bundle {
     //    sylt.asset_map.load().expect("Could not load");
     let map: Vec<_> = sylt.asset_map.get_all_assets().cloned().collect();
     (
@@ -305,7 +304,7 @@ fn vertically_scrolling_list(mut sylt: Sylt) -> impl Bundle {
                             ..default()
                         },
                         children![(
-                            Text(format!("{}", name)),
+                            Text(name.to_string()),
                             Label,
                             AccessibilityNode(Accessible::new(Role::ListItem)),
                         )],
@@ -345,7 +344,7 @@ fn refresh_sprite_menu(
     mut query_sprite: Single<&mut ImageNode, With<PreviewSprite>>,
     mut text_box: Single<&mut TextInputValue, With<FileFinder>>,
 ) {
-    for (interaction, sprite_id, entity) in &interaction_query {
+    for (interaction, sprite_id, _entity) in &interaction_query {
         if *interaction == Interaction::Pressed {
             *selected_sprite = SelectedSprite(sprite_id.0.clone());
             let sprite_handler = sylt.get_sprite(&sprite_id.0);

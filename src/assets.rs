@@ -34,18 +34,18 @@ impl LoadedAssetMap {
     }
 }
 
-impl Into<AssetMap> for LoadedAssetMap {
-    fn into(self) -> AssetMap {
+impl From<LoadedAssetMap> for AssetMap {
+    fn from(val: LoadedAssetMap) -> Self {
         AssetMap {
-            assets: self.assets.into_values().collect(),
+            assets: val.assets.into_values().collect(),
         }
     }
 }
 
-impl Into<LoadedAssetMap> for AssetMap {
-    fn into(self) -> LoadedAssetMap {
+impl From<AssetMap> for LoadedAssetMap {
+    fn from(val: AssetMap) -> Self {
         LoadedAssetMap {
-            assets: self
+            assets: val
                 .assets
                 .into_iter()
                 .map(|x| (x.name.clone(), x))
@@ -158,13 +158,10 @@ impl<'w> Sylt<'w> {
         if let Some(handle) = image_handle {
             Sprite {
                 image: handle.clone(),
-                texture_atlas: match atlas_handle {
-                    Some(handle) => Some(TextureAtlas {
+                texture_atlas: atlas_handle.as_mut().map(|handle| TextureAtlas {
                         layout: handle.clone(),
                         index: 0,
                     }),
-                    _ => None,
-                },
                 ..Default::default()
             }
         } else if let Some(path) = path {
@@ -188,13 +185,10 @@ impl<'w> Sylt<'w> {
 
             Sprite {
                 image: handle,
-                texture_atlas: match atlas_handle {
-                    Some(handle) => Some(TextureAtlas {
+                texture_atlas: atlas_handle.as_mut().map(|handle| TextureAtlas {
                         layout: handle.clone(),
                         index: 0,
                     }),
-                    _ => None,
-                },
                 ..Default::default()
             }
         } else {
