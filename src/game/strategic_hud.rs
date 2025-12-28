@@ -1,17 +1,20 @@
 use std::collections::btree_map::Entry;
+use std::collections::HashSet;
 use std::collections::{BTreeMap, BTreeSet};
 
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::math::usize;
 use bevy::picking::hover::HoverMap;
 use bevy::ui::InteractionDisabled;
+use bevy::color::palettes::css::*;
 
 use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::{Caravan, Order, Player, SelectedCaravan, SelectedCity, StrategicState};
 use super::tooltip::Tooltips;
-use crate::game::strategic_map::{ActivePlayer, BelongsTo};
+use crate::game::market;
 use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
+use crate::game::strategic_map::{ActivePlayer, BelongsTo};
 use crate::game::tooltip::TooltipOf;
 use crate::prelude::*;
 use crate::GameState;
@@ -865,12 +868,82 @@ fn caravan_destination_buttons(
     }
 }
 
-fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>) {
+fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>, building_table: Res<BuildinTable>) {
     let window = popup_window(&mut commands, FlexDirection::Row);
 
     //Basic and exotic mats
     commands.entity(window).with_children(|parent| {
         //Basic and exotic mats
+        let available_resources: HashSet<Resources> = HashSet::from_iter(
+                                                                town.available_commodities(&building_table)
+                                                                    .iter()
+                                                                    .map(|x| *x)
+                                                                    .collect::<Vec<Resources>>());
+        let basic_resources = HashSet::from(market::BASIC_RESOURCES);
+        let advanced_resources = HashSet::from(market::ADVANCED_RESOURCES);
+        let exotic_resources = HashSet::from(market::EXOTIC_RESOURCES);
+        let service_resources = HashSet::from(market::SERVICE_RESOURCES);
+        let illegal_resources = HashSet::from(market::ILLEGAL_RESOURCES);
+        let color_coded_basics = basic_resources.iter()
+                        .map(|x| 
+                            if basic_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
+                                TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
+                            } else {
+                                TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
+                            }
+                        )
+                        .zip(basic_resources.iter())
+                        .map(|(x, y)| (*y, x))
+                        .collect::<Vec<(Resources, TextColor)>>();
+
+        let color_coded_advanced = advanced_resources.iter()
+                        .map(|x|
+                            if advanced_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
+                                TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
+                            } else {
+                                TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
+                            }
+                        )
+                        .zip(advanced_resources.iter())
+                        .map(|(x, y)| (*y, x))
+                        .collect::<Vec<_>>();
+
+        let color_coded_exotics = exotic_resources.iter()
+                        .map(|x|
+                            if exotic_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
+                                TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
+                            } else {
+                                TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
+                            }
+                        )
+                        .zip(exotic_resources.iter())
+                        .map(|(x, y)| (*y, x))
+                        .collect::<Vec<_>>();
+
+        let color_coded_service = service_resources.iter()
+                        .map(|x|
+                            if service_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
+                                TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
+                            } else {
+                                TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
+                            }
+                        )
+                        .zip(service_resources.iter())
+                        .map(|(x, y)| (*y, x))
+                        .collect::<Vec<_>>();
+
+        let color_coded_illegal = illegal_resources.iter()
+                        .map(|x|
+                            if illegal_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
+                                TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
+                            } else {
+                                TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
+                            }
+                        )
+                        .zip(illegal_resources.iter())
+                        .map(|(x, y)| (*y, x))
+                        .collect::<Vec<_>>();
+
         let city_data = &town.0;
         parent
             .spawn((Node {
@@ -898,17 +971,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>) {
                     .with_children(|parent| {
                         create_resource_list(
                             parent,
-                            vec![
-                                Resources::Food,
-                                Resources::Plants,
-                                Resources::CommonOre,
-                                Resources::RareOre,
-                                Resources::Lumber,
-                                Resources::Stone,
-                                Resources::Water,
-                                Resources::Glass,
-                                Resources::Coal,
-                            ],
+                            color_coded_basics,
                             "Basic materials".to_string(),
                             &city_data,
                             &mut sylt,
@@ -943,7 +1006,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>) {
                     .with_children(|parent| {
                         create_resource_list(
                             parent,
-                            vec![Resources::Drugs, Resources::Slaves, Resources::Vitae],
+                            color_coded_illegal,
                             "Illegal materials".to_string(),
                             &city_data,
                             &mut sylt,
@@ -965,15 +1028,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>) {
                     .with_children(|parent| {
                         create_resource_list(
                             parent,
-                            vec![
-                                Resources::RefinedValuables,
-                                Resources::CommonAlloys,
-                                Resources::Textiles,
-                                Resources::ManufacturedGoods,
-                                Resources::Medicines,
-                                Resources::Reagents,
-                                Resources::Machinery,
-                            ],
+                            color_coded_advanced,
                             "Advanced materials".to_string(),
                             &city_data,
                             &mut sylt,
@@ -1008,13 +1063,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>) {
                     .with_children(|parent| {
                         create_resource_list(
                             parent,
-                            vec![
-                                Resources::SimpleLabour,
-                                Resources::Military,
-                                Resources::Transportation,
-                                Resources::Luxuries,
-                                Resources::ComplexLabour,
-                            ],
+                            color_coded_service,
                             "Services".to_string(),
                             &city_data,
                             &mut sylt,
@@ -1036,11 +1085,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>) {
                     .with_children(|parent| {
                         create_resource_list(
                             parent,
-                            vec![
-                                Resources::ExoticAlloys,
-                                Resources::Spellwork,
-                                Resources::Artifacts,
-                            ],
+                            color_coded_exotics,
                             "Exotic materials".to_string(),
                             &city_data,
                             &mut sylt,
@@ -1066,7 +1111,7 @@ enum PopupButton {
 
 fn create_resource_list(
     parent: &mut ChildSpawnerCommands,
-    resources: Vec<Resources>,
+    resources: Vec<(Resources, TextColor)>,
     box_name: String,
     town: &CityData,
     mut sylt: &mut Sylt,
@@ -1085,7 +1130,7 @@ fn create_resource_list(
         create_resource_icon(
             parent,
             resource,
-            town.get_resource_value(&resource),
+            town.get_resource_value(&resource.0),
             &mut sylt,
         );
     }
@@ -1093,7 +1138,7 @@ fn create_resource_list(
 
 fn create_resource_icon(
     parent: &mut ChildSpawnerCommands,
-    resource: Resources,
+    resource: (Resources, TextColor),
     cost: f64,
     //    amount: usize,
     sylt: &mut Sylt,
@@ -1124,7 +1169,7 @@ fn create_resource_icon(
                 },
                 ImageNode {
                     image: sylt
-                        .get_sprite(match resource {
+                        .get_sprite(match resource.0 {
                             Resources::Artifacts => "resource_artifacts",
                             Resources::Coal => "resource_coal",
                             Resources::CommonAlloys => "resource_common_alloys",
@@ -1159,7 +1204,8 @@ fn create_resource_icon(
                 },
                 BackgroundColor(Srgba::new(0.3, 0.3, 0.3, 1.0).into()),
             ),
-            (Text::new(resource.get_name())),
+            (Text::new(resource.0.get_name()),
+            resource.1),
             (Text::new(format!("{:.2}$", cost)),)
         ],
     ));
