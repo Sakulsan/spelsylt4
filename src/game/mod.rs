@@ -9,9 +9,9 @@ pub mod strategic_map;
 use bevy::prelude::*;
 
 use crate::game::turn::*;
+pub mod city_data;
 pub mod tooltip;
 pub mod turn;
-pub mod city_data;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
