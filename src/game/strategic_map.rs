@@ -165,7 +165,9 @@ pub fn plugin(app: &mut App) {
             spawn_map_sprite,
             spawn_city_ui_nodes,
             spawn_player,
-        ),
+        )
+            .in_set(MapGenSet)
+            .after(NodeGenSet),
     )
     .insert_resource(SelectedCity(CityData {
         id: "Placeholder".to_string(),
@@ -486,7 +488,7 @@ fn update_ui_nodes(
 //#[derive(Component)]
 //struct Demographic<T>();
 
-#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States, Serialize, Deserialize)]
 pub enum Faction {
     #[default]
     Neutral,

@@ -74,7 +74,7 @@ pub const EXOTIC_RESOURCES: [Resources; 3] = [
 pub const ILLEGAL_RESOURCES: [Resources; 3] =
     [Resources::Drugs, Resources::Slaves, Resources::Vitae];
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Default, Serialize, Deserialize)]
 pub enum BuildingType {
     Human,
     Elven,
