@@ -81,65 +81,65 @@ impl Resources {
 
     pub fn get_base_value(&self) -> isize {
         match &self {
-            Self::Food => {1},
-            Self::Plants => {1},
-            Self::CommonOre => {1},
-            Self::RareOre => {1},
-            Self::Lumber => {1},
-            Self::Stone => {1},
-            Self::Water => {1},
-            Self::Glass => {1},
-            Self::Coal => {1},
-            Self::RefinedValuables => {3},
-            Self::CommonAlloys => {3},
-            Self::Textiles => {3},
-            Self::ManufacturedGoods => {3},
-            Self::Medicines => {3},
-            Self::Reagents => {3},
-            Self::Machinery => {3},
-            Self::Drugs => {3},
-            Self::Slaves => {3},
-            Self::Vitae => {5},
-            Self::SimpleLabour => {1},
-            Self::Military => {1},
-            Self::Transportation => {1},
-            Self::Luxuries => {1},
-            Self::ComplexLabour => {1},
-            Self::ExoticAlloys => {5},
-            Self::Spellwork => {5},
-            Self::Artifacts => {5},
+            Self::Food => 1,
+            Self::Plants => 1,
+            Self::CommonOre => 1,
+            Self::RareOre => 1,
+            Self::Lumber => 1,
+            Self::Stone => 1,
+            Self::Water => 1,
+            Self::Glass => 1,
+            Self::Coal => 1,
+            Self::RefinedValuables => 3,
+            Self::CommonAlloys => 3,
+            Self::Textiles => 3,
+            Self::ManufacturedGoods => 3,
+            Self::Medicines => 3,
+            Self::Reagents => 3,
+            Self::Machinery => 3,
+            Self::Drugs => 3,
+            Self::Slaves => 3,
+            Self::Vitae => 5,
+            Self::SimpleLabour => 1,
+            Self::Military => 1,
+            Self::Transportation => 1,
+            Self::Luxuries => 1,
+            Self::ComplexLabour => 1,
+            Self::ExoticAlloys => 5,
+            Self::Spellwork => 5,
+            Self::Artifacts => 5,
         }
     }
 
     pub fn get_name(&self) -> &str {
         match &self {
-            Self::Food => {"Food"},
-            Self::Plants => {"Plants"},
-            Self::CommonOre => {"Common Ore"},
-            Self::RareOre => {"Rare Ore"},
-            Self::Lumber => {"Lumber"},
-            Self::Stone => {"Stone"},
-            Self::Water => {"Water"},
-            Self::Glass => {"Glass"},
-            Self::Coal => {"Coal"},
-            Self::RefinedValuables => {"Refined Valuables"},
-            Self::CommonAlloys => {"Common Alloys"},
-            Self::Textiles => {"Textiles"},
-            Self::ManufacturedGoods => {"Manufactured Goods"},
-            Self::Medicines => {"Medicines"},
-            Self::Reagents => {"Reagents"},
-            Self::Machinery => {"Machinery"},
-            Self::Drugs => {"Drugs"},
-            Self::Slaves => {"Slaves"},
-            Self::Vitae => {"Vitae"},
-            Self::SimpleLabour => {"Simple Labour"},
-            Self::Military => {"Military"},
-            Self::Transportation => {"Transportation"},
-            Self::Luxuries => {"Luxuries"},
-            Self::ComplexLabour => {"Complex Labour"},
-            Self::ExoticAlloys => {"Exotic Alloys"},
-            Self::Spellwork => {"Spellwork"},
-            Self::Artifacts => {"Artifacts"},
+            Self::Food => "Food",
+            Self::Plants => "Plants",
+            Self::CommonOre => "Common Ore",
+            Self::RareOre => "Rare Ore",
+            Self::Lumber => "Lumber",
+            Self::Stone => "Stone",
+            Self::Water => "Water",
+            Self::Glass => "Glass",
+            Self::Coal => "Coal",
+            Self::RefinedValuables => "Refined Valuables",
+            Self::CommonAlloys => "Common Alloys",
+            Self::Textiles => "Textiles",
+            Self::ManufacturedGoods => "Manufactured Goods",
+            Self::Medicines => "Medicines",
+            Self::Reagents => "Reagents",
+            Self::Machinery => "Machinery",
+            Self::Drugs => "Drugs",
+            Self::Slaves => "Slaves",
+            Self::Vitae => "Vitae",
+            Self::SimpleLabour => "Simple Labour",
+            Self::Military => "Military",
+            Self::Transportation => "Transportation",
+            Self::Luxuries => "Luxuries",
+            Self::ComplexLabour => "Complex Labour",
+            Self::ExoticAlloys => "Exotic Alloys",
+            Self::Spellwork => "Spellwork",
+            Self::Artifacts => "Artifacts",
         }
     }
 }
@@ -150,7 +150,7 @@ pub struct Building {
     pub output: HashMap<Resources, isize>,
     pub tier: usize,
     pub image_sylt_id: Option<String>,
-    pub build_type: BuildingType
+    pub build_type: BuildingType,
 }
 
 pub fn gen_building_tables() -> HashMap<String, Building> {
@@ -308,41 +308,34 @@ pub fn gen_random_building(
                 tier
             ),
         },
-        BuildingType::Elven => {
-            match tier {
-                1 => {
-                    match random_choice % 3 {
-                        0 => "Earth Spirit Aid", 
-                        1 => "Ironwood Forestry",
-                        2 => "Forest Foraging",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                2 => {
-                    match random_choice % 3 {
-                        0 => "Domesticated Orchards",
-                        1 => "Amber Plantations", 
-                        2 => "Gardens of Wonder",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                3 => {
-                    match random_choice % 2 {
-                        0 => "Elemental Springs",
-                        1 => "Integrated Farms",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                4 => {
-                    match random_choice % 2 {
-                        0 => "Gaian Meadows",
-                        1 => "Self-spinning Weavers",
-                        _ => panic!("Modulo stopped working in gen_random_building")
-                    }
-                }
-                5 => "Archmage's Tower",
-                _ => panic!("gen_random_building tried to generate a building of tier {:?}", tier)
-            }
+        BuildingType::Elven => match tier {
+            1 => match random_choice % 3 {
+                0 => "Earth Spirit Aid",
+                1 => "Ironwood Forestry",
+                2 => "Forest Foraging",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            2 => match random_choice % 3 {
+                0 => "Domesticated Orchards",
+                1 => "Amber Plantations",
+                2 => "Gardens of Wonder",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            3 => match random_choice % 2 {
+                0 => "Elemental Springs",
+                1 => "Integrated Farms",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            4 => match random_choice % 2 {
+                0 => "Gaian Meadows",
+                1 => "Self-spinning Weavers",
+                _ => panic!("Modulo stopped working in gen_random_building"),
+            },
+            5 => "Archmage's Tower",
+            _ => panic!(
+                "gen_random_building tried to generate a building of tier {:?}",
+                tier
+            ),
         },
         BuildingType::Goblin => match tier {
             1 => match random_choice % 3 {
