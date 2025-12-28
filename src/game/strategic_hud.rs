@@ -54,6 +54,9 @@ fn set_interaction(show: bool) -> impl Fn(Commands, Query<Entity, With<Node>>) {
 #[derive(Component)]
 pub struct PopUpItem;
 
+#[derive(Component)]
+pub struct IncomeValue(Resources);
+
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 pub enum PopupHUD {
     #[default]
@@ -409,7 +412,9 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>)
                         )
                     ],
                 ));
+
                 for (resource, amount) in &stop.trade_order {
+                    //A single stops hud
                     parent
                         .spawn((
                             Node {
@@ -423,75 +428,88 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>)
                             BorderColor::all(Color::BLACK),
                             Text::new("Buys something"),
                         ))
-                        .with_children(|parent|
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Button,
+                                CaravanMenuButtons::ChangeTrade(
+                                    stop.goal_city_id.clone(),
+                                    *resource,
+                                ),
+                                Node {
+                                    width: px(256),
+                                    height: px(44),
+                                    margin: UiRect::all(px(2)),
+                                    border: UiRect::all(px(2)),
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(0.9, 0.2, 0.2, 1.0).into()),
+                                Text::new(resource.get_name()),
+                            ));
 
-                                     //HUD buttons
-                                     {
-                                         parent.spawn((
-                                             Button,
-                                             CaravanMenuButtons::ChangeTrade(stop.goal_city_id.clone(),*resource),
-                                             Node {
-                                                 width: px(256),
-                                                 height: px(44),
-                                                 margin: UiRect::all(px(2)),
-                                                 border: UiRect::all(px(2)),
-                                                 ..default()
-                                             },
-                                             BackgroundColor(Srgba::new(0.9, 0.2, 0.2, 1.0).into()),
-                                             Text::new(resource.get_name())
-                                         ));
+                            parent.spawn((
+                                Button,
+                                CaravanMenuButtons::DecTradeAmount(
+                                    stop.goal_city_id.clone(),
+                                    *resource,
+                                ),
+                                Node {
+                                    width: px(44),
+                                    height: px(44),
+                                    margin: UiRect::all(px(2)),
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
+                                BorderColor::all(Color::BLACK),
+                                Text::new("-"),
+                            ));
+                            parent.spawn((
+                                Node {
+                                    width: px(44),
+                                    height: px(44),
+                                    margin: UiRect::all(px(2)),
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
+                                Text::new(format!("{}", amount)),
+                            ));
+                            parent.spawn((
+                                Button,
+                                CaravanMenuButtons::IncTradeAmount(
+                                    stop.goal_city_id.clone(),
+                                    *resource,
+                                ),
+                                Node {
+                                    width: px(44),
+                                    height: px(44),
+                                    margin: UiRect::all(px(2)),
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
+                                Text::new("+"),
+                            ));
 
+                            parent.spawn((
+                                IncomeValue(*resource),
+                                Node {
+                                    height: px(44),
+                                    margin: UiRect::all(px(2)),
+                                    ..default()
+                                },
+                                Text::new("Proft: 567$"), //TODO add next cost from  `amount` and `resource` in this town (from stop.goal_city_id)
+                            ));
 
-                                         parent.spawn((
-                                             Button,
-                                             CaravanMenuButtons::DecTradeAmount (stop.goal_city_id.clone(),*resource
-),
-                                             Node {
-                                                 width: px(44),
-                                                 height: px(44),
-                                                 margin: UiRect::all(px(2)),
-                                                 ..default()
-                                             },
-                                             BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
-                                             BorderColor::all(Color::BLACK),
-                                             Text::new("-")
-                                         ));
-                                         parent.spawn((
-                                             Node {
-                                                 width: px(44),
-                                                 height: px(44),
-                                                 margin: UiRect::all(px(2)),
-                                                 ..default()
-                                             },
-                                             BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
-                                             Text::new(format!("{}",amount))
-                                         ));
-                                         parent.spawn((
-                                             Button,
-                                             CaravanMenuButtons::IncTradeAmount(stop.goal_city_id.clone(),*resource
-                                             ),
-                                             Node {
-                                                 width: px(44),
-                                                 height: px(44),
-                                                 margin: UiRect::all(px(2)),
-                                                 ..default()
-                                             },
-                                             BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
-                                             Text::new("+")
-                                         ));
-                                         parent.spawn((
-                                             Button,
-                                             CaravanMenuButtons::KillTrade(stop.goal_city_id.clone(),*resource
-),
-                                             Node {
-                                                 width: px(44),
-                                                 height: px(44),
-                                                 margin: UiRect::all(px(2)),
-                                                 ..default()
-                                             },
-                                             BackgroundColor(Srgba::new(0.9, 0.1, 0.1, 1.0).into()),
-                                         ));
-                                     });
+                            parent.spawn((
+                                Button,
+                                CaravanMenuButtons::KillTrade(stop.goal_city_id.clone(), *resource),
+                                Node {
+                                    width: px(44),
+                                    height: px(44),
+                                    margin: UiRect::all(px(2)),
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(0.9, 0.1, 0.1, 1.0).into()),
+                            ));
+                        });
                 }
             });
     }
@@ -607,6 +625,26 @@ fn caravan_button(
                                     }
                                 });
                         });
+                    }
+                }
+                CaravanMenuButtons::ChangeTradeConfirm(city_id, from_res, to_res) => {
+                    for entity in hudNode.iter() {
+                        commands.entity(entity).despawn_children();
+                    }
+
+                    if to_res != from_res {
+                        let order = selected_caravan
+                            .0
+                            .orders
+                            .iter_mut()
+                            .find(|order| &order.goal_city_id == city_id)
+                            .expect(format!("Couldn't find city named {}", city_id).as_str());
+                        if order.trade_order.contains_key(to_res) {
+                            println!("You already are selling this");
+                        } else {
+                            let value = order.trade_order.remove(from_res).unwrap();
+                            order.trade_order.insert(*to_res, value);
+                        }
                     }
                 }
                 _ => {}
