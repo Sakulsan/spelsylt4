@@ -3,7 +3,7 @@ use bevy_renet::netcode::{
     ClientAuthentication, NetcodeClientPlugin, NetcodeClientTransport, NetcodeServerPlugin,
     NetcodeServerTransport, NetcodeTransportError, ServerAuthentication, ServerConfig,
 };
-use bevy_renet::renet::RenetClient;
+use bevy_renet::renet::{RenetClient, ServerEvent};
 use bevy_renet::{
     renet::{ConnectionConfig, RenetServer},
     RenetClientPlugin, RenetServerPlugin,
@@ -40,8 +40,22 @@ pub fn plugin(app: &mut App) {
     .init_state::<NetworkMenuState>() //Feels weird to have duplicate names, but it works
     .add_systems(
         Update,
-        (button_hover_system, button_functionality).run_if(in_state(GameState::NetworkMenu))
-    );
+        (button_hover_system, button_functionality).run_if(in_state(GameState::NetworkMenu)),
+    )
+    .add_systems(Update, handle_events_system);
+}
+
+fn handle_events_system(mut server_events: MessageReader<ServerEvent>) {
+    for event in server_events.read() {
+        match event {
+            ServerEvent::ClientConnected { client_id } => {
+                info!("Client {client_id} connected");
+            }
+            ServerEvent::ClientDisconnected { client_id, reason } => {
+                info!("Client {client_id} disconnected: {reason}");
+            }
+        }
+    }
 }
 
 // All actions that can be triggered from a button click
@@ -52,7 +66,7 @@ enum NetworkMenuButton {
     JoinButton,
     StartButton,
     ConnectToServerButton,
-    QuitButton
+    QuitButton,
 }
 
 // State used for the current menu screen
@@ -62,7 +76,7 @@ enum NetworkMenuState {
     Join,
     Lobby,
     #[default]
-    Disabled
+    Disabled,
 }
 
 fn spawn_network_menu(
