@@ -41,7 +41,13 @@ enum NetworkMenuState {
     Disabled,
 }
 
-fn spawn_network_menu(mut commands: Commands, mut sylt: Sylt) {
+fn spawn_network_menu(
+    mut commands: Commands,
+    mut sylt: Sylt,
+    mut state: ResMut<NextState<NetworkMenuState>>,
+) {
+    state.set(NetworkMenuState::Main);
+
     commands.spawn((
         //AudioPlayer::new(asset_server.load("music/Bellsachiming.ogg")),
         PlaybackSettings {
