@@ -19,8 +19,6 @@ pub(super) fn plugin(app: &mut App) {
         city_graph::plugin,
         strategic_hud::plugin,
         tooltip::plugin,
+        turn::plugin,
     ));
-    app.add_observer(market_updater);
-    app.add_observer(caravan_updater);
-    app.add_observer(debt_collector);
 }

@@ -7,10 +7,9 @@ use bevy::ui::InteractionDisabled;
 
 use super::city_data::CityData;
 use super::market::*;
-use super::strategic_map::{
-    Caravan, Order, PlayerStats, SelectedCaravan, SelectedCity, StrategicState,
-};
+use super::strategic_map::{Caravan, Order, Player, SelectedCaravan, SelectedCity, StrategicState};
 use super::tooltip::Tooltips;
+use crate::game::strategic_map::{ActivePlayer, BelongsTo};
 use crate::game::tooltip::TooltipOf;
 use crate::prelude::*;
 pub fn plugin(app: &mut App) {
@@ -32,7 +31,7 @@ pub fn plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            (update_caravan_menu).run_if(resource_changed::<super::strategic_map::SelectedCaravan>),
+            update_caravan_menu.run_if(resource_changed::<SelectedCaravan>),
         )
         .add_observer(on_scroll_handler)
         .add_systems(Update, popup_button);
@@ -67,12 +66,18 @@ pub enum PopupHUD {
 }
 
 fn no_popup_button(
+    mut commands: Commands,
     mut interaction_query: Query<(&Interaction, &HudButton), (Changed<Interaction>, With<Button>)>,
     mut menu_state: ResMut<NextState<StrategicState>>,
     mut tab_state: ResMut<NextState<PopupHUD>>,
     selected_city: Res<SelectedCity>,
-    mut stats: ResMut<PlayerStats>,
+    player: Option<Single<Entity, With<ActivePlayer>>>,
 ) {
+    let Some(player) = player else {
+        error!("No active player exists!");
+        return;
+    };
+
     for (interaction, menu_button_action) in &interaction_query {
         if *interaction == Interaction::Pressed {
             match menu_button_action {
@@ -81,14 +86,17 @@ fn no_popup_button(
                 }
 
                 HudButton::OperationAction => {
-                    stats.caravans.push(Caravan {
-                        position_city_id: selected_city.0.id.clone(),
-                        orders: vec![Order {
-                            goal_city_id: selected_city.0.id.clone(),
+                    commands.spawn((
+                        Caravan {
+                            position_city_id: selected_city.0.id.clone(),
+                            orders: vec![Order {
+                                goal_city_id: selected_city.0.id.clone(),
+                                ..default()
+                            }],
                             ..default()
-                        }],
-                        ..default()
-                    });
+                        },
+                        BelongsTo(*player),
+                    ));
                 }
                 HudButton::EconomyTabAction => {
                     tab_state.set(PopupHUD::Wares);
@@ -292,22 +300,18 @@ fn caravan_menu(mut commands: Commands) {
 //Redo the caravan menu in case of new buttons and so on
 fn update_caravan_menu(
     caravan_box: Query<Entity, With<CaravanMenu>>,
-    mut selected_caravan: ResMut<SelectedCaravan>,
-    mut stats: ResMut<PlayerStats>,
+    selected_caravan: ResMut<SelectedCaravan>,
+    caravans: Query<&Caravan>,
     mut commands: Commands,
 ) {
-    //stats.caravans.iter()
-    if let Some(stats_caravan) = stats
-        .caravans
-        .iter_mut()
-        .find(|n| n.position_city_id == selected_caravan.0.position_city_id)
-    {
-        *stats_caravan = selected_caravan.0.clone();
-    }
+    let Ok(selected_caravan) = caravans.get(selected_caravan.0) else {
+        error!("No selected caravan");
+        return;
+    };
+
     for caravan_box in caravan_box.iter() {
         commands.entity(caravan_box).despawn_children();
         commands.entity(caravan_box).with_children(|parent| {
-            let selected_caravan = selected_caravan.0.clone();
             println!("Updating caravan menu");
             parent.spawn((
                 Node {
@@ -523,9 +527,14 @@ fn caravan_button(
     >,
     mut hudNode: Query<Entity, With<CaravanCityUINode>>,
     //mut menu_state: ResMut<NextState<StrategicState>>,
-    mut selected_caravan: ResMut<SelectedCaravan>,
+    selected_caravan: Res<SelectedCaravan>,
+    mut caravans: Query<&mut Caravan>,
     mut window_state: ResMut<NextState<StrategicState>>,
 ) {
+    let Ok(mut selected_caravan) = caravans.get_mut(selected_caravan.0) else {
+        return;
+    };
+
     for (interaction, menu_button_action) in &interaction_query {
         if *interaction == Interaction::Pressed {
             match menu_button_action {
@@ -535,30 +544,23 @@ fn caravan_button(
                 CaravanMenuButtons::AddTradeToStop(stop_name) => {
                     //Hashmap here?
                     selected_caravan
-                        .0
                         .orders
                         .iter_mut()
-                        .filter(|order| order.goal_city_id == *stop_name)
-                        .collect::<Vec<&mut Order>>()
-                        .get_mut(0)
+                        .find(|order| order.goal_city_id == *stop_name)
                         .expect(format!("Couldn't find city named {}", stop_name).as_str())
                         .trade_order
                         .insert(Resources::Food, 0);
                 }
                 CaravanMenuButtons::RemoveStop(stop_name) => {
                     selected_caravan
-                        .0
                         .orders
                         .retain(|position| position.goal_city_id != *stop_name);
                 }
                 CaravanMenuButtons::IncTradeAmount(city_id, resource) => {
                     *selected_caravan
-                        .0
                         .orders
                         .iter_mut()
-                        .filter(|order| order.goal_city_id == *city_id)
-                        .collect::<Vec<&mut Order>>()
-                        .get_mut(0)
+                        .find(|order| order.goal_city_id == *city_id)
                         .expect(format!("Couldn't find city named {}", city_id).as_str())
                         .trade_order
                         .get_mut(resource) //Should never call a undefined resource
@@ -566,12 +568,9 @@ fn caravan_button(
                 }
                 CaravanMenuButtons::DecTradeAmount(city_id, resource) => {
                     *selected_caravan
-                        .0
                         .orders
                         .iter_mut()
-                        .filter(|order| order.goal_city_id == *city_id)
-                        .collect::<Vec<&mut Order>>()
-                        .get_mut(0)
+                        .find(|order| order.goal_city_id == *city_id)
                         .expect(format!("Couldn't find city named {}", city_id).as_str())
                         .trade_order
                         .get_mut(resource) //Should never call a undefined resource
@@ -579,12 +578,9 @@ fn caravan_button(
                 }
                 CaravanMenuButtons::KillTrade(city_id, resource) => {
                     selected_caravan
-                        .0
                         .orders
                         .iter_mut()
-                        .filter(|order| order.goal_city_id == *city_id)
-                        .collect::<Vec<&mut Order>>()
-                        .get_mut(0)
+                        .find(|order| order.goal_city_id == *city_id)
                         .expect(format!("Couldn't find city named {}", city_id).as_str())
                         .trade_order
                         .remove(resource);
@@ -656,13 +652,18 @@ fn caravan_button(
 fn caravan_destination_buttons(
     mut commands: Commands,
     mut interaction_query: Query<(&Interaction, &CityData), (Changed<Interaction>, With<Button>)>,
-    //mut menu_state: ResMut<NextState<StrategicState>>,
-    mut selected_caravan: ResMut<SelectedCaravan>,
+    selected_caravan: Res<SelectedCaravan>,
+    mut caravans: Query<&mut Caravan>,
     mut window_state: ResMut<NextState<StrategicState>>,
 ) {
+    let Ok(mut selected_caravan) = caravans.get_mut(selected_caravan.0) else {
+        error!("Selected caravan doesn't exist");
+        return;
+    };
+
     for (interaction, city_data) in &interaction_query {
         if *interaction == Interaction::Pressed {
-            selected_caravan.0.orders.push(Order {
+            selected_caravan.orders.push(Order {
                 goal_city_id: city_data.id.clone(),
                 ..default()
             });
@@ -949,7 +950,7 @@ fn create_resource_icon(
 #[derive(Clone, Default, Eq, PartialEq, Hash, Component)]
 pub struct BottomBar;
 
-pub fn city_hud_setup(mut commands: Commands, mut sylt: Sylt, selected_city: ResMut<SelectedCity>) {
+pub fn city_hud_setup(mut commands: Commands, selected_city: ResMut<SelectedCity>) {
     let city = selected_city.0.clone();
     //Map quit upon click
     commands.spawn((
