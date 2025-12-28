@@ -10,8 +10,8 @@ use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::{Caravan, Order, Player, SelectedCaravan, SelectedCity, StrategicState};
 use super::tooltip::Tooltips;
-use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
 use crate::game::strategic_map::{ActivePlayer, BelongsTo};
+use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
 use crate::game::tooltip::TooltipOf;
 use crate::prelude::*;
 use crate::GameState;
@@ -233,7 +233,11 @@ fn popup_window(commands: &mut Commands, direction: FlexDirection) -> Entity {
         .id()
 }
 
-fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>, building_table: Res<BuildinTable>) {
+fn building_menu(
+    mut commands: Commands,
+    city: ResMut<SelectedCity>,
+    building_table: Res<BuildinTable>,
+) {
     let window = popup_window(&mut commands, FlexDirection::ColumnReverse);
     let population = city.0.population + 1;
     for tiers in 1..population {
@@ -265,49 +269,99 @@ fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>, building_ta
                             println!("Found building {}", building.0);
                             let mut production_text = "Produces: ".to_string();
                             let mut consumption_text = "Consumes: ".to_string();
-                            let mut production = vec!();
-                            let mut consumption = vec!();
-                            for prod in &building_table.0.get(&building.0)
-                                                        .expect(format!("Tried to access invalid building {:?}", building.0).as_str())
-                                                        .output {
+                            let mut production = vec![];
+                            let mut consumption = vec![];
+                            for prod in &building_table
+                                .0
+                                .get(&building.0)
+                                .expect(
+                                    format!("Tried to access invalid building {:?}", building.0)
+                                        .as_str(),
+                                )
+                                .output
+                            {
                                 production.push(prod);
                             }
-                            for cons in &building_table.0.get(&building.0)
-                                                        .expect(format!("Tried to access invalid building {:?}", building.0).as_str())
-                                                        .input {
+                            for cons in &building_table
+                                .0
+                                .get(&building.0)
+                                .expect(
+                                    format!("Tried to access invalid building {:?}", building.0)
+                                        .as_str(),
+                                )
+                                .input
+                            {
                                 consumption.push(cons);
                             }
 
                             for i in 0..production.len() - 1 {
-                                production_text += format!("{0} x{1}, ", production[i].0.get_name(), production[i].1).as_str();
+                                production_text += format!(
+                                    "{0} x{1}, ",
+                                    production[i].0.get_name(),
+                                    production[i].1
+                                )
+                                .as_str();
                                 if i % 2 == 1 {
                                     production_text += "\n";
                                 }
                             }
                             if production.len() == 1 {
-                                production_text += format!("{0} x{1}", 
-                                                            production.last().expect("weird ass building table").0.get_name(),
-                                                            production.last().expect("weird ass building table").1).as_str();
+                                production_text += format!(
+                                    "{0} x{1}",
+                                    production
+                                        .last()
+                                        .expect("weird ass building table")
+                                        .0
+                                        .get_name(),
+                                    production.last().expect("weird ass building table").1
+                                )
+                                .as_str();
                             } else {
-                                production_text += format!("and {0} x{1}", 
-                                                            production.last().expect("weird ass building table").0.get_name(),
-                                                            production.last().expect("weird ass building table").1).as_str();
+                                production_text += format!(
+                                    "and {0} x{1}",
+                                    production
+                                        .last()
+                                        .expect("weird ass building table")
+                                        .0
+                                        .get_name(),
+                                    production.last().expect("weird ass building table").1
+                                )
+                                .as_str();
                             }
 
                             for i in 0..consumption.len() - 1 {
-                                consumption_text += format!("{0} x{1}, ", consumption[i].0.get_name(), consumption[i].1).as_str();
+                                consumption_text += format!(
+                                    "{0} x{1}, ",
+                                    consumption[i].0.get_name(),
+                                    consumption[i].1
+                                )
+                                .as_str();
                                 if i % 2 == 1 {
                                     consumption_text += "\n";
                                 }
                             }
                             if consumption.len() == 1 {
-                                consumption_text += format!("{0} x{1}", 
-                                                            consumption.last().expect("weird ass building table").0.get_name(),
-                                                            consumption.last().expect("weird ass building table").1).as_str();
+                                consumption_text += format!(
+                                    "{0} x{1}",
+                                    consumption
+                                        .last()
+                                        .expect("weird ass building table")
+                                        .0
+                                        .get_name(),
+                                    consumption.last().expect("weird ass building table").1
+                                )
+                                .as_str();
                             } else {
-                                consumption_text += format!("and {0} x{1}", 
-                                                            consumption.last().expect("weird ass building table").0.get_name(),
-                                                            consumption.last().expect("weird ass building table").1).as_str();
+                                consumption_text += format!(
+                                    "and {0} x{1}",
+                                    consumption
+                                        .last()
+                                        .expect("weird ass building table")
+                                        .0
+                                        .get_name(),
+                                    consumption.last().expect("weird ass building table").1
+                                )
+                                .as_str();
                             }
 
                             parent.spawn((
@@ -767,11 +821,11 @@ fn caravan_button(
     }
 }
 
-fn update_caravan_order_idx(
-    mut caravan_query: Query<(&mut Caravan), (Changed<Caravan>)>
-) {
+fn update_caravan_order_idx(mut caravan_query: Query<(&mut Caravan), (Changed<Caravan>)>) {
     for mut caravan in caravan_query {
-        if caravan.orders[caravan.order_idx].goal_city_id == caravan.position_city_id && caravan.orders.len() > 1 {
+        if caravan.orders[caravan.order_idx].goal_city_id == caravan.position_city_id
+            && caravan.orders.len() > 1
+        {
             caravan.order_idx = (caravan.order_idx + 1) % caravan.orders.len();
         }
     }
@@ -1071,9 +1125,33 @@ fn create_resource_icon(
                 ImageNode {
                     image: sylt
                         .get_sprite(match resource {
-                            Resources::Water => "resource_water",
+                            Resources::Artifacts => "resource_artifacts",
+                            Resources::Coal => "resource_coal",
+                            Resources::CommonAlloys => "resource_common_alloys",
+                            Resources::CommonOre => "resource_common_ore",
+                            Resources::ComplexLabour => "resource_complex_labour",
+                            Resources::Drugs => "resource_drugs",
+                            Resources::ExoticAlloys => "resource_exotic_alloys",
+                            Resources::Food => "resource_food",
+                            Resources::Glass => "resource_glass",
+                            Resources::Lumber => "resource_lumber",
+                            Resources::Luxuries => "resource_luxuries",
+                            Resources::Machinery => "resource_machinery",
+                            Resources::ManufacturedGoods => "resource_manufactured_goods",
+                            Resources::Medicines => "resource_medecines",
+                            Resources::Military => "resource_military",
+                            Resources::Plants => "resource_plants",
+                            Resources::RareOre => "resource_rare_ore",
+                            Resources::Reagents => "resource_reagents",
+                            Resources::RefinedValuables => "resource_refined_valuables",
+                            Resources::SimpleLabour => "resource_simple_labour",
+                            Resources::Slaves => "resource_slaves",
+                            Resources::Spellwork => "resource_spellwork",
                             Resources::Stone => "resource_stone",
-                            Resources::Lumber => "resource_wood",
+                            Resources::Textiles => "resource_textiles",
+                            Resources::Transportation => "resource_transportation",
+                            Resources::Vitae => "resource_vitae",
+                            Resources::Water => "resource_water",
                             _ => "map",
                         })
                         .image,

@@ -143,11 +143,12 @@ impl<'w> Sylt<'w> {
     }
 
     pub fn get_sprite(&mut self, name: &str) -> Sprite {
-        let conf = self
-            .asset_map
-            .assets
-            .get_mut(name)
-            .expect("This asset hasn't been defined in the map yet!");
+        let Some(conf) = self.asset_map.assets.get_mut(name) else {
+            return Sprite {
+                image: self.error_tex.0.clone(),
+                ..Default::default()
+            };
+        };
         let AssetConfig {
             name: _,
             path,
