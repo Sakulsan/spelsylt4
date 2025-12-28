@@ -7,7 +7,7 @@ use crate::prelude::*;
 
 use super::market::*;
 use crate::GameState;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
 
@@ -50,7 +50,7 @@ pub struct Caravan {
 #[derive(Clone, Default, Eq, PartialEq, Debug)]
 pub struct Order {
     pub goal_city_id: String,
-    pub trade_order: HashMap<Resources, isize>,
+    pub trade_order: BTreeMap<Resources, isize>,
 }
 
 impl Caravan {

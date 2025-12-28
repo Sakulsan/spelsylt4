@@ -1,5 +1,5 @@
-use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
+use std::collections::btree_map::Entry;
+use std::collections::{BTreeMap, BTreeSet};
 
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::math::usize;
@@ -620,7 +620,7 @@ fn caravan_button(
                 }
                 CaravanMenuButtons::ChangeTrade(city_id, resource) => {
                     for entity in hudNode.iter() {
-                        let mut order: HashSet<_> = selected_caravan
+                        let mut order: BTreeSet<_> = selected_caravan
                             .orders
                             .iter()
                             .find(|order| order.goal_city_id == *city_id)
@@ -630,7 +630,7 @@ fn caravan_button(
                             .cloned()
                             .collect();
 
-                        let resources: HashSet<_> =
+                        let resources: BTreeSet<_> =
                             Resources::all_resources().into_iter().collect();
 
                         commands.entity(entity).with_children(|parent| {
