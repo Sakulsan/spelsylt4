@@ -5,9 +5,9 @@
 use crate::game::city_data::CityData;
 use crate::game::namelists::*;
 use crate::game::strategic_map::{CityImageMarker, CityNodeMarker};
+use crate::Val::Px;
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
-use crate::Val::Px;
 use bevy_simple_text_input::TextInputPlugin;
 use bevy_ui_anchor::AnchorUiPlugin;
 use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
@@ -17,6 +17,7 @@ use std::time::SystemTime;
 
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
 mod game;
+mod network;
 
 mod assets;
 mod prelude;
@@ -31,6 +32,16 @@ enum GameState {
     Splash,
     Menu,
     Game,
+    NetworkMenu,
+}
+
+// Enum that will be used as a global state for the game
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+enum NetworkState {
+    #[default]
+    SinglePlayer,
+    Client,
+    Host,
 }
 
 // One of the two settings that can be set through the menu. It will be a resource in the app
@@ -149,6 +160,7 @@ fn main() {
             menu::menu_plugin,
             game::plugin,
             assets::plugin,
+            network::plugin,
         ))
         // Insert as resource the initial value for the settings resources
         .insert_resource(DisplayQuality::Medium)
@@ -157,6 +169,7 @@ fn main() {
         .insert_resource(Volume(7))
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
+        .init_state::<NetworkState>()
         //.add_systems(Startup, debug_city_names)
         .add_systems(Startup, setup)
         .add_systems(
@@ -165,7 +178,8 @@ fn main() {
                 move_camera,
                 zoom_camera,
                 scale_city_nodes.run_if(any_match_filter::<Changed<Projection>>),
-            ),
+            )
+                .run_if(in_state(GameState::Game)),
         )
         // Adds the plugins for each state
         .run();
@@ -346,7 +360,8 @@ mod menu {
     // All actions that can be triggered from a button click
     #[derive(Component)]
     enum MenuButtonAction {
-        Play,
+        SinglePlayer,
+        Multiplayer,
         Settings,
         Credits,
         SettingsDisplay,
@@ -470,11 +485,25 @@ mod menu {
                         Button,
                         button_node.clone(),
                         BackgroundColor(NORMAL_BUTTON),
-                        MenuButtonAction::Play,
+                        MenuButtonAction::SinglePlayer,
                         children![
                             (ImageNode::new(right_icon), button_icon_node.clone()),
                             (
-                                Text::new("New Game"),
+                                Text::new("Singleplayer"),
+                                button_text_font.clone(),
+                                TextColor(TEXT_COLOR),
+                            ),
+                        ]
+                    ),
+                    (
+                        Button,
+                        button_node.clone(),
+                        BackgroundColor(NORMAL_BUTTON),
+                        MenuButtonAction::Multiplayer,
+                        children![
+                            //                            (ImageNode::new(right_icon), button_icon_node.clone()),
+                            (
+                                Text::new("Multiplayer"),
                                 button_text_font.clone(),
                                 TextColor(TEXT_COLOR),
                             ),
@@ -758,8 +787,12 @@ mod menu {
                     MenuButtonAction::Quit => {
                         app_exit_writer.write(AppExit::Success);
                     }
-                    MenuButtonAction::Play => {
+                    MenuButtonAction::SinglePlayer => {
                         game_state.set(GameState::Game);
+                        menu_state.set(MenuState::Disabled);
+                    }
+                    MenuButtonAction::Multiplayer => {
+                        game_state.set(GameState::NetworkMenu);
                         menu_state.set(MenuState::Disabled);
                     }
                     MenuButtonAction::Settings => menu_state.set(MenuState::Settings),

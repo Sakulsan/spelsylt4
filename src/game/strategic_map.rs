@@ -146,7 +146,7 @@ pub fn plugin(app: &mut App) {
     .init_state::<StrategicState>()
     .add_systems(
         Update,
-        update_caravan_hud
+        update_caravan_outliner
             .run_if(any_match_filter::<Changed<Caravan>>.or(resource_changed::<SelectedCaravan>)),
     )
     .add_systems(
@@ -237,7 +237,7 @@ fn spawn_map_sprite(mut commands: Commands, mut sylt: Sylt) {
     ));
 }
 
-fn update_caravan_hud(
+fn update_caravan_outliner(
     caravan_box: Query<Entity, With<CaravanHudEntity>>,
     player: Option<Single<Entity, With<ActivePlayer>>>,
     caravans: Query<(Entity, &Caravan, &BelongsTo)>,
