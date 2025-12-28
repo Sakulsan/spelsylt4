@@ -8,8 +8,9 @@ use crate::GameState;
 use std::collections::{HashMap, HashSet};
 
 use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
+use serde::{Deserialize, Serialize};
 
-#[derive(Component, Default, Clone, Debug)]
+#[derive(Component, Default, Clone, Debug, Serialize, Deserialize)]
 pub struct CityData {
     pub id: String,
     pub race: BuildingType,
@@ -96,7 +97,8 @@ impl CityData {
             panic!("tried to find resource {res:?} but the resource was missing")
         };
 
-        let sigmoid = 2.0 / (1.0 + (std::f64::consts::E).powf((*total) as f64 * 1.0 / 200.0)) as f64;
+        let sigmoid =
+            2.0 / (1.0 + (std::f64::consts::E).powf((*total) as f64 * 1.0 / 200.0)) as f64;
         sigmoid.max(0.3)
     }
 

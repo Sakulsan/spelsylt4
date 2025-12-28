@@ -260,6 +260,7 @@ fn button_functionality(
         (&Interaction, &NetworkMenuButton),
         (Changed<Interaction>, With<Button>),
     >,
+    mut loading_container: Query<&mut Visibility, With<LoadingContainer>>,
     mut menu_state: ResMut<NextState<NetworkMenuState>>,
     ip_address_field: Option<Single<&TextInputValue, With<IPField>>>,
     mut game_state: ResMut<NextState<GameState>>,
@@ -278,6 +279,10 @@ fn button_functionality(
                     menu_state.set(NetworkMenuState::Join);
                 }
                 NetworkMenuButton::ConnectToServerButton => {
+                    for mut loading_box in loading_container.iter_mut() {
+                        *loading_box = Visibility::Visible;
+                    }
+
                     commands.trigger(JoinEvent(ip_address_field.as_ref().unwrap().0.to_string()));
                     info!("Connecting to ip: {}", ip_address_field.as_ref().unwrap().0);
                 }
@@ -376,6 +381,9 @@ pub struct PlayerContainer;
 #[derive(Component, Default)]
 pub struct IPField;
 
+#[derive(Component, Default)]
+pub struct LoadingContainer;
+
 fn join_menu_setup(mut commands: Commands) {
     let button_node = Node {
         width: px(200),
@@ -425,6 +433,12 @@ fn join_menu_setup(mut commands: Commands) {
                         ..default()
                     },
                     BorderColor::all(Color::BLACK),
+                ),
+                (
+                    LoadingContainer,
+                    button_node.clone(),
+                    Visibility::Hidden,
+                    Text::new("Connecting...")
                 ),
                 (
                     Button,

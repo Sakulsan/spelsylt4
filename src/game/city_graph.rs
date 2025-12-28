@@ -5,14 +5,19 @@ use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::Faction;
 use crate::game::strategic_map::BuildinTable;
-use crate::prelude::*;
+use crate::{prelude::*, GameState};
 
 use petgraph::algo::astar;
 use petgraph::{algo::connected_components, graph::NodeIndex, Graph, Undirected};
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Startup, (setup, gen_edges, remove_random_edges).chain());
-    app.add_systems(Update, gizmo_nodes);
+    app.add_systems(
+        OnEnter(GameState::Game),
+        (setup, gen_edges, remove_random_edges)
+            .chain()
+            .in_set(NodeGenSet),
+    );
+    app.add_systems(Update, gizmo_nodes.run_if(resource_exists::<CityGraph>));
 }
 
 #[derive(Component, Clone, Debug)]
