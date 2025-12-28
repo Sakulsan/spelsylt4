@@ -887,7 +887,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>) {
                     .spawn((
                         Node {
                             width: percent(100),
-                            height: percent(70),
+                            height: percent(80),
                             margin: UiRect::all(px(4)),
                             justify_content: JustifyContent::FlexStart,
                             flex_direction: FlexDirection::Column,
@@ -954,7 +954,7 @@ fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>) {
                     .spawn((
                         Node {
                             width: percent(100),
-                            height: percent(55),
+                            height: percent(60),
                             margin: UiRect::all(px(4)),
                             justify_content: JustifyContent::FlexStart,
                             flex_direction: FlexDirection::Column,
@@ -1075,7 +1075,7 @@ fn create_resource_list(
     parent.spawn((
         Node {
             width: percent(100),
-            height: px(40),
+            height: px(50),
             ..default()
         },
         Text::new(box_name.clone()),
@@ -1101,7 +1101,7 @@ fn create_resource_icon(
     parent.spawn((
         Node {
             width: percent(100),
-            height: px(40),
+            height: px(50),
             margin: UiRect {
                 left: px(0),
                 right: px(0),
@@ -1118,8 +1118,8 @@ fn create_resource_icon(
             (
                 Node {
                     right: px(0),
-                    width: px(40),
-                    height: px(40),
+                    width: px(50),
+                    height: px(50),
                     ..default()
                 },
                 ImageNode {
@@ -1157,6 +1157,7 @@ fn create_resource_icon(
                         .image,
                     ..default()
                 },
+                BackgroundColor(Srgba::new(0.3, 0.3, 0.3, 1.0).into()),
             ),
             (Text::new(resource.get_name())),
             (Text::new(format!("{:.2}$", cost)),)
