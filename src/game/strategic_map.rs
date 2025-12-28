@@ -1,5 +1,6 @@
 use super::strategic_hud::PopupHUD;
 use super::city_data::*;
+use crate::game::city_graph::{CityGraph, get_path, Node as CityNode};
 use crate::game::market;
 use crate::prelude::*;
 
@@ -20,7 +21,7 @@ pub struct BuildinTable(pub HashMap<String, Building>);
 #[derive(Resource, Default)]
 pub struct PlayerStats {
     pub caravans: Vec<Caravan>,
-    pub money: isize,
+    pub money: f64,
 }
 
 #[derive(Resource)]
@@ -29,6 +30,8 @@ pub struct SelectedCaravan(pub Caravan);
 #[derive(Clone, Default, Eq, PartialEq, Debug)]
 pub struct Caravan {
     pub orders: Vec<Order>,
+    pub order_idx: usize,
+    pub time_travelled: usize,
     pub position_city_id: String,
     pub cargo: Vec<(Resources, usize)>,
 }
@@ -37,6 +40,49 @@ pub struct Caravan {
 pub struct Order {
     pub goal_city_id: String,
     pub trade_order: HashMap<Resources, isize>,
+}
+
+impl Caravan {
+    pub fn update_orders(&mut self, city: &Res<CityGraph>, mut nodes: &mut Query<(&CityNode, &mut CityData)>, building_table: &Res<BuildinTable>, player_money: &mut f64) {
+        if self.orders.len() == 0 { return }
+        let current_node = nodes
+                                                .iter()
+                                                .filter(|(_, y)| y.id == self.position_city_id)
+                                                .next()
+                                                .expect(format!("Caravan located in city {:?} that doesn't exist", self.position_city_id).as_str());
+        let next_node = nodes
+                                                .iter()
+                                                .filter(|(_, y)| y.id == self.orders[self.order_idx].goal_city_id)
+                                                .next()
+                                                .expect(format!("Caravan trying to get to city {:?} that doesn't exist", self.orders[self.order_idx].goal_city_id).as_str());
+        let (_, path) = get_path(city, current_node.0.0, next_node.0.0);
+        if path.len() > 1 {
+            let next_city = nodes.get(path[1]).expect("Caravan travelling to a city that doesnt exist");
+            self.position_city_id = next_city.1.id.to_string();
+        }
+        let mut current_city = nodes.get_mut(path[0]).expect("failed to get a path in order updater????");
+        if self.orders[self.order_idx].goal_city_id == current_city.1.id {
+            let available_commodies = current_city.1.available_commodities(&building_table);
+            for (trade, amount) in self.orders[self.order_idx].trade_order.clone() {
+                if amount > 0 && available_commodies.contains(&trade) {
+                    let amount_available = current_city.1.market[&trade];
+                    let amount_bought = amount.abs().min(amount_available);
+                    let price = current_city.1.get_bulk_buy_price(&trade, amount_bought as usize);
+                    *player_money -= price;
+                    current_city.1.market.insert(trade, amount_available - amount_bought);
+                }
+                if amount > 0 {
+                    let amount_available = current_city.1.market[&trade];
+                    let amount_sold = amount.abs();
+                    let price = current_city.1.get_bulk_sell_price(&trade, amount_sold as usize);
+                    *player_money += price;
+                    current_city.1.market.insert(trade, amount_available + amount_sold);
+                }
+            }
+
+            self.order_idx = (self.order_idx + 1) % self.orders.len();
+        }
+    }
 }
 
 pub fn plugin(app: &mut App) {
@@ -49,7 +95,7 @@ pub fn plugin(app: &mut App) {
         ..default()
     }))
     .insert_resource(PlayerStats {
-        money: 5000,
+        money: 5000.0,
         ..default()
     })
     .insert_resource(SelectedCaravan(Caravan { ..default() }))
@@ -173,7 +219,6 @@ fn update_caravan_hud(
     }
 }
 
-use super::city_graph::Node as CityNode;
 use super::tooltip::Tooltips;
 fn spawn_city_ui_nodes(
     mut commands: Commands,

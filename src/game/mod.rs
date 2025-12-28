@@ -8,7 +8,7 @@ pub mod strategic_hud;
 pub mod strategic_map;
 use bevy::prelude::*;
 
-use crate::game::turn::market_updater;
+use crate::game::turn::*;
 pub mod tooltip;
 pub mod turn;
 pub mod city_data;
@@ -21,4 +21,5 @@ pub(super) fn plugin(app: &mut App) {
         tooltip::plugin,
     ));
     app.add_observer(market_updater);
+    app.add_observer(caravan_updater);
 }

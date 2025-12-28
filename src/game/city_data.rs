@@ -110,7 +110,7 @@ impl CityData {
         self.get_theoretical_resource_value_modifier(res, amount) * res.get_base_value() as f64
     }
 
-    pub fn get_bulk_price(&self, res: &Resources, amount: usize) -> f64 {
+    pub fn get_bulk_buy_price(&self, res: &Resources, amount: usize) -> f64 {
         let mut amount_available = *self.market.get(res).expect(format!("tried to find resource {:?} but the resource was missing in internal market", res).as_str());
         let mut total_cost = 0.0;
         for i in 0..amount {
@@ -119,6 +119,17 @@ impl CityData {
             amount_available -= 1;
         };
         total_cost
+    }
+
+    pub fn get_bulk_sell_price(&self, res: &Resources, amount: usize) -> f64 {
+        let mut amount_available = *self.market.get(res).expect(format!("tried to find resource {:?} but the resource was missing in internal market", res).as_str());
+        let mut total_profit = 0.0;
+        for i in 0..amount {
+            let price = self.get_theoretical_resource_value(res, amount_available);
+            total_profit += price;
+            amount_available += 1;
+        };
+        total_profit
     }
 
     pub fn available_commodities(&self, building_table: &Res<BuildinTable>) -> Vec<Resources> {

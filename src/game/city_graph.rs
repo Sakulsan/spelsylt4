@@ -46,7 +46,7 @@ fn gen_rand_circle(i: i32, min: f32, max: f32, rng: &mut ResMut<GlobalRng>) -> V
     Vec2::from_angle(ang) * d + vec2(jx, jy)
 }
 
-pub fn get_path(graph: CityGraph, node1: NodeIndex, node2: NodeIndex) -> (usize, Vec<Entity>) {
+pub fn get_path(graph: &Res<CityGraph>, node1: NodeIndex, node2: NodeIndex) -> (usize, Vec<Entity>) {
     let (cost, mut path) = astar(&graph.graph, node1, |x| x == node2, |_| 1, |_| 0)
                                             .expect(format!("Graph does not connect node {0:?} and {1:?}", node1, node2).as_str());
 
