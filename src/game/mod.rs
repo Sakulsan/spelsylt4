@@ -11,6 +11,7 @@ use bevy::prelude::*;
 use crate::game::turn::market_updater;
 pub mod tooltip;
 pub mod turn;
+pub mod city_data;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((

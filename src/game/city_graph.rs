@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use std::f32::consts::PI;
 
 use super::market::*;
-use super::strategic_map::{CityData, Faction};
+use super::strategic_map::{Faction};
+use super::city_data::CityData;
 use crate::game::strategic_map::BuildinTable;
 use crate::prelude::*;
 

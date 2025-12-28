@@ -4,8 +4,9 @@ use bevy::math::usize;
 
 use super::market::*;
 use super::strategic_map::{
-    Caravan, CityData, Order, PlayerStats, SelectedCaravan, SelectedCity, StrategicState,
+    Caravan, Order, PlayerStats, SelectedCaravan, SelectedCity, StrategicState,
 };
+use super::city_data::CityData;
 use super::tooltip::Tooltips;
 use crate::prelude::*;
 pub fn plugin(app: &mut App) {

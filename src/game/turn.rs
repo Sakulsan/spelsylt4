@@ -1,5 +1,6 @@
 use crate::prelude::*;
-use crate::game::strategic_map::{BuildinTable, CityData};
+use crate::game::strategic_map::{BuildinTable};
+use super::city_data::CityData;
 
 #[derive(Event)]
 pub struct TurnEnd;

@@ -3,7 +3,7 @@
 //! settings for 5 seconds before going back to the menu.
 
 use crate::game::namelists::*;
-use crate::game::strategic_map::CityData;
+use crate::game::city_data::CityData;
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
