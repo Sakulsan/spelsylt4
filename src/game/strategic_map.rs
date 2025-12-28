@@ -254,9 +254,15 @@ fn update_caravan_hud(
 }
 
 use super::tooltip::Tooltips;
+
+#[derive(Component)]
+pub struct CityNodeMarker(Entity);
+#[derive(Component)]
+pub struct CityImageMarker;
+
 fn spawn_city_ui_nodes(
     mut commands: Commands,
-    graph_nodes: Query<(Entity, &CityNode, &super::city_graph::CityTypeComponent)>,
+    graph_nodes: Query<(Entity, &CityNode, &CityData)>,
     mut sylt: Sylt,
     mut rng: ResMut<GlobalRng>,
 ) {
@@ -269,61 +275,69 @@ fn spawn_city_ui_nodes(
         ];
         let mut image = ImageNode::new(sylt.get_image("town_ui_icon"));
         let mut background = BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 0.3).into());
-        let city_descriptor = match city_data.0.population {
-            0..3 => format!("{:?} town", city_data.0.race),
-            3..6 => format!("{:?} city", city_data.0.race),
+        let city_descriptor = match city_data.population {
+            0..3 => format!("{:?} town", city_data.race),
+            3..6 => format!("{:?} city", city_data.race),
             _ => format!(
                 "GREAT AREA OF {:?} (error in tooltip code btw)",
-                city_data.0.race
+                city_data.race
             ),
         };
-        if capitals.contains(&city_data.0.id.as_str()) {
+        if capitals.contains(&city_data.id.as_str()) {
             image.color.set_alpha(0.0);
             background.0.set_alpha(0.0);
         }
-        commands.entity(ent).insert(AnchoredUiNodes::spawn_one((
-            AnchorUiConfig {
-                anchorpoint: AnchorPoint::middle(),
-                ..default()
-            },
+
+        let text_node = |text: String| {
+            (
+                Text::new(text),
+                TextLayout::new_with_justify(Justify::Center),
+                Node { ..default() },
+                BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
+            )
+        };
+
+        let city_ui_node = (
             Button,
-            city_data.0.clone(),
-            Transform::from_xyz(0., 0.0, 1.0),
             Node {
                 width: px(32),
                 height: px(32),
                 ..default()
             },
+            AnchorUiConfig {
+                anchorpoint: AnchorPoint::middle(),
+                ..default()
+            },
+            CityImageMarker,
             image,
             background,
+        );
+
+        let clickable_node = (
+            AnchorUiConfig {
+                anchorpoint: AnchorPoint::middle(),
+                ..default()
+            },
+            Button,
+            CityNodeMarker(ent),
+            Node {
+                width: px(32),
+                height: px(32),
+                ..default()
+            },
+            BackgroundColor(Srgba::new(0.2, 0.2, 0.2, 0.5).into()),
             related!(
-                Tooltips[(
-                    Text::new(city_data.0.id.clone()),
-                    TextShadow::default(),
-                    // Set the justification of the Text
-                    TextLayout::new_with_justify(Justify::Center),
-                    // Set the style of the Node itself.
-                    Node { ..default() },
-                    BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
-                ),
-                (
-                    Text::new(format!("Tier: {}", city_data.0.population)),
-                    TextShadow::default(),
-                    // Set the justification of the Text
-                    TextLayout::new_with_justify(Justify::Center),
-                    // Set the style of the Node itself.
-                    Node { ..default() }
-                ),
-                (
-                    Text::new(city_descriptor),
-                    TextShadow::default(),
-                    // Set the justification of the Text
-                    TextLayout::new_with_justify(Justify::Center),
-                    // Set the style of the Node itself.
-                    Node { ..default() }
-                )]
+                Tooltips[
+                    text_node(city_data.id.clone()),
+                    text_node(format!("Tier: {}", city_data.population)),
+                    text_node(city_descriptor),
+                ]
             ),
-        )));
+        );
+
+        commands
+            .entity(ent)
+            .insert(related!(AnchoredUiNodes[clickable_node, city_ui_node]));
     }
 }
 
@@ -375,7 +389,8 @@ struct CaravanHudItem(Caravan);
 //}
 
 fn city_interaction_system(
-    mut interaction_query: Query<(&Interaction, &CityData), Changed<Interaction>>,
+    mut interaction_query: Query<(&Interaction, &CityNodeMarker), Changed<Interaction>>,
+    mut city_data: Query<&CityData>,
     //ui_entities: Query<Entity, With<super::strategic_hud::PopUpItem>>,
     mut menu_state: ResMut<NextState<StrategicState>>,
     mut selected_city: ResMut<SelectedCity>,
@@ -383,7 +398,11 @@ fn city_interaction_system(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
 ) {
-    for (interaction, city) in &mut interaction_query {
+    for (interaction, city_id) in &mut interaction_query {
+        let Ok(city) = city_data.get(city_id.0) else {
+            continue;
+        };
+
         match *interaction {
             Interaction::Pressed => {
                 println!("Pressed the city {}", city.id);

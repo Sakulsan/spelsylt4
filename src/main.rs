@@ -4,7 +4,7 @@
 
 use crate::game::city_data::CityData;
 use crate::game::namelists::*;
-use crate::game::strategic_map::CityNodeMarker;
+use crate::game::strategic_map::{CityImageMarker, CityNodeMarker};
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
@@ -48,19 +48,9 @@ fn move_camera(
     keys: Res<ButtonInput<KeyCode>>,
     mut cam_pos: Query<&mut Transform, With<Camera>>,
     mut proj: Query<&mut Projection>,
-    mut city_nodes: Query<&mut Node, With<CityData>>,
 ) {
     let Ok(mut c) = cam_pos.single_mut() else {
         error!("we have multiple cameras or something");
-        return;
-    };
-
-    let Ok(mut proj) = proj.single_mut() else {
-        error!("we have multiple cameras or something");
-        return;
-    };
-    let Projection::Orthographic(proj) = &mut *proj else {
-        error!("projection wasn't orthographic :(");
         return;
     };
 
@@ -83,6 +73,21 @@ fn move_camera(
             *c += dir * if shift { 60.0 } else { 20.0 };
         }
     }
+}
+
+fn zoom_camera(keys: Res<ButtonInput<KeyCode>>, mut proj: Query<&mut Projection>) {
+    use KeyCode as K;
+
+    let Ok(mut proj) = proj.single_mut() else {
+        error!("we have multiple cameras or something");
+        return;
+    };
+    let Projection::Orthographic(proj) = &mut *proj else {
+        error!("projection wasn't orthographic :(");
+        return;
+    };
+
+    let shift = keys.pressed(K::ShiftLeft);
 
     if keys.pressed(K::KeyZ) {
         proj.scale += 0.05 * if shift { 3.0 } else { 1.0 };
@@ -91,14 +96,39 @@ fn move_camera(
     }
 
     proj.scale = 0.05f32.max(proj.scale);
+}
 
+fn scale_city_nodes(
+    proj: Query<&Projection>,
+    city_nodes: Query<&AnchoredUiNodes, With<CityData>>,
+    mut city_image_nodes: Query<(&mut Node, Option<&CityNodeMarker>, Option<&CityImageMarker>)>,
+) {
+    let Ok(proj) = proj.single() else {
+        error!("we have multiple cameras or something");
+        return;
+    };
+    let Projection::Orthographic(proj) = proj else {
+        error!("projection wasn't orthographic :(");
+        return;
+    };
+
+    let Vec2 { x: w, y: h } = Vec2::splat(16.0) / proj.scale;
     //Might be a horrible perforer
-    for mut node in city_nodes.iter_mut() {
-        *node = Node {
-            width: px(16. / proj.scale),
-            height: px(16. / proj.scale),
-            ..default()
-        };
+    for city in city_nodes {
+        for node in city.collection() {
+            let Ok((mut node, clickable, sprite)) = city_image_nodes.get_mut(*node) else {
+                error!("child wasn't real");
+                continue;
+            };
+
+            if sprite.is_some() {
+                node.width = px(w);
+                node.height = px(h);
+            } else if clickable.is_some() {
+                node.min_width = px(w.max(32.0));
+                node.min_height = px(h.max(32.0));
+            }
+        }
     }
 }
 
@@ -128,7 +158,14 @@ fn main() {
         .init_state::<GameState>()
         .add_systems(Startup, debug_city_names)
         .add_systems(Startup, setup)
-        .add_systems(Update, move_camera)
+        .add_systems(
+            Update,
+            (
+                move_camera,
+                zoom_camera,
+                scale_city_nodes.run_if(any_match_filter::<Changed<Projection>>),
+            ),
+        )
         // Adds the plugins for each state
         .run();
 }

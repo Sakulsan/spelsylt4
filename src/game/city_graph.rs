@@ -218,7 +218,7 @@ fn spawn_city(
         Transform::from_translation(pos.extend(0.0)),
         Node(idx, pos, color),
         Button,
-        CityTypeComponent(data),
+        data,
     ));
 }
 

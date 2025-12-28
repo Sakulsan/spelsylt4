@@ -40,6 +40,7 @@ pub fn spawn_tooltip_container(
                     flex_direction: FlexDirection::Column,
                     ..default()
                 },
+                BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.2)),
                 Visibility::Hidden,
             ))
             .id();
