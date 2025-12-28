@@ -143,7 +143,8 @@ pub fn plugin(app: &mut App) {
     .init_state::<StrategicState>()
     .add_systems(
         Update,
-        update_caravan_hud.run_if(any_match_filter::<Added<Caravan>>),
+        update_caravan_hud
+            .run_if(any_match_filter::<Added<Caravan>>.or(resource_changed::<SelectedCaravan>)),
     )
     .add_systems(
         Update,
@@ -498,7 +499,7 @@ fn check_outline_button(
     for (interaction, mut node_color, caravan_data) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
-                *next_caravan = SelectedCaravan(caravan_data.0);
+                next_caravan.0 = caravan_data.0;
                 tab_state.set(PopupHUD::Caravan);
             }
             Interaction::Hovered => {

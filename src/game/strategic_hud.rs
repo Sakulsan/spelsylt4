@@ -12,6 +12,8 @@ use super::tooltip::Tooltips;
 use crate::game::strategic_map::{ActivePlayer, BelongsTo};
 use crate::game::tooltip::TooltipOf;
 use crate::prelude::*;
+use crate::GameState;
+
 pub fn plugin(app: &mut App) {
     app.init_state::<PopupHUD>()
         .add_systems(OnEnter(StrategicState::HUDOpen), city_hud_setup)
@@ -24,14 +26,21 @@ pub fn plugin(app: &mut App) {
         )
         .add_systems(OnEnter(PopupHUD::Off), set_interaction(true))
         .add_systems(OnExit(PopupHUD::Off), set_interaction(false))
-        .add_systems(Update, no_popup_button.run_if(in_state(PopupHUD::Off)))
+        .add_systems(
+            Update,
+            no_popup_button
+                .run_if(in_state(GameState::Game))
+                .run_if(in_state(PopupHUD::Off)),
+        )
         .add_systems(
             Update,
             (caravan_button, send_scroll_events).run_if(in_state(PopupHUD::Caravan)),
         )
         .add_systems(
             Update,
-            update_caravan_menu.run_if(resource_changed::<SelectedCaravan>),
+            update_caravan_menu.run_if(
+                any_match_filter::<Changed<Caravan>>.or(resource_changed::<SelectedCaravan>),
+            ),
         )
         .add_observer(on_scroll_handler)
         .add_systems(Update, popup_button);
@@ -86,6 +95,7 @@ fn no_popup_button(
                 }
 
                 HudButton::OperationAction => {
+                    info!("Spawning caravan");
                     commands.spawn((
                         Caravan {
                             position_city_id: selected_city.0.id.clone(),
@@ -304,8 +314,10 @@ fn update_caravan_menu(
     caravans: Query<&Caravan>,
     mut commands: Commands,
 ) {
+    info!("Updating menu");
+
     let Ok(selected_caravan) = caravans.get(selected_caravan.0) else {
-        error!("No selected caravan");
+        error!("No selected caravan to display");
         return;
     };
 
@@ -313,6 +325,7 @@ fn update_caravan_menu(
         commands.entity(caravan_box).despawn_children();
         commands.entity(caravan_box).with_children(|parent| {
             println!("Updating caravan menu");
+            dbg!(&selected_caravan);
             parent.spawn((
                 Node {
                     width: percent(100),
