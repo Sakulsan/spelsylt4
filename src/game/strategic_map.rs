@@ -79,15 +79,17 @@ impl Caravan {
                 let current_node = city_by_id(&caravan.position_city_id);
                 let next_node = city_by_id(&caravan.orders[caravan.order_idx].goal_city_id);
                 let (_, path) = get_path(&city, current_node.0 .0, next_node.0 .0);
-                if path.len() > 1 {
-                    let next_city = nodes
-                        .get(path[1])
-                        .expect("Caravan travelling to a city that doesnt exist");
-                    caravan.position_city_id = next_city.1.id.to_string();
-                }
                 let mut current_city = nodes
                     .get_mut(path[0])
                     .expect("failed to get a path in order updater????");
+                if path.len() > 1 {
+                    current_city = nodes
+                        .get_mut(path[1])
+                        .expect("Caravan travelling to a city that doesnt exist");
+                    caravan.position_city_id = current_city.1.id.to_string();
+                    info!("Caravan travels to {0:?}", current_city.1.id.to_string());
+                }
+                info!("Caravan wants to get to {0:?}", caravan.orders[caravan.order_idx].goal_city_id);
                 if caravan.orders[caravan.order_idx].goal_city_id == current_city.1.id {
                     let available_commodies = current_city.1.available_commodities(&building_table);
                     for (trade, amount) in caravan.orders[caravan.order_idx].trade_order.clone() {
@@ -117,6 +119,7 @@ impl Caravan {
                         }
                     }
 
+                    info!("Caravan finished trading, new goal is {0:?}", caravan.orders[(caravan.order_idx + 1) % caravan.orders.len()].goal_city_id);
                     caravan.order_idx = (caravan.order_idx + 1) % caravan.orders.len();
                 }
             }
@@ -144,7 +147,7 @@ pub fn plugin(app: &mut App) {
     .add_systems(
         Update,
         update_caravan_hud
-            .run_if(any_match_filter::<Added<Caravan>>.or(resource_changed::<SelectedCaravan>)),
+            .run_if(any_match_filter::<Changed<Caravan>>.or(resource_changed::<SelectedCaravan>)),
     )
     .add_systems(
         Update,

@@ -116,7 +116,6 @@ fn scale_city_nodes(
     let Vec2 { x: w, y: h } = Vec2::splat(16.0) / proj.scale;
     //Might be a horrible perforer
     for city in city_nodes {
-        let (mut sprite_pos_x, mut sprite_pos_y) = (px(0.0), px(0.0));
         for node in city.collection() {
             let Ok((mut node, clickable, sprite)) = city_image_nodes.get_mut(*node) else {
                 error!("child wasn't real");
@@ -124,7 +123,6 @@ fn scale_city_nodes(
             };
 
             if sprite.is_some() {
-                (sprite_pos_x, sprite_pos_y) = (node.left, node.bottom);
                 node.width = px(w);
                 node.height = px(h);
             } else if clickable.is_some() {
