@@ -288,7 +288,7 @@ fn spawn_city_ui_nodes(
     for (ent, node, city_data) in graph_nodes {
         let capitals = vec![
             "Great Lancastershire",
-            //"Jewel of All Creation", These capitals aren't represented on the map  yet.
+            //"Jewel of All Creation", These capitals aren't represented on the map yet.
             //"Terez-e-Palaz",
             "Tevet Pekhep Dered",
         ];
@@ -356,7 +356,7 @@ fn spawn_city_ui_nodes(
 
         commands
             .entity(ent)
-            .insert(related!(AnchoredUiNodes[clickable_node, city_ui_node]));
+            .insert(related!(AnchoredUiNodes[city_ui_node, clickable_node]));
     }
 }
 
