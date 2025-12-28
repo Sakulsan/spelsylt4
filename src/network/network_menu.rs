@@ -1,4 +1,5 @@
 use bevy::color::palettes::css::{CRIMSON, LIGHT_SLATE_GRAY};
+use bevy_simple_text_input::{TextInput, TextInputValue};
 
 use crate::{prelude::*, GameState};
 
@@ -28,9 +29,11 @@ pub fn plugin(app: &mut App) {
 // All actions that can be triggered from a button click
 #[derive(Component)]
 enum NetworkMenuButton {
+    MainButton,
     HostButton,
     JoinButton,
     StartButton,
+    ConnectToServerButton,
     QuitButton,
 }
 
@@ -181,17 +184,27 @@ fn button_functionality(
         (Changed<Interaction>, With<Button>),
     >,
     mut menu_state: ResMut<NextState<NetworkMenuState>>,
+    ip_address_field: Option<Single<&TextInputValue, (With<IPField>, Changed<TextInputValue>)>>,
     mut game_state: ResMut<NextState<GameState>>,
 ) {
     for (interaction, menu_button_action) in &interaction_query {
         if *interaction == Interaction::Pressed {
             match menu_button_action {
+                NetworkMenuButton::MainButton => {
+                    menu_state.set(NetworkMenuState::Main);
+                }
                 NetworkMenuButton::HostButton => {
                     //DO HOST CODE HERE
                     menu_state.set(NetworkMenuState::Lobby);
                 }
                 NetworkMenuButton::JoinButton => {
                     menu_state.set(NetworkMenuState::Join);
+                }
+                NetworkMenuButton::ConnectToServerButton => {
+                    println!(
+                        "Connecting to ip: {}",
+                        &ip_address_field.as_ref().unwrap().0
+                    );
                 }
                 NetworkMenuButton::StartButton => {
                     todo!()
@@ -285,6 +298,9 @@ fn update_players(mut commands: Commands, players_container: Query<Entity, With<
 #[derive(Component, Default)]
 pub struct PlayerContainer;
 
+#[derive(Component, Default)]
+pub struct IPField;
+
 fn join_menu_setup(mut commands: Commands) {
     let button_node = Node {
         width: px(200),
@@ -304,7 +320,7 @@ fn join_menu_setup(mut commands: Commands) {
     );
 
     commands.spawn((
-        DespawnOnExit(NetworkMenuState::Main),
+        DespawnOnExit(NetworkMenuState::Join),
         Node {
             width: percent(100),
             height: percent(100),
@@ -317,9 +333,36 @@ fn join_menu_setup(mut commands: Commands) {
             Node {
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
+
                 ..default()
             },
             BackgroundColor(CRIMSON.into()),
-        )],
+            children![
+                (
+                    IPField,
+                    TextInput,
+                    Node {
+                        padding: UiRect::all(Val::Px(5.0)),
+                        border: UiRect::all(Val::Px(2.0)),
+                        ..default()
+                    },
+                    BorderColor::all(Color::BLACK),
+                ),
+                (
+                    Button,
+                    NetworkMenuButton::ConnectToServerButton,
+                    BorderColor::all(Color::BLACK),
+                    Text::new("Join server"),
+                    button_node.clone()
+                ),
+                (
+                    Button,
+                    NetworkMenuButton::MainButton,
+                    BorderColor::all(Color::BLACK),
+                    Text::new("Return"),
+                    button_node.clone()
+                )
+            ]
+        ),],
     ));
 }
