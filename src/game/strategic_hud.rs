@@ -619,7 +619,6 @@ fn caravan_button(
                         .remove(resource);
                 }
                 CaravanMenuButtons::ChangeTrade(city_id, resource) => {
-                    info!("hmm 1");
                     for entity in hudNode.iter() {
                         let mut order: HashSet<_> = selected_caravan
                             .orders
@@ -671,8 +670,6 @@ fn caravan_button(
                     }
                 }
                 CaravanMenuButtons::ChangeTradeConfirm(city_id, from_res, to_res) => {
-                    info!("hmm");
-
                     for entity in hudNode.iter() {
                         commands.entity(entity).despawn_children();
                     }
