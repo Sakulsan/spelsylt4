@@ -268,7 +268,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
     let mut other_pos = Vec::new();
 
     for (race, capital_pos) in [
-        (BuildingType::Goblin, vec2(650., -1450.)),
+        (BuildingType::Goblin, vec2(635., -1460.)),
         (BuildingType::Human, vec2(20., -150.)),
         (BuildingType::Elven, vec2(-30., 1460.)),
         (BuildingType::Dwarven, vec2(-1495., 1100.)),
@@ -337,16 +337,16 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
 }
 
 fn gizmo_nodes(mut gizmos: Gizmos, nodes: Query<&Node>, g: Res<CityGraph>) {
-    for n in &nodes {
+    /*    for n in &nodes {
         gizmos.circle_2d(n.1, 5.0, n.2);
-    }
+    }*/
 
     let g = &g.graph;
     for n1 in &nodes {
         for neighbor in g.neighbors(n1.0) {
             let n2 = nodes.get(g[neighbor]).expect("lol");
 
-            gizmos.line_2d(n1.1, n2.1, Color::linear_rgb(1.0, 0.0, 0.0));
+            gizmos.line_2d(n1.1, n2.1, Color::linear_rgb(0.55, 0.27, 0.075));
         }
     }
 }

@@ -29,6 +29,8 @@ pub fn debt_collector(
     mut player: Single<&mut Player, With<ActivePlayer>>,
     mut commands: Commands,
 ) {
+    println!("player has {} money", player.money);
+
     if player.money < 0.0 {
         player.money = player.money * 1.1;
     }

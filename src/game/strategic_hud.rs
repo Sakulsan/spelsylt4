@@ -2,19 +2,19 @@ use std::collections::btree_map::Entry;
 use std::collections::HashSet;
 use std::collections::{BTreeMap, BTreeSet};
 
+use bevy::color::palettes::css::*;
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::math::usize;
 use bevy::picking::hover::HoverMap;
 use bevy::ui::InteractionDisabled;
-use bevy::color::palettes::css::*;
 
 use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::{Caravan, Order, Player, SelectedCaravan, SelectedCity, StrategicState};
 use super::tooltip::Tooltips;
 use crate::game::market;
-use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
 use crate::game::strategic_map::{ActivePlayer, BelongsTo};
+use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
 use crate::game::tooltip::TooltipOf;
 use crate::prelude::*;
 use crate::GameState;
@@ -25,6 +25,7 @@ pub fn plugin(app: &mut App) {
         .add_systems(OnEnter(PopupHUD::Buildings), building_menu)
         .add_systems(OnEnter(PopupHUD::Caravan), caravan_menu)
         .add_systems(OnEnter(PopupHUD::Wares), wares_menu)
+        .add_systems(OnEnter(PopupHUD::Finance), finance_menu)
         .add_systems(
             Update,
             caravan_destination_buttons.run_if(in_state(StrategicState::DestinationPicker)),
@@ -83,6 +84,7 @@ pub enum PopupHUD {
     Buildings,
     Caravan,
     Wares,
+    Finance,
 }
 
 #[derive(Component)]
@@ -156,6 +158,10 @@ fn no_popup_button(
                 }
                 HudButton::BuldingTabAction => {
                     tab_state.set(PopupHUD::Buildings);
+                }
+
+                HudButton::FinanceAction => {
+                    tab_state.set(PopupHUD::Finance);
                 }
 
                 _ => {}
@@ -417,6 +423,39 @@ fn building_menu(
                         }
                     }
                 });
+        }
+    });
+}
+
+fn finance_menu(mut commands: Commands, players: Query<&Player>) {
+    let window = popup_window(&mut commands, FlexDirection::Column);
+    commands.entity(window).with_children(|parent| {
+        parent.spawn((
+            Node {
+                width: percent(100),
+                height: percent(15),
+                ..default()
+            },
+            Text::new("Finances"),
+        ));
+        for player in players.iter() {
+            parent.spawn((
+                Node {
+                    width: percent(100),
+                    height: percent(25),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    border: UiRect::all(px(4)),
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },
+                BackgroundColor(Srgba::new(0.8, 0.1, 0.1, 1.0).into()),
+                BorderColor::all(Color::BLACK),
+                children![
+                    (Text::new(format!("----{}----", "NO NAME"))),
+                    (Text::new(format!("Money: {}", player.money)))
+                ],
+            ));
         }
     });
 }
@@ -872,81 +911,117 @@ fn caravan_destination_buttons(
     }
 }
 
-fn wares_menu(mut commands: Commands, mut sylt: Sylt, town: Res<SelectedCity>, building_table: Res<BuildinTable>) {
+fn wares_menu(
+    mut commands: Commands,
+    mut sylt: Sylt,
+    town: Res<SelectedCity>,
+    building_table: Res<BuildinTable>,
+) {
     let window = popup_window(&mut commands, FlexDirection::Row);
 
     //Basic and exotic mats
     commands.entity(window).with_children(|parent| {
         //Basic and exotic mats
         let available_resources: HashSet<Resources> = HashSet::from_iter(
-                                                                town.available_commodities(&building_table)
-                                                                    .iter()
-                                                                    .map(|x| *x)
-                                                                    .collect::<Vec<Resources>>());
+            town.available_commodities(&building_table)
+                .iter()
+                .map(|x| *x)
+                .collect::<Vec<Resources>>(),
+        );
+        info!(
+            "{0:?}\n{1:?}",
+            town.market,
+            town.available_commodities(&building_table)
+        );
         let basic_resources = HashSet::from(market::BASIC_RESOURCES);
         let advanced_resources = HashSet::from(market::ADVANCED_RESOURCES);
         let exotic_resources = HashSet::from(market::EXOTIC_RESOURCES);
         let service_resources = HashSet::from(market::SERVICE_RESOURCES);
         let illegal_resources = HashSet::from(market::ILLEGAL_RESOURCES);
-        let color_coded_basics = basic_resources.iter()
-                        .map(|x| 
-                            if basic_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
-                                TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
-                            } else {
-                                TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
-                            }
-                        )
-                        .zip(basic_resources.iter())
-                        .map(|(x, y)| (*y, x))
-                        .collect::<Vec<(Resources, TextColor)>>();
+        let color_coded_basics = basic_resources
+            .iter()
+            .map(|x| {
+                if basic_resources
+                    .intersection(&available_resources)
+                    .collect::<Vec<_>>()
+                    .contains(&x)
+                {
+                    TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
+                } else {
+                    TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
+                }
+            })
+            .zip(basic_resources.iter())
+            .map(|(x, y)| (*y, x))
+            .collect::<Vec<(Resources, TextColor)>>();
 
-        let color_coded_advanced = advanced_resources.iter()
-                        .map(|x|
-                            if advanced_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
-                                TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
-                            } else {
-                                TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
-                            }
-                        )
-                        .zip(advanced_resources.iter())
-                        .map(|(x, y)| (*y, x))
-                        .collect::<Vec<_>>();
+        let color_coded_advanced = advanced_resources
+            .iter()
+            .map(|x| {
+                if advanced_resources
+                    .intersection(&available_resources)
+                    .collect::<Vec<_>>()
+                    .contains(&x)
+                {
+                    TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
+                } else {
+                    TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
+                }
+            })
+            .zip(advanced_resources.iter())
+            .map(|(x, y)| (*y, x))
+            .collect::<Vec<_>>();
 
-        let color_coded_exotics = exotic_resources.iter()
-                        .map(|x|
-                            if exotic_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
-                                TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
-                            } else {
-                                TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
-                            }
-                        )
-                        .zip(exotic_resources.iter())
-                        .map(|(x, y)| (*y, x))
-                        .collect::<Vec<_>>();
+        let color_coded_exotics = exotic_resources
+            .iter()
+            .map(|x| {
+                if exotic_resources
+                    .intersection(&available_resources)
+                    .collect::<Vec<_>>()
+                    .contains(&x)
+                {
+                    TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
+                } else {
+                    TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
+                }
+            })
+            .zip(exotic_resources.iter())
+            .map(|(x, y)| (*y, x))
+            .collect::<Vec<_>>();
 
-        let color_coded_service = service_resources.iter()
-                        .map(|x|
-                            if service_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
-                                TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
-                            } else {
-                                TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
-                            }
-                        )
-                        .zip(service_resources.iter())
-                        .map(|(x, y)| (*y, x))
-                        .collect::<Vec<_>>();
+        let color_coded_service = service_resources
+            .iter()
+            .map(|x| {
+                if service_resources
+                    .intersection(&available_resources)
+                    .collect::<Vec<_>>()
+                    .contains(&x)
+                {
+                    TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
+                } else {
+                    TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
+                }
+            })
+            .zip(service_resources.iter())
+            .map(|(x, y)| (*y, x))
+            .collect::<Vec<_>>();
 
-        let color_coded_illegal = illegal_resources.iter()
-                        .map(|x|
-                            if illegal_resources.union(&available_resources).collect::<Vec<_>>().contains(&x) {
-                                TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
-                            } else {
-                                TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
-                            }
-                        )
-                        .zip(illegal_resources.iter())
-                        .map(|(x, y)| (*y, x))
-                        .collect::<Vec<_>>();
+        let color_coded_illegal = illegal_resources
+            .iter()
+            .map(|x| {
+                if illegal_resources
+                    .intersection(&available_resources)
+                    .collect::<Vec<_>>()
+                    .contains(&x)
+                {
+                    TextColor(Color::Srgba(bevy::color::palettes::css::WHITE))
+                } else {
+                    TextColor(Color::Srgba(bevy::color::palettes::css::DARK_RED))
+                }
+            })
+            .zip(illegal_resources.iter())
+            .map(|(x, y)| (*y, x))
+            .collect::<Vec<_>>();
 
         let city_data = &town.0;
         parent
@@ -1105,6 +1180,7 @@ enum HudButton {
     EconomyTabAction,
     BuldingTabAction,
     OperationAction,
+    FinanceAction,
 }
 
 #[derive(Component)]
@@ -1208,8 +1284,7 @@ fn create_resource_icon(
                 },
                 BackgroundColor(Srgba::new(0.3, 0.3, 0.3, 1.0).into()),
             ),
-            (Text::new(resource.0.get_name()),
-            resource.1),
+            (Text::new(resource.0.get_name()), resource.1),
             (Text::new(format!("{:.2}$", cost)),)
         ],
     ));
@@ -1261,50 +1336,15 @@ pub fn city_hud_setup(mut commands: Commands, selected_city: ResMut<SelectedCity
                     flex_direction: FlexDirection::Row,
                     ..default()
                 },
-                children![
-                    (
-                        Node {
-                            width: percent(40.0),
-                            ..default()
-                        },
-                        // Title
-                        Text::new(city.id.clone()),
-                        TextFont { ..default() },
-                    ),
-                    (
-                        Button,
-                        HudButton::BuldingTabAction,
-                        Node {
-                            width: percent(20.0),
-                            ..default()
-                        },
-                        BackgroundColor(Srgba::new(0.2, 0.2, 0.9, 1.0).into()),
-                        Text::new("Buildings"),
-                        TextFont { ..default() },
-                    ),
-                    (
-                        Button,
-                        HudButton::OperationAction,
-                        Node {
-                            width: percent(20.0),
-                            ..default()
-                        },
-                        BackgroundColor(Srgba::new(0.2, 0.2, 0.9, 1.0).into()),
-                        Text::new("Actions"),
-                        TextFont { ..default() },
-                    ),
-                    (
-                        Button,
-                        HudButton::EconomyTabAction,
-                        Node {
-                            width: percent(20.0),
-                            ..default()
-                        },
-                        BackgroundColor(Srgba::new(0.2, 0.2, 0.9, 1.0).into()),
-                        Text::new("Market"),
-                        TextFont { ..default() },
-                    )
-                ]
+                children![(
+                    Node {
+                        width: percent(40.0),
+                        ..default()
+                    },
+                    // Title
+                    Text::new(city.id.clone()),
+                    TextFont { ..default() },
+                ),]
             ),
             (
                 Node {
@@ -1351,6 +1391,18 @@ pub fn city_hud_setup(mut commands: Commands, selected_city: ResMut<SelectedCity
                             ..default()
                         },
                         Text::new("Send a new caravan"),
+                        BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into())
+                    ),
+                    (
+                        Button,
+                        HudButton::FinanceAction,
+                        Node {
+                            width: percent(18),
+                            height: percent(80),
+                            margin: UiRect::all(percent(1)),
+                            ..default()
+                        },
+                        Text::new("Finances"),
                         BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into())
                     )
                 ]

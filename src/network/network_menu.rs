@@ -1,4 +1,16 @@
-use bevy::color::palettes::css::CRIMSON;
+use bevy::color::palettes::css::{CRIMSON, LIGHT_SLATE_GRAY};
+use bevy_renet::netcode::{
+    ClientAuthentication, NetcodeClientPlugin, NetcodeClientTransport, NetcodeServerPlugin,
+    NetcodeServerTransport, NetcodeTransportError, ServerAuthentication, ServerConfig,
+};
+use bevy_renet::renet::{DefaultChannel, RenetClient, ServerEvent};
+use bevy_renet::{
+    renet::{ConnectionConfig, RenetServer},
+    RenetClientPlugin, RenetServerPlugin,
+};
+use bevy_simple_text_input::{TextInput, TextInputValue};
+use std::net::{SocketAddr, UdpSocket};
+use std::time::SystemTime;
 
 use crate::{prelude::*, GameState};
 
@@ -9,25 +21,56 @@ const HOVERED_PRESSED_BUTTON: Color = Color::srgb(0.25, 0.65, 0.25);
 const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
 
 pub fn plugin(app: &mut App) {
+    app.add_plugins((
+        RenetServerPlugin,
+        RenetClientPlugin,
+        NetcodeServerPlugin,
+        NetcodeClientPlugin,
+    ));
+
     app.add_systems(
         OnEnter(GameState::NetworkMenu),
         (crate::kill_music, spawn_network_menu),
     )
-    .add_systems(OnEnter(NetworkMenuState::Lobby), lobby_menu_setup)
+    .add_systems(
+        OnEnter(NetworkMenuState::Lobby),
+        (lobby_menu_setup, update_players, host_server).chain(),
+    )
     .add_systems(OnEnter(NetworkMenuState::Join), join_menu_setup)
     .init_state::<NetworkMenuState>() //Feels weird to have duplicate names, but it works
     .add_systems(
         Update,
         (button_hover_system, button_functionality).run_if(in_state(GameState::NetworkMenu)),
-    );
+    )
+    .add_systems(Update, handle_events_system)
+    .add_systems(
+        Update,
+        (send_message_system, receive_message_system).run_if(resource_exists::<RenetClient>),
+    )
+    .add_observer(squad_up);
+}
+
+fn handle_events_system(mut server_events: MessageReader<ServerEvent>) {
+    for event in server_events.read() {
+        match event {
+            ServerEvent::ClientConnected { client_id } => {
+                info!("Client {client_id} connected");
+            }
+            ServerEvent::ClientDisconnected { client_id, reason } => {
+                info!("Client {client_id} disconnected: {reason}");
+            }
+        }
+    }
 }
 
 // All actions that can be triggered from a button click
 #[derive(Component)]
 enum NetworkMenuButton {
+    MainButton,
     HostButton,
     JoinButton,
     StartButton,
+    ConnectToServerButton,
     QuitButton,
 }
 
@@ -171,24 +214,72 @@ fn button_hover_system(
         }
     }
 }
+#[derive(Event)]
+struct JoinEvent(String);
+
+fn squad_up(join: On<JoinEvent>, mut commands: Commands) {
+    let authentication = ClientAuthentication::Unsecure {
+        server_addr: SocketAddr::new(join.0.parse().unwrap(), 5000),
+        client_id: 0,
+        user_data: None,
+        protocol_id: 0,
+    };
+
+    let local_ip = match local_ip_address::local_ip() {
+        Ok(ip) => ip,
+        Err(e) => {
+            error!("Server failed to start: couldn't get local IP address");
+            return;
+        }
+    };
+
+    let socket = UdpSocket::bind(SocketAddr::new(local_ip, 5000)).unwrap();
+    let current_time = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
+
+    info!("set up client on ip {}", local_ip);
+    let mut transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
+    commands.insert_resource(transport);
+}
+
+fn send_message_system(mut client: ResMut<RenetClient>) {
+    // Send a text message to the server
+    client.send_message(DefaultChannel::ReliableOrdered, "server message");
+}
+
+fn receive_message_system(mut client: ResMut<RenetClient>) {
+    while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
+        // Handle received message
+    }
+}
 
 fn button_functionality(
+    mut commands: Commands,
     interaction_query: Query<
         (&Interaction, &NetworkMenuButton),
         (Changed<Interaction>, With<Button>),
     >,
     mut menu_state: ResMut<NextState<NetworkMenuState>>,
+    ip_address_field: Option<Single<&TextInputValue, With<IPField>>>,
     mut game_state: ResMut<NextState<GameState>>,
 ) {
     for (interaction, menu_button_action) in &interaction_query {
         if *interaction == Interaction::Pressed {
             match menu_button_action {
+                NetworkMenuButton::MainButton => {
+                    menu_state.set(NetworkMenuState::Main);
+                }
                 NetworkMenuButton::HostButton => {
                     //DO HOST CODE HERE
                     menu_state.set(NetworkMenuState::Lobby);
                 }
                 NetworkMenuButton::JoinButton => {
                     menu_state.set(NetworkMenuState::Join);
+                }
+                NetworkMenuButton::ConnectToServerButton => {
+                    commands.trigger(JoinEvent(ip_address_field.as_ref().unwrap().0.to_string()));
+                    info!("Connecting to ip: {}", ip_address_field.as_ref().unwrap().0);
                 }
                 NetworkMenuButton::StartButton => {
                     todo!()
@@ -210,6 +301,7 @@ fn lobby_menu_setup(mut commands: Commands) {
         margin: UiRect::all(px(20)),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
+        flex_direction: FlexDirection::Column,
         ..default()
     };
 
@@ -224,24 +316,65 @@ fn lobby_menu_setup(mut commands: Commands) {
     commands.spawn((
         DespawnOnExit(NetworkMenuState::Lobby),
         Node {
-            width: percent(100),
-            height: percent(100),
+            width: vw(100),
+            height: vh(100),
             align_items: AlignItems::Center,
             justify_content: JustifyContent::Center,
+            flex_direction: FlexDirection::Column,
             ..default()
         },
+        BackgroundColor(LIGHT_SLATE_GRAY.into()),
         //OnSettingsMenuScreen,
-        children![(
-            Text::new("Server on 192.128......"),
-            Node {
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                ..default()
-            },
-            BackgroundColor(CRIMSON.into()),
-        )],
+        children![
+            (
+                Text::new("Lobby"),
+                Node {
+                    width: vw(100),
+                    height: vh(20),
+                    ..default()
+                },
+                BackgroundColor(CRIMSON.into()),
+            ),
+            (Text::new("IP: 192.128......"), IPField),
+            (Text::new("World seed: SEED")),
+            (
+                PlayerContainer,
+                Node {
+                    width: vw(100),
+                    height: vh(70),
+                    ..default()
+                },
+            )
+        ],
     ));
 }
+
+fn update_players(mut commands: Commands, players_container: Query<Entity, With<PlayerContainer>>) {
+    for container in players_container.iter() {
+        let mut container = commands.get_entity(container).unwrap();
+
+        container.despawn_children();
+        container.with_children(|parent| {
+            for player in vec!["Player one", "Player two"] {
+                parent.spawn((
+                    Node {
+                        left: vw(10),
+                        width: vw(80),
+                        height: px(128),
+                        ..default()
+                    },
+                    Text::new(player),
+                ));
+            }
+        });
+    }
+}
+
+#[derive(Component, Default)]
+pub struct PlayerContainer;
+
+#[derive(Component, Default)]
+pub struct IPField;
 
 fn join_menu_setup(mut commands: Commands) {
     let button_node = Node {
@@ -261,8 +394,11 @@ fn join_menu_setup(mut commands: Commands) {
         TextColor(TEXT_COLOR),
     );
 
+    let client = RenetClient::new(ConnectionConfig::default());
+    commands.insert_resource(client);
+
     commands.spawn((
-        DespawnOnExit(NetworkMenuState::Main),
+        DespawnOnExit(NetworkMenuState::Join),
         Node {
             width: percent(100),
             height: percent(100),
@@ -275,9 +411,70 @@ fn join_menu_setup(mut commands: Commands) {
             Node {
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
+
                 ..default()
             },
             BackgroundColor(CRIMSON.into()),
-        )],
+            children![
+                (
+                    IPField,
+                    TextInput,
+                    Node {
+                        padding: UiRect::all(Val::Px(5.0)),
+                        border: UiRect::all(Val::Px(2.0)),
+                        ..default()
+                    },
+                    BorderColor::all(Color::BLACK),
+                ),
+                (
+                    Button,
+                    NetworkMenuButton::ConnectToServerButton,
+                    BorderColor::all(Color::BLACK),
+                    Text::new("Join server"),
+                    button_node.clone()
+                ),
+                (
+                    Button,
+                    NetworkMenuButton::MainButton,
+                    BorderColor::all(Color::BLACK),
+                    Text::new("Return"),
+                    button_node.clone()
+                )
+            ]
+        ),],
     ));
+}
+
+fn host_server(mut commands: Commands, field: Query<Entity, With<IPField>>) {
+    let server = RenetServer::new(ConnectionConfig::default());
+    commands.insert_resource(server);
+
+    let server = RenetServer::new(ConnectionConfig::default());
+    commands.insert_resource(server);
+
+    let local_ip = match local_ip_address::local_ip() {
+        Ok(ip) => ip,
+        Err(e) => {
+            error!("Server failed to start: couldn't get local IP address");
+            return;
+        }
+    };
+
+    let server_addr = SocketAddr::new(local_ip, 5000);
+
+    commands
+        .entity(field.single().unwrap())
+        .insert(Text(format!("Hosting server on: {}", server_addr)));
+    let socket = UdpSocket::bind(server_addr).unwrap();
+    let server_config = ServerConfig {
+        current_time: SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap(),
+        max_clients: 64,
+        protocol_id: 0,
+        public_addresses: vec![server_addr],
+        authentication: ServerAuthentication::Unsecure,
+    };
+    let transport = NetcodeServerTransport::new(server_config, socket).unwrap();
+    commands.insert_resource(transport);
 }
