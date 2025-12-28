@@ -10,7 +10,7 @@ use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::{Caravan, Order, Player, SelectedCaravan, SelectedCity, StrategicState};
 use super::tooltip::Tooltips;
-use crate::game::strategic_map::CityNodeMarker;
+use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
 use crate::game::strategic_map::{ActivePlayer, BelongsTo};
 use crate::game::tooltip::TooltipOf;
 use crate::prelude::*;
@@ -211,7 +211,7 @@ fn popup_window(commands: &mut Commands, direction: FlexDirection) -> Entity {
         .id()
 }
 
-fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
+fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>, building_table: Res<BuildinTable>) {
     let window = popup_window(&mut commands, FlexDirection::ColumnReverse);
     let population = city.0.population + 1;
     for tiers in 1..population {
@@ -241,6 +241,53 @@ fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
                             _ => None,
                         } {
                             println!("Found building {}", building.0);
+                            let mut production_text = "Produces: ".to_string();
+                            let mut consumption_text = "Consumes: ".to_string();
+                            let mut production = vec!();
+                            let mut consumption = vec!();
+                            for prod in &building_table.0.get(&building.0)
+                                                        .expect(format!("Tried to access invalid building {:?}", building.0).as_str())
+                                                        .output {
+                                production.push(prod);
+                            }
+                            for cons in &building_table.0.get(&building.0)
+                                                        .expect(format!("Tried to access invalid building {:?}", building.0).as_str())
+                                                        .input {
+                                consumption.push(cons);
+                            }
+
+                            for i in 0..production.len() - 1 {
+                                production_text += format!("{0} x{1}, ", production[i].0.get_name(), production[i].1).as_str();
+                                if i % 2 == 1 {
+                                    production_text += "\n";
+                                }
+                            }
+                            if production.len() == 1 {
+                                production_text += format!("{0} x{1}", 
+                                                            production.last().expect("weird ass building table").0.get_name(),
+                                                            production.last().expect("weird ass building table").1).as_str();
+                            } else {
+                                production_text += format!("and {0} x{1}", 
+                                                            production.last().expect("weird ass building table").0.get_name(),
+                                                            production.last().expect("weird ass building table").1).as_str();
+                            }
+
+                            for i in 0..consumption.len() - 1 {
+                                consumption_text += format!("{0} x{1}, ", consumption[i].0.get_name(), consumption[i].1).as_str();
+                                if i % 2 == 1 {
+                                    consumption_text += "\n";
+                                }
+                            }
+                            if consumption.len() == 1 {
+                                consumption_text += format!("{0} x{1}", 
+                                                            consumption.last().expect("weird ass building table").0.get_name(),
+                                                            consumption.last().expect("weird ass building table").1).as_str();
+                            } else {
+                                consumption_text += format!("and {0} x{1}", 
+                                                            consumption.last().expect("weird ass building table").0.get_name(),
+                                                            consumption.last().expect("weird ass building table").1).as_str();
+                            }
+
                             parent.spawn((
                                 Node {
                                     width: px(64),
@@ -261,7 +308,7 @@ fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
                                         BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
                                     ),
                                     (
-                                        Text::new("I produce this"),
+                                        Text::new(production_text),
                                         TextShadow::default(),
                                         // Set the justification of the Text
                                         TextLayout::new_with_justify(Justify::Center),
@@ -269,7 +316,7 @@ fn building_menu(mut commands: Commands, city: ResMut<SelectedCity>) {
                                         Node { ..default() }
                                     ),
                                     (
-                                        Text::new("here is lore"),
+                                        Text::new(consumption_text),
                                         TextShadow::default(),
                                         // Set the justification of the Text
                                         TextLayout::new_with_justify(Justify::Center),
