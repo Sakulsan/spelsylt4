@@ -82,14 +82,15 @@ pub fn plugin(app: &mut App) {
         .add_systems(
             Update,
             (
-                await_id.run_if(in_state(ClientNetworkState::AwaitingId)),
                 read_player_joined.run_if(
                     in_state(ClientNetworkState::AwaitingSeed)
                         .or(in_state(ClientNetworkState::AwaitingStart)),
                 ),
+                await_id.run_if(in_state(ClientNetworkState::AwaitingId)),
                 await_seed.run_if(not(in_state(ClientNetworkState::Started))),
                 await_start.run_if(not(in_state(ClientNetworkState::Started))),
             )
+                .chain()
                 .in_set(ClientSet),
         )
         .add_observer(squad_up);
