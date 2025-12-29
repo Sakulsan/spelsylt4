@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     game::{city_data::CityData, strategic_map::Caravan},
     prelude::*,
@@ -7,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Message, Deref, DerefMut)]
 pub struct ClientMessage(pub NetworkMessage);
 
-#[derive(Message, Deref, DerefMut)]
+#[derive(Message, Deref, DerefMut, Clone)]
 pub struct ServerMessage(pub NetworkMessage);
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -33,6 +35,7 @@ pub enum NetworkMessage {
     },
     TurnFinished {
         caravans: Vec<Caravan>,
+        economy: HashMap<PlayerId, isize>,
     },
 }
 

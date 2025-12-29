@@ -964,7 +964,7 @@ fn caravan_button(
         (&Interaction, &CaravanMenuButtons),
         (Changed<Interaction>, With<Button>),
     >,
-    hud_node: Query<Entity, With<CaravanCityUINode>>,
+    hud_node: Query<(Entity, &CaravanCityUINode)>,
     //mut menu_state: ResMut<NextState<StrategicState>>,
     selected_caravan: Res<SelectedCaravan>,
     mut caravans: Query<&mut Caravan>,
@@ -1059,7 +1059,7 @@ fn caravan_button(
                         .remove(resource);
                 }
                 CaravanMenuButtons::ChangeTrade(city_id, resource) => {
-                    for entity in hud_node.iter() {
+                    if let Some((entity, _)) = hud_node.iter().find(|n| n.1 .0 == *city_id) {
                         let order: BTreeSet<_> = selected_caravan
                             .orders
                             .iter()
@@ -1110,7 +1110,7 @@ fn caravan_button(
                     }
                 }
                 CaravanMenuButtons::ChangeTradeConfirm(city_id, from_res, to_res) => {
-                    for entity in hud_node.iter() {
+                    for (entity, _) in hud_node.iter() {
                         commands.entity(entity).despawn_children();
                     }
 
