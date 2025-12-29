@@ -557,6 +557,7 @@ enum CaravanMenuButtons {
     ChangeTrade(String, Resources),
     IncTradeAmount(String, Resources),
     DecTradeAmount(String, Resources),
+    ToggleTradeStockpileExclusivity(String, Resources),
     KillTrade(String, Resources),
     ChangeTradeConfirm(String, Resources, Resources),
 }
@@ -774,6 +775,44 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>)
                                 Text::new("+"),
                             ));
 
+                            if true {
+                                parent.spawn((
+                                    Node {
+                                        width: px(44),
+                                        height: px(44),
+                                        margin: UiRect::all(px(2)),
+                                        ..default()
+                                    },
+                                    BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
+                                    Button,
+                                    CaravanMenuButtons::ToggleTradeStockpileExclusivity(
+                                        stop.goal_city_id.clone(),
+                                        *resource,
+                                    ),
+                                    children![(
+                                        Node {
+                                            width: px(34),
+                                            height: px(34),
+                                            margin: UiRect::all(px(5)),
+                                            ..default()
+                                        },
+                                        BackgroundColor(Srgba::new(0.1, 0.8, 0.1, 1.0).into()),
+                                    )],
+                                    related!(
+                                        Tooltips[(
+                                            Text::new("Toggle trades with warehouses"),
+                                            // Set the justification of the Text
+                                            TextLayout::new_with_justify(Justify::Center),
+                                            // Set the style of the Node itself.
+                                            Node { ..default() },
+                                            BackgroundColor(
+                                                Srgba::new(0.05, 0.05, 0.05, 1.0).into()
+                                            ),
+                                        )]
+                                    ),
+                                ));
+                            }
+
                             parent.spawn((
                                 IncomeValue(*resource),
                                 Node {
@@ -869,6 +908,16 @@ fn caravan_button(
                         .get_mut(resource) //Should never call a undefined resource
                         .expect("Couldn't find resource, should never happen") -= 1;
                 }
+
+                CaravanMenuButtons::ToggleTradeStockpileExclusivity(city_id, resource) => {
+                    todo!();
+                    selected_caravan
+                        .orders
+                        .iter_mut()
+                        .find(|order| order.goal_city_id == *city_id)
+                        .expect(format!("Couldn't find city named {}", city_id).as_str());
+                }
+
                 CaravanMenuButtons::KillTrade(city_id, resource) => {
                     selected_caravan
                         .orders
