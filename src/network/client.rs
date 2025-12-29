@@ -73,6 +73,9 @@ fn squad_up(
     menu_state.set(NetworkMenuState::Lobby);
 }
 
+#[derive(Reflect, Resource, Default)]
+pub struct CityNameList(Vec<Vec<String>>);
+
 pub fn plugin(app: &mut App) {
     app.init_state::<ClientNetworkState>()
         .add_systems(
@@ -89,7 +92,7 @@ pub fn plugin(app: &mut App) {
             (
                 read_player_joined.run_if(in_state(ClientNetworkState::AwaitingStart)),
                 await_id.run_if(in_state(ClientNetworkState::AwaitingId)),
-                await_seed.run_if(not(in_state(ClientNetworkState::Started))),
+                await_map.run_if(not(in_state(ClientNetworkState::Started))),
                 await_start.run_if(not(in_state(ClientNetworkState::Started))),
             )
                 .chain()
@@ -142,14 +145,16 @@ fn await_id(
     }
 }
 
-fn await_seed(
+fn await_map(
     mut messages: MessageReader<ServerMessage>,
     mut state: ResMut<NextState<ClientNetworkState>>,
     mut rng: ResMut<GlobalRngSeed>,
+    mut city_names: ResMut<CityNameList>,
 ) {
     for message in messages.read() {
-        if let NetworkMessage::Map { seed } = **message {
+        if let NetworkMessage::Map { seed, city_names } = **message {
             info!("Received seed from host, set seed to {seed}");
+            city_name.0 = city_names;
             rng.0 = seed;
             state.set(ClientNetworkState::AwaitingStart);
         }

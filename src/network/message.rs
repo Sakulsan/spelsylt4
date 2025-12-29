@@ -18,6 +18,7 @@ pub enum NetworkMessage {
     },
     Map {
         seed: u64,
+        city_names: Vec<Vec<String>>,
     },
     GameStart,
     TurnEnded {

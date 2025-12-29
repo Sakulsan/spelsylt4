@@ -12,6 +12,7 @@ use bevy_renet::{
 use crate::{
     game::city_data::CityData,
     network::{
+        client::CityNameList,
         message::{ClientData, ClientMessage, NetworkMessage, PlayerId, Players, ServerMessage},
         network_menu::NetworkMenuState,
     },
@@ -183,8 +184,12 @@ fn receive_message_system_server(
 fn broadcast_seed_and_start_before_mapgen(
     mut writer: MessageWriter<ServerMessage>,
     seed: Res<GlobalRngSeed>,
+    city_names: ResMut<CityNameList>,
 ) {
-    writer.write(ServerMessage(NetworkMessage::Map { seed: seed.0 }));
+    writer.write(ServerMessage(NetworkMessage::Map {
+        seed: seed.0,
+        city_names: city_names.0,
+    }));
     writer.write(ServerMessage(NetworkMessage::GameStart));
 }
 
