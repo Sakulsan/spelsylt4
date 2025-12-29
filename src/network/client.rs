@@ -4,7 +4,10 @@ use std::{
 };
 
 use crate::{
-    network::message::{ClientData, ClientMessage, NetworkMessage, Players, ServerMessage},
+    network::{
+        message::{ClientData, ClientMessage, NetworkMessage, Players, ServerMessage},
+        network_menu::NetworkMenuState,
+    },
     prelude::*,
     NetworkState,
 };
@@ -17,7 +20,7 @@ use bevy_renet::{
 struct ClientSet;
 
 #[derive(States, Debug, Clone, Copy, Hash, Eq, PartialEq, Default)]
-enum ClientNetworkState {
+pub enum ClientNetworkState {
     #[default]
     AwaitingId,
     AwaitingSeed,
@@ -28,7 +31,12 @@ enum ClientNetworkState {
 #[derive(Event)]
 pub struct JoinEvent(pub String);
 
-fn squad_up(join: On<JoinEvent>, mut commands: Commands, mut net: ResMut<NextState<NetworkState>>) {
+fn squad_up(
+    join: On<JoinEvent>,
+    mut commands: Commands,
+    mut net: ResMut<NextState<NetworkState>>,
+    mut menu_state: ResMut<NextState<NetworkMenuState>>,
+) {
     net.set(NetworkState::Client);
 
     let local_ip = match local_ip_address::local_ip() {
@@ -62,6 +70,7 @@ fn squad_up(join: On<JoinEvent>, mut commands: Commands, mut net: ResMut<NextSta
     info!("set up client on ip {}", local_ip);
     let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
     commands.insert_resource(transport);
+    menu_state.set(NetworkMenuState::Lobby);
 }
 
 pub fn plugin(app: &mut App) {

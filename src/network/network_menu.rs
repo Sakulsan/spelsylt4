@@ -13,6 +13,7 @@ use std::net::{SocketAddr, UdpSocket};
 use std::time::SystemTime;
 
 use crate::network::client::JoinEvent;
+use crate::network::message::Players;
 use crate::network::server::{GameStarted, ServerHosted};
 use crate::{prelude::*, GameState};
 
@@ -34,6 +35,7 @@ pub fn plugin(app: &mut App) {
         OnEnter(GameState::NetworkMenu),
         (crate::kill_music, spawn_network_menu),
     )
+    .add_systems(Update, update_players.run_if(resource_changed::<Players>))
     .add_systems(
         OnEnter(NetworkMenuState::Lobby),
         (lobby_menu_setup, update_players, host_server).chain(),
@@ -48,7 +50,7 @@ pub fn plugin(app: &mut App) {
 
 // All actions that can be triggered from a button click
 #[derive(Component)]
-enum NetworkMenuButton {
+pub enum NetworkMenuButton {
     MainButton,
     HostButton,
     JoinButton,
@@ -59,7 +61,7 @@ enum NetworkMenuButton {
 
 // State used for the current menu screen
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
-enum NetworkMenuState {
+pub enum NetworkMenuState {
     Main,
     Join,
     Lobby,
@@ -311,13 +313,17 @@ fn lobby_menu_setup(mut commands: Commands, network_state: Res<State<NetworkStat
     ));
 }
 
-fn update_players(mut commands: Commands, players_container: Query<Entity, With<PlayerContainer>>) {
+fn update_players(
+    mut commands: Commands,
+    players_container: Query<Entity, With<PlayerContainer>>,
+    players: Res<Players>,
+) {
     for container in players_container.iter() {
         let mut container = commands.get_entity(container).unwrap();
 
         container.despawn_children();
         container.with_children(|parent| {
-            for player in vec!["Player one", "Player two"] {
+            for player in &players.0 {
                 parent.spawn((
                     Node {
                         left: vw(10),
@@ -325,7 +331,7 @@ fn update_players(mut commands: Commands, players_container: Query<Entity, With<
                         height: px(128),
                         ..default()
                     },
-                    Text::new(player),
+                    Text::new(player.to_string()),
                 ));
             }
         });
