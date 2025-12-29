@@ -174,10 +174,11 @@ fn main() {
         .init_state::<NetworkState>()
         //.add_systems(Startup, debug_city_names)
         .add_systems(Startup, setup)
+        .add_systems(Update,  update_rng.run_if(resource_changed::<GlobalRngSeed>)
+        )
         .add_systems(
             Update,
             (
-                update_rng.run_if(resource_changed::<GlobalRngSeed>),
                 move_camera,
                 zoom_camera,
                 scale_city_nodes.run_if(any_match_filter::<Changed<Projection>>),

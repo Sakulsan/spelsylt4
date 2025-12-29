@@ -16,7 +16,7 @@ pub fn market_updater(
     _ev: On<TurnEnd>,
     nodes: Query<&mut CityData>,
     building_table: Res<BuildinTable>,
-    mut players: Query<&mut Player>
+    mut players: Query<&mut Player>,
 ) {
     println!("we ended the turn!!!!");
     for mut node in nodes {

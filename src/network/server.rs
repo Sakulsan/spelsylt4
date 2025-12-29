@@ -11,7 +11,7 @@ use bevy_renet::{
 
 use crate::{
     network::{
-        message::{ClientData, ClientMessage, NetworkMessage, PlayerId, ServerMessage},
+        message::{ClientData, ClientMessage, NetworkMessage, PlayerId, Players, ServerMessage},
         network_menu::NetworkMenuState,
     },
     prelude::*,
@@ -107,6 +107,7 @@ fn server_config(mut commands: Commands) {
         ip: ip.to_string(),
     });
     commands.insert_resource(ClientData { player_id: 0 });
+    commands.insert_resource(Players(vec![0]));
 }
 
 fn handle_events_system(

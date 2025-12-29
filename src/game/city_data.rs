@@ -267,8 +267,8 @@ impl CityData {
                     if b.2.0 {
                         let mut warehouse_meets_demands = true;
                         for (res, amount) in &building.input {
-                            warehouse_meets_demands = warehouse_meets_demands 
-                                                        && amount <= self.warehouses
+                            warehouse_meets_demands = warehouse_meets_demands
+                                && amount <= self.warehouses
                                                                             .get(&(player_id as u64))
                                                                             .expect(format!("PlayerId {:?} doesn't exist", player_id).as_str())
                                                                             .get(&res)
@@ -287,8 +287,8 @@ impl CityData {
                     } else {
                         let mut market_meets_demands = true;
                         for (res, _) in &building.input {
-                            market_meets_demands = market_meets_demands 
-                                                    && self.available_commodities(&building_table).contains(&res);
+                            market_meets_demands = market_meets_demands
+                                && self.available_commodities(&building_table).contains(&res);
                         }
                         if market_meets_demands {
                             for (res, amount) in &building.input {
@@ -301,7 +301,7 @@ impl CityData {
                         }
                     }
 
-                    if demands_met {   
+                    if demands_met {
                         if b.2.1 {
                             for (res, amount) in &building.output {
                                 let cur_amount = self.warehouses.get_mut(&(player_id as u64))
@@ -317,7 +317,7 @@ impl CityData {
                                 players.iter_mut().find(|x| x.player_id == player_id as u64)
                                                     .expect("building belongs to player {player_id} but no such player exists")
                                                     .money += price;
-                                
+
                                 let market_amount = self.market.entry(*res).or_insert(0);
                                 *market_amount += amount;
                             }
