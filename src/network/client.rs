@@ -202,6 +202,7 @@ fn receive_city_updates(
         };
 
         if updated_city.id == selected_city.0.id {
+            selected_city.0.overwrite(updated_city);
             commands.trigger(CityUpdateReceived);
         }
 
