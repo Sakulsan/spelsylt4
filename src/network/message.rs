@@ -31,7 +31,7 @@ pub struct ClientData {
     pub player_id: PlayerId,
 }
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct Players(pub Vec<PlayerId>);
 
 pub type PlayerId = u64;

@@ -30,7 +30,7 @@ pub fn plugin(app: &mut App) {
         NetcodeServerPlugin,
         NetcodeClientPlugin,
     ));
-
+    app.init_resource::<Players>();
     app.add_systems(
         OnEnter(GameState::NetworkMenu),
         (crate::kill_music, spawn_network_menu),
