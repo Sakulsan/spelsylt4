@@ -945,6 +945,8 @@ fn create_route_showcase(
                                 Button,
                                 CaravanMenuButtons::KillTrade(stop.goal_city_id.clone(), *resource),
                                 Node {
+                                    position_type: PositionType::Absolute,
+                                    right: px(2),
                                     width: px(44),
                                     height: px(44),
                                     margin: UiRect::all(px(2)),
