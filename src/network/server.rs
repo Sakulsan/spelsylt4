@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use bevy_renet::renet::{DefaultChannel, RenetServer, ServerEvent};
 
 use crate::{
-    network::message::{ClientMessage, NetworkMessage, PlayerId, ServerMessage},
+    network::message::{ClientData, ClientMessage, NetworkMessage, PlayerId, ServerMessage},
     prelude::*,
+    NetworkState,
 };
 
 type ClientId = u64;
@@ -17,6 +18,9 @@ struct ServerState {
     id_map: HashMap<u64, PlayerId>,
     next_id: PlayerId,
 }
+
+#[derive(Event)]
+pub struct GameStarted;
 
 impl ServerState {
     pub fn add_player(&mut self, client_id: u64) -> PlayerId {
@@ -34,18 +38,23 @@ impl ServerState {
 pub fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        (send_message_system_server, receive_message_system_server)
+        (
+            send_message_system_server,
+            receive_message_system_server,
+            handle_events_system,
+        )
             .run_if(resource_exists::<RenetServer>),
     )
-    .add_systems(Update, handle_events_system)
     .add_observer(on_host);
 }
 
-fn on_host(_: On<ServerHosted>, mut commands: Commands) {
+fn on_host(_: On<ServerHosted>, mut commands: Commands, mut net: ResMut<NextState<NetworkState>>) {
+    net.set(NetworkState::Host);
     commands.insert_resource(ServerState {
         id_map: HashMap::from([(0, 0)]),
         next_id: 1,
     });
+    commands.insert_resource(ClientData { player_id: 0 });
 }
 
 fn handle_events_system(

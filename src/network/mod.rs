@@ -12,5 +12,7 @@ use crate::game::turn::*;
 pub struct NetworkingSet;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((network_menu::plugin));
+    app.add_plugins((network_menu::plugin, client::plugin, server::plugin))
+        .add_message::<message::ClientMessage>()
+        .add_message::<message::ServerMessage>();
 }

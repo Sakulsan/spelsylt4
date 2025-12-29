@@ -13,6 +13,7 @@ use std::net::{SocketAddr, UdpSocket};
 use std::time::SystemTime;
 
 use crate::network::client::JoinEvent;
+use crate::network::server::{GameStarted, ServerHosted};
 use crate::{prelude::*, GameState};
 
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
@@ -230,7 +231,7 @@ fn button_functionality(
                     info!("Connecting to ip: {}", ip_address_field.as_ref().unwrap().0);
                 }
                 NetworkMenuButton::StartButton => {
-                    todo!()
+                    commands.trigger(GameStarted);
                 }
                 NetworkMenuButton::QuitButton => {
                     println!("Lol");
@@ -242,7 +243,9 @@ fn button_functionality(
     }
 }
 
-fn lobby_menu_setup(mut commands: Commands) {
+use crate::NetworkState;
+
+fn lobby_menu_setup(mut commands: Commands, network_state: Res<State<NetworkState>>) {
     let button_node = Node {
         width: px(200),
         height: px(65),
@@ -297,6 +300,11 @@ fn lobby_menu_setup(mut commands: Commands) {
                 Text::new("Start game"),
                 Button,
                 NetworkMenuButton::StartButton,
+                if *network_state == NetworkState::Host {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
+                },
                 button_node.clone()
             )
         ],

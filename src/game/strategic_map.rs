@@ -4,7 +4,7 @@ use super::turn::TurnEnd;
 use crate::game::city_graph::{get_path, CityGraph, Node as CityNode};
 use crate::game::market;
 use crate::network::message::PlayerId;
-use crate::prelude::*;
+use crate::{prelude::*, NetworkState};
 
 use super::market::*;
 use crate::GameState;
@@ -174,7 +174,7 @@ pub fn plugin(app: &mut App) {
             crate::kill_music,
             spawn_map_sprite,
             spawn_city_ui_nodes,
-            spawn_player,
+            spawn_player.run_if(in_state(NetworkState::SinglePlayer)),
         )
             .in_set(MapGenSet)
             .after(NodeGenSet),
@@ -263,7 +263,13 @@ fn update_miku_cat(
 }
 
 fn spawn_player(mut commands: Commands) {
-    commands.spawn((Player { money: 5000.0 }, ActivePlayer));
+    commands.spawn((
+        Player {
+            player_id: 0,
+            money: 5000.0,
+        },
+        ActivePlayer,
+    ));
 }
 
 fn spawn_map_sprite(mut commands: Commands, mut sylt: Sylt) {

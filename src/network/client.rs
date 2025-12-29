@@ -6,6 +6,7 @@ use std::{
 use crate::{
     network::message::{ClientData, ClientMessage, NetworkMessage, Players, ServerMessage},
     prelude::*,
+    NetworkState,
 };
 use bevy_renet::{
     netcode::{ClientAuthentication, NetcodeClientTransport},
@@ -27,7 +28,9 @@ enum ClientNetworkState {
 #[derive(Event)]
 pub struct JoinEvent(pub String);
 
-fn squad_up(join: On<JoinEvent>, mut commands: Commands) {
+fn squad_up(join: On<JoinEvent>, mut commands: Commands, mut net: ResMut<NextState<NetworkState>>) {
+    net.set(NetworkState::Client);
+
     let local_ip = match local_ip_address::local_ip() {
         Ok(ip) => ip,
         Err(e) => {
@@ -79,7 +82,8 @@ pub fn plugin(app: &mut App) {
                 await_start.run_if(not(in_state(ClientNetworkState::Started))),
             )
                 .in_set(ClientSet),
-        );
+        )
+        .add_observer(squad_up);
 
     app.configure_sets(Update, ClientSet.run_if(resource_exists::<RenetClient>));
 }
