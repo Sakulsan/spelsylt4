@@ -229,7 +229,7 @@ impl CityData {
     }
 
     #[rustfmt::skip]
-    pub fn update_market(&mut self, building_table: &Res<BuildinTable>) {
+    pub fn update_market(&mut self, building_table: &Res<BuildinTable>, mut players: &mut Query<&mut Player>) {
         macro_rules! update_market_over_buildings {
             ($list:expr) => {
                 for b in &$list {
@@ -256,11 +256,88 @@ impl CityData {
             };
         }
 
+        macro_rules! update_player_buildings {
+            ($list:expr) => {
+                for b in &$list {
+                    let Faction::Player(player_id) = b.1 else { continue; };
+                    let building = &building_table.0
+                                                .get(&b.0)
+                                                .expect(format!("Couldn't retrieve value for {:?}", &b.0).as_str());
+                    let mut demands_met = false;
+                    if b.2.0 {
+                        let mut warehouse_meets_demands = true;
+                        for (res, amount) in &building.input {
+                            warehouse_meets_demands = warehouse_meets_demands 
+                                                        && amount <= self.warehouses
+                                                                            .get(&(player_id as u64))
+                                                                            .expect(format!("PlayerId {:?} doesn't exist", player_id).as_str())
+                                                                            .get(&res)
+                                                                            .expect(format!("Warehouse for player {:?} improperly initialized", player_id).as_str());
+                        }
+                        if warehouse_meets_demands {
+                            demands_met = true;
+                            for (res, amount) in &building.input {
+                                let cur_amount = self.warehouses.get_mut(&(player_id as u64))
+                                                                .expect(&format!("PlayerId {:?} doesn't exist", player_id))
+                                                                .entry(*res)
+                                                                .or_insert(0);
+                                *cur_amount -= amount;
+                            }
+                        }
+                    } else {
+                        let mut market_meets_demands = true;
+                        for (res, _) in &building.input {
+                            market_meets_demands = market_meets_demands 
+                                                    && self.available_commodities(&building_table).contains(&res);
+                        }
+                        if market_meets_demands {
+                            for (res, amount) in &building.input {
+                                let price = self.get_bulk_buy_price(&res, *amount as usize);
+                                players.iter_mut().find(|x| x.player_id == player_id as u64).expect("building belongs to player {player_id} but no such player exists").money -= price;
+                                let market_amount = self.market.entry(*res).or_insert(0);
+                                *market_amount -= amount;
+                            }
+                            demands_met = true;
+                        }
+                    }
+
+                    if demands_met {   
+                        if b.2.1 {
+                            for (res, amount) in &building.output {
+                                let cur_amount = self.warehouses.get_mut(&(player_id as u64))
+                                                                .expect(&format!("PlayerId {player_id} doesn't exist"))
+                                                                .entry(*res)
+                                                                .or_insert(0);
+
+                                *cur_amount += amount;
+                            }
+                        } else {
+                            for (res, amount) in &building.output {
+                                let price = self.get_bulk_sell_price(&res, *amount as usize);
+                                players.iter_mut().find(|x| x.player_id == player_id as u64)
+                                                    .expect("building belongs to player {player_id} but no such player exists")
+                                                    .money += price;
+                                
+                                let market_amount = self.market.entry(*res).or_insert(0);
+                                *market_amount += amount;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         update_market_over_buildings!(self.buildings_t1);
         update_market_over_buildings!(self.buildings_t2);
         update_market_over_buildings!(self.buildings_t3);
         update_market_over_buildings!(self.buildings_t4);
         update_market_over_buildings!(self.buildings_t5);
+
+        update_player_buildings!(self.buildings_t1);
+        update_player_buildings!(self.buildings_t2);
+        update_player_buildings!(self.buildings_t3);
+        update_player_buildings!(self.buildings_t4);
+        update_player_buildings!(self.buildings_t5);
 
         let match_condition = self.population;
 
