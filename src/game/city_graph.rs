@@ -514,11 +514,11 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands, players: Query<&Pla
             };
 
             println!(
-                "{0} {1} {2} {3}",
-                namelists[0].len(),
-                namelists[1].len(),
-                namelists[2].len(),
-                namelists[3].len()
+                "{0:?} {1:?} {2:?} {3:?}",
+                namelists[0],
+                namelists[1],
+                namelists[2],
+                namelists[3]
             );
             println!("{}", j);
 
