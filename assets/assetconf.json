@@ -2,7 +2,7 @@
     "assets": [
         {
             "name": "resource_complex_labour",
-            "path": "",
+            "path": "sprites/complex_labour",
             "info": null
         },
         {
@@ -12,7 +12,7 @@
         },
         {
             "name": "resource_military",
-            "path": "",
+            "path": "sprites/military.png",
             "info": null
         },
         {
@@ -42,7 +42,7 @@
         },
         {
             "name": "resource_machinery",
-            "path": "",
+            "path": "sprite/machinery.png",
             "info": null
         },
         {
@@ -132,17 +132,17 @@
         },
         {
             "name": "resource_transportation",
-            "path": "",
+            "path": "sprites/transportation.png",
             "info": null
         },
         {
             "name": "resource_simple_labour",
-            "path": "",
+            "path": "sprites/simple_labour.png",
             "info": null
         },
         {
             "name": "resource_reagents",
-            "path": "",
+            "path": "sprites/reagents.png",
             "info": null
         },
         {
