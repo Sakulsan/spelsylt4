@@ -6,6 +6,7 @@ use crate::game::city_data::CityData;
 use crate::game::namelists::*;
 use crate::game::strategic_map::{CityImageMarker, CityNodeMarker};
 use crate::Val::Px;
+use bevy::color::palettes::css::CRIMSON;
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
@@ -299,6 +300,7 @@ mod menu {
             .add_systems(OnEnter(MenuState::Main), main_menu_setup)
             // Systems to handle the settings menu screen
             .add_systems(OnEnter(MenuState::Settings), settings_menu_setup)
+            .add_systems(OnEnter(MenuState::Credits), credits_menu_setup)
             // Systems to handle the display settings screen
             .add_systems(
                 OnEnter(MenuState::SettingsDisplay),
@@ -328,6 +330,7 @@ mod menu {
         Settings,
         SettingsDisplay,
         SettingsSound,
+        Credits,
         #[default]
         Disabled,
     }
@@ -586,7 +589,7 @@ mod menu {
                 BackgroundColor(CRIMSON.into()),
                 Children::spawn(SpawnIter(
                     [
-                        (MenuButtonAction::SettingsDisplay, "Display"),
+                        //(MenuButtonAction::SettingsDisplay, "Display"),
                         (MenuButtonAction::SettingsSound, "Sound"),
                         (MenuButtonAction::BackToMainMenu, "Back"),
                     ]
@@ -807,11 +810,159 @@ mod menu {
                         menu_state.set(MenuState::Settings);
                     }
                     MenuButtonAction::Credits => {
-                        todo!();
+                        menu_state.set(MenuState::Credits);
                     }
                 }
             }
         }
+    }
+
+    fn credits_menu_setup(mut commands: Commands) {
+        let button_node = Node {
+            width: px(200),
+            height: px(65),
+            margin: UiRect::all(px(20)),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            ..default()
+        };
+
+        let button_text_style = (
+            TextFont {
+                font_size: 33.0,
+                ..default()
+            },
+            TextColor(TEXT_COLOR),
+        );
+
+        commands.spawn((
+            DespawnOnExit(MenuState::Credits),
+            Node {
+                width: percent(100),
+                height: percent(100),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },
+            children![(
+                Node {
+                    width: vw(60),
+                    //margin: UiRect::all(px(16)),
+                    border: UiRect::all(px(16)),
+                    flex_direction: FlexDirection::Column,
+
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                BorderColor::all(CRIMSON),
+                BackgroundColor(CRIMSON.into()),
+                children![
+                    (
+                        Node {
+                            width: vw(50),
+                            margin: UiRect::all(px(16)),
+                            flex_direction: FlexDirection::Row,
+                            align_items: AlignItems::FlexStart,
+                            justify_content: JustifyContent::SpaceBetween,
+                            ..default()
+                        },
+                        children![
+                            (Text::new("Organizer:")),
+                            (
+                                Node {
+                                    width: vw(25),
+                                    ..default()
+                                },
+                                Text::new("Lukas Jacobsson Hakola")
+                            ),
+                        ]
+                    ),
+                    (
+                        Node {
+                            width: vw(50),
+                            margin: UiRect::all(px(16)),
+                            flex_direction: FlexDirection::Row,
+                            align_items: AlignItems::FlexStart,
+                            justify_content: JustifyContent::SpaceBetween,
+                            ..default()
+                        },
+                        children![
+                            (Text::new("Programming:")),
+                            (
+                                Node {
+                                    flex_direction: FlexDirection::Column,
+                                    width: vw(25),
+                                    ..default()
+                                },
+                                children![
+                                    Text::new("Astrd Strom"),
+                                    Text::new("Felix Murnion"),
+                                    Text::new("Lukas Jacobsson Hakola")
+                                ]
+                            ),
+                        ]
+                    ),
+                    (
+                        Node {
+                            width: vw(50),
+                            margin: UiRect::all(px(16)),
+                            flex_direction: FlexDirection::Row,
+                            align_items: AlignItems::FlexStart,
+                            justify_content: JustifyContent::SpaceBetween,
+                            ..default()
+                        },
+                        children![
+                            (Text::new("Art:")),
+                            (
+                                Node {
+                                    flex_direction: FlexDirection::Column,
+                                    width: vw(25),
+                                    ..default()
+                                },
+                                children![Text::new("Otto Holst"), Text::new("Ida Sjogren"),]
+                            ),
+                        ]
+                    ),
+                    (
+                        Node {
+                            width: vw(50),
+                            margin: UiRect::all(px(16)),
+                            flex_direction: FlexDirection::Row,
+                            align_items: AlignItems::FlexStart,
+                            justify_content: JustifyContent::SpaceBetween,
+                            ..default()
+                        },
+                        children![
+                            (Text::new("Music:")),
+                            (
+                                Node {
+                                    width: vw(25),
+                                    ..default()
+                                },
+                                Text::new("Neddie Bergstrom")
+                            ),
+                        ]
+                    ),
+                    (
+                        Node {
+                            flex_direction: FlexDirection::Column,
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },
+                        BackgroundColor(CRIMSON.into()),
+                        children![(
+                            MenuButtonAction::BackToMainMenu,
+                            Button,
+                            button_node.clone(),
+                            BackgroundColor(NORMAL_BUTTON),
+                            children![(Text::new("Back"), button_text_style.clone())],
+                        )]
+                    )
+                ]
+            ),],
+        ));
     }
 }
 
@@ -820,3 +971,5 @@ fn kill_music(mut commands: Commands, mut audio_sources: Query<Entity, With<Audi
         commands.entity(entity).despawn();
     }
 }
+
+//Maybe should be inside smaller scope, but whatevs

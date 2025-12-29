@@ -499,7 +499,7 @@ fn building_menu(
                 height: percent(100),
                 ..default()
             },
-            BackgroundColor(Srgba::new(0.8, 0.1, 0.1, 1.0).into()),
+            //BackgroundColor(Srgba::new(0.8, 0.1, 0.1, 1.0).into()),
         ));
     });
 }
