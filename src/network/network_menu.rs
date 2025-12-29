@@ -316,8 +316,12 @@ fn lobby_menu_setup(mut commands: Commands, network_state: Res<State<NetworkStat
 fn update_players(
     mut commands: Commands,
     players_container: Query<Entity, With<PlayerContainer>>,
-    players: Res<Players>,
+    players: Option<Res<Players>>,
 ) {
+    let Some(players) = players else {
+        return;
+    };
+
     for container in players_container.iter() {
         let mut container = commands.get_entity(container).unwrap();
 
