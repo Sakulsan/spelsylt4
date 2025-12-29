@@ -3,9 +3,9 @@ use std::{
 };
 
 use crate::{
-    GlobalRngSeed, NetworkState, game::{city_data::CityData, namelists::CityNameList, strategic_map::SelectedCity}, network::{
+    GlobalRngSeed, NetworkState, game::{city_data::CityData, namelists::CityNameList, strategic_hud::LockedCities, strategic_map::SelectedCity}, network::{
         message::{ClientData, ClientMessage, NetworkMessage, Players, ServerMessage},
-        network_menu::{CityUpdateReceived, NetworkMenuState},
+        network_menu::{CityMenuEntered, CityMenuExited, CityUpdateReceived, NetworkMenuState},
     }, prelude::*
 };
 use bevy_renet::{
@@ -77,6 +77,8 @@ pub fn plugin(app: &mut App) {
                 send_message_system_client,
                 receive_message_system_client,
                 receive_city_updates,
+                receive_city_menu_entered,
+                receive_city_menu_exited,
             )
                 .in_set(ClientSet),
         )
@@ -91,7 +93,9 @@ pub fn plugin(app: &mut App) {
                 .chain()
                 .in_set(ClientSet),
         )
-        .add_observer(squad_up);
+        .add_observer(squad_up)
+        .add_observer(send_city_menu_entered)
+        .add_observer(send_city_menu_exited);
 
     app.configure_sets(Update, ClientSet.run_if(in_state(NetworkState::Client)));
 }
@@ -187,6 +191,51 @@ fn receive_message_system_client(
         };
 
         writer.write(ServerMessage(text));
+    }
+}
+
+fn send_city_menu_entered(
+    ev: On<CityMenuEntered>,
+    mut writer: MessageWriter<ClientMessage>
+) {
+    let text = NetworkMessage::CityViewing { player_id: ev.player, city_id: ev.city.clone() };
+    writer.write(ClientMessage(text));
+}
+
+fn receive_city_menu_entered(
+    mut reader: MessageReader<ClientMessage>,
+    mut locked_cities: ResMut<LockedCities>,
+) {
+    for msg in reader.read() {
+        let NetworkMessage::CityViewing { player_id: player_viewing, city_id: city_viewed } = &**msg else {
+            continue;
+        };
+
+        locked_cities.0.push((city_viewed.clone(), *player_viewing));
+    }
+}
+
+fn send_city_menu_exited(
+    ev: On<CityMenuExited>,
+    mut writer: MessageWriter<ClientMessage>
+) {
+    let text = NetworkMessage::NotCityViewing { player_id: ev.player, city_id: ev.city.clone() };
+    writer.write(ClientMessage(text));
+}
+
+fn receive_city_menu_exited(
+    mut reader: MessageReader<ClientMessage>,
+    mut locked_cities: ResMut<LockedCities>,
+) {
+    for msg in reader.read() {
+        let NetworkMessage::NotCityViewing { player_id: player_viewing, city_id: city_viewed } = &**msg else {
+            continue;
+        };
+        let pos = locked_cities.0.iter()
+                                                .position(|(city, player)| city_viewed == city && player_viewing == player);
+        if pos.is_some() {
+            locked_cities.0.remove(pos.unwrap());
+        }
     }
 }
 

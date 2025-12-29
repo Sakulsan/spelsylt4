@@ -10,9 +10,9 @@ use bevy_renet::{
 };
 
 use crate::{
-    GlobalRngSeed, NetworkState, game::{city_data::CityData, namelists::CityNameList, strategic_map::SelectedCity}, network::{
+    GlobalRngSeed, NetworkState, game::{city_data::CityData, namelists::CityNameList, strategic_hud::LockedCities, strategic_map::SelectedCity}, network::{
         message::{ClientData, ClientMessage, NetworkMessage, PlayerId, Players, ServerMessage},
-        network_menu::{CityUpdateReceived, NetworkMenuState},
+        network_menu::{CityMenuEntered, CityMenuExited, CityUpdateReceived, NetworkMenuState},
     }, prelude::*
 };
 
@@ -86,9 +86,13 @@ pub fn plugin(app: &mut App) {
             receive_message_system_server,
             handle_events_system,
             broadcast_city_updates,
+            broadcast_city_menu_entered,
+            broadcast_city_menu_exited,
         )
             .run_if(in_state(NetworkState::Host)),
-    );
+    )
+    .add_observer(send_message_city_menu_entered)
+    .add_observer(send_message_city_menu_exited);
 }
 
 fn server_config(mut commands: Commands) {
@@ -216,5 +220,57 @@ fn broadcast_city_updates(
         }
 
         writer.write(ServerMessage(upd.clone()));
+    }
+}
+
+fn send_message_city_menu_entered(
+    ev: On<CityMenuEntered>,
+    mut writer: MessageWriter<ServerMessage>,
+) {
+    let text = NetworkMessage::CityViewing { player_id: ev.player, city_id: ev.city.clone() };
+    writer.write(ServerMessage(text));
+}
+
+fn broadcast_city_menu_entered(
+    mut reader: MessageReader<ClientMessage>,
+    mut writer: MessageWriter<ServerMessage>,
+    mut locked_cities: ResMut<LockedCities>,
+) {
+    for msg in reader.read() {
+        let pass_on @ NetworkMessage::CityViewing { player_id: player_viewing, city_id: city_viewed } = &**msg else {
+            continue;
+        };
+
+        locked_cities.0.push((city_viewed.clone(), *player_viewing));
+
+        writer.write(ServerMessage(pass_on.clone()));
+    }
+}
+
+fn send_message_city_menu_exited(
+    ev: On<CityMenuExited>,
+    mut writer: MessageWriter<ServerMessage>,
+) {
+    let text = NetworkMessage::NotCityViewing { player_id: ev.player, city_id: ev.city.clone() };
+    writer.write(ServerMessage(text));
+}
+
+fn broadcast_city_menu_exited(
+    mut reader: MessageReader<ClientMessage>,
+    mut writer: MessageWriter<ServerMessage>,
+    mut locked_cities: ResMut<LockedCities>,
+) {
+    for msg in reader.read() {
+        let pass_on @ NetworkMessage::NotCityViewing { player_id: player_viewing, city_id: city_viewed } = &**msg else {
+            continue;
+        };
+
+        let pos = locked_cities.0.iter()
+                                                .position(|(city, player)| city_viewed == city && player_viewing == player);
+        if pos.is_some() {
+            locked_cities.0.remove(pos.unwrap());
+        }
+
+        writer.write(ServerMessage(pass_on.clone()));
     }
 }

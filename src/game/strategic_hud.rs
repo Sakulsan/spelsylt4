@@ -16,12 +16,16 @@ use crate::game::market;
 use crate::game::strategic_map::UpdatedCity;
 use crate::game::strategic_map::{ActivePlayer, BelongsTo, Faction};
 use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
+use crate::network::message::PlayerId;
+use crate::network::network_menu::CityMenuEntered;
+use crate::network::network_menu::CityMenuExited;
 use crate::network::network_menu::CityUpdateReceived;
 use crate::prelude::*;
 use crate::GameState;
 
 pub fn plugin(app: &mut App) {
     app.init_state::<PopupHUD>()
+        .insert_resource(LockedCities(vec!()))
         .add_systems(OnEnter(StrategicState::HUDOpen), city_hud_setup)
         .add_systems(OnEnter(PopupHUD::Buildings), building_menu)
         .add_systems(OnEnter(PopupHUD::Caravan), caravan_menu)
@@ -35,6 +39,7 @@ pub fn plugin(app: &mut App) {
         .add_systems(OnExit(StrategicState::DestinationPicker), off_city_scout)
         .add_systems(OnEnter(PopupHUD::Off), set_interaction(true))
         .add_systems(OnExit(PopupHUD::Off), set_interaction(false))
+        .add_systems(OnExit(StrategicState::HUDOpen), free_city_viewer)
         .add_systems(
             Update,
             no_popup_button
@@ -98,6 +103,9 @@ pub enum PopupHUD {
     Wares,
     Finance,
 }
+
+#[derive(Resource)]
+pub struct LockedCities(pub Vec<(String, PlayerId)>);
 
 #[derive(Reflect, Component)]
 struct CaravanPickerText;
@@ -248,6 +256,25 @@ fn popup_window(commands: &mut Commands, direction: FlexDirection) -> Entity {
             )],
         ))
         .id()
+}
+
+fn free_city_viewer(
+    mut locked_cities: ResMut<LockedCities>,
+    you: Query<&Player, With<ActivePlayer>>, 
+    selected_city: ResMut<SelectedCity>, 
+    mut commands: Commands
+) {
+    let selected_id = &selected_city.0.id;
+    let cur_player = &you.single().unwrap().player_id;
+    if locked_cities.0.iter()
+                    .find(|(city, player)| selected_id == city && cur_player == player)
+                    .is_some() 
+                    {
+        let pos = locked_cities.0.iter()
+                                                .position(|(city, player)| selected_id == city && cur_player == player);
+        locked_cities.0.remove(pos.unwrap());
+        commands.trigger(CityMenuExited{ player: *cur_player, city: selected_id.clone() });
+    }
 }
 
 fn update_buildings(city_new: Res<SelectedCity>, mut city_data: Query<&mut CityData>) {
@@ -1662,7 +1689,22 @@ fn create_resource_icon(
 #[derive(Reflect, Clone, Default, Eq, PartialEq, Hash, Component)]
 pub struct BottomBar;
 
-pub fn city_hud_setup(mut commands: Commands, selected_city: ResMut<SelectedCity>) {
+pub fn city_hud_setup(
+    mut commands: Commands, 
+    selected_city: ResMut<SelectedCity>, 
+    mut locked_cities: ResMut<LockedCities>, 
+    you: Query<&Player, With<ActivePlayer>>, 
+    mut window_state: ResMut<NextState<StrategicState>>,
+) {
+    if locked_cities.0.iter()
+                    .find(|(id, p)| &selected_city.0.id == id && p != &you.single().unwrap().player_id)
+                    .is_some() { 
+                        window_state.set(StrategicState::Map);
+                        return; 
+                    } else { 
+                        locked_cities.0.push((selected_city.0.id.clone(), you.single().unwrap().player_id));
+                        commands.trigger(CityMenuEntered {player: you.single().unwrap().player_id, city: selected_city.0.id.clone()}); 
+                    }
     let city = selected_city.0.clone();
     //Map quit upon click
     commands.spawn((

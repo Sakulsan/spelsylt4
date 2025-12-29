@@ -5,7 +5,7 @@ use bevy_renet::{renet::ConnectionConfig, RenetClientPlugin, RenetServerPlugin};
 use bevy_simple_text_input::{TextInput, TextInputValue};
 
 use crate::network::client::JoinEvent;
-use crate::network::message::Players;
+use crate::network::message::{PlayerId, Players};
 use crate::network::server::ServerState;
 use crate::{prelude::*, GameState};
 
@@ -73,6 +73,18 @@ pub enum NetworkMenuState {
 
 #[derive(Event)]
 pub struct CityUpdateReceived;
+
+#[derive(Event)]
+pub struct CityMenuEntered {
+    pub player: PlayerId,
+    pub city: String
+}
+
+#[derive(Event)]
+pub struct CityMenuExited {
+    pub player: PlayerId,
+    pub city: String,
+}
 
 fn spawn_network_menu(mut commands: Commands, mut state: ResMut<NextState<NetworkMenuState>>) {
     state.set(NetworkMenuState::Main);

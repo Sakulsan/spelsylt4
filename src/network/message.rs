@@ -37,6 +37,14 @@ pub enum NetworkMessage {
         caravans: Vec<Caravan>,
         economy: HashMap<PlayerId, isize>,
     },
+    CityViewing {
+        player_id: PlayerId,
+        city_id: String,
+    },
+    NotCityViewing {
+        player_id: PlayerId,
+        city_id: String,
+    }
 }
 
 #[derive(Resource)]
