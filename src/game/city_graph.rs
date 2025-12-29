@@ -480,7 +480,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands, players: Query<&Pla
     for (race, capital_pos) in [
         (BuildingType::Goblin, vec2(635., -1460.)),
         (BuildingType::Human, vec2(20., -150.)),
-        (BuildingType::Elven, vec2(-30., 1460.)),
+        (BuildingType::Elven, vec2(35., 1400.)),
         (BuildingType::Dwarven, vec2(-1495., 1100.)),
     ] {
         spawn_city(

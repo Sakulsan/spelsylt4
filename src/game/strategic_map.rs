@@ -503,8 +503,8 @@ fn spawn_city_ui_nodes(
     for (ent, _node, city_data) in graph_nodes {
         let capitals = vec![
             "Great Lancastershire",
-            //"Jewel of All Creation", These capitals aren't represented on the map yet.
-            //"Terez-e-Palaz",
+            "Jewel of All Creation",
+            "Terez-e-Palaz",
             "Tevet Pekhep Dered",
         ];
         let mut image = ImageNode::new(sylt.get_image("town_ui_icon"));
