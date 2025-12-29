@@ -18,7 +18,7 @@ use crate::{
     GlobalRngSeed, NetworkState,
 };
 
-#[derive(Resource, Default)]
+#[derive(Reflect, Resource, Default)]
 pub struct ServerState {
     pub id_map: HashMap<u64, PlayerId>,
     pub next_id: PlayerId,

@@ -19,7 +19,7 @@ use bevy_renet::{
 #[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct ClientSet;
 
-#[derive(States, Debug, Clone, Copy, Hash, Eq, PartialEq, Default)]
+#[derive(Reflect, States, Debug, Clone, Copy, Hash, Eq, PartialEq, Default)]
 pub enum ClientNetworkState {
     #[default]
     AwaitingId,

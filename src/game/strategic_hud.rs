@@ -80,13 +80,13 @@ fn set_interaction(show: bool) -> impl Fn(Commands, Query<Entity, With<Node>>) {
     }
 }
 
-#[derive(Component)]
+#[derive(Reflect, Component)]
 pub struct PopUpItem;
 
-#[derive(Component)]
+#[derive(Reflect, Component)]
 pub struct IncomeValue(Resources);
 
-#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+#[derive(Clone, Reflect, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 pub enum PopupHUD {
     #[default]
     Off,
@@ -96,7 +96,7 @@ pub enum PopupHUD {
     Finance,
 }
 
-#[derive(Component)]
+#[derive(Reflect, Component)]
 struct CaravanPickerText;
 fn on_city_scout(
     mut commands: Commands,
@@ -559,10 +559,10 @@ fn finance_menu(
     });
 }
 
-#[derive(Component, Default, Clone, Debug)]
+#[derive(Reflect, Component, Default, Clone, Debug)]
 struct BuildingBrowser;
 
-#[derive(Component, Clone, Debug)]
+#[derive(Reflect, Component, Clone, Debug)]
 enum BuildingButton {
     NewBuilding(usize, usize),
     EditBuilding(usize, usize),
@@ -571,9 +571,9 @@ enum BuildingButton {
     BuildTypeButton(String, usize, usize),
 }
 
-#[derive(Component, Default, Clone, Debug)]
+#[derive(Reflect, Component, Default, Clone, Debug)]
 struct CaravanMenu;
-#[derive(Component, Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Reflect, Component, Clone, Eq, PartialEq, Debug, Hash)]
 enum CaravanMenuButtons {
     NewStop,
     RemoveStop(String),
@@ -661,7 +661,7 @@ fn update_caravan_menu(
     }
 }
 
-#[derive(Component, Default, Clone, Debug)]
+#[derive(Reflect, Component, Default, Clone, Debug)]
 struct CaravanCityUINode(String);
 
 fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>, cities: Query<&CityData>) {
@@ -1337,7 +1337,7 @@ fn wares_menu(
     });
 }
 
-#[derive(Component)]
+#[derive(Reflect, Component)]
 enum HudButton {
     KillHud,
     EconomyTabAction,
@@ -1346,7 +1346,7 @@ enum HudButton {
     FinanceAction,
 }
 
-#[derive(Component)]
+#[derive(Reflect, Component)]
 enum PopupButton {
     KillHud,
     BuldingTabAction,
@@ -1497,7 +1497,7 @@ fn create_resource_icon(
     ));
 }
 
-#[derive(Clone, Default, Eq, PartialEq, Hash, Component)]
+#[derive(Reflect, Clone, Default, Eq, PartialEq, Hash, Component)]
 pub struct BottomBar;
 
 pub fn city_hud_setup(mut commands: Commands, selected_city: ResMut<SelectedCity>) {

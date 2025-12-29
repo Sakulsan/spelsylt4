@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(
+    Reflect, Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd, Serialize, Deserialize,
+)]
 pub enum Resources {
     Artifacts,
     Coal,
@@ -73,7 +75,7 @@ pub const EXOTIC_RESOURCES: [Resources; 3] = [
 pub const ILLEGAL_RESOURCES: [Resources; 3] =
     [Resources::Drugs, Resources::Slaves, Resources::Vitae];
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Reflect, Debug, Clone, Copy, Eq, PartialEq, Default, Serialize, Deserialize)]
 pub enum BuildingType {
     Human,
     Elven,
@@ -183,7 +185,7 @@ impl Resources {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Reflect, Debug, Clone, Eq, PartialEq)]
 pub struct Building {
     pub input: HashMap<Resources, isize>,
     pub output: HashMap<Resources, isize>,

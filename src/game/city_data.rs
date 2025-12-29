@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Component, Default, Clone, Debug, Serialize, Deserialize)]
+#[derive(Reflect, Component, Default, Clone, Debug, Serialize, Deserialize)]
 pub struct CityData {
     pub id: String,
     pub race: BuildingType,

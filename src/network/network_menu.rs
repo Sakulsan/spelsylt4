@@ -185,6 +185,8 @@ fn button_hover_system(
         (Changed<Interaction>, With<Button>),
     >,
 ) {
+    return;
+
     for (interaction, mut background_color) in &mut interaction_query {
         *background_color = match *interaction {
             Interaction::Pressed => PRESSED_BUTTON.into(),

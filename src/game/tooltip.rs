@@ -1,24 +1,24 @@
 use crate::prelude::*;
 use bevy::ui::InteractionDisabled;
 
-#[derive(Component, Debug)]
+#[derive(Reflect, Component, Debug)]
 #[relationship(relationship_target = Tooltips)]
 pub struct TooltipOf {
     #[relationship]
     pub target: Entity,
 }
 
-#[derive(Component, Debug)]
+#[derive(Reflect, Component, Debug)]
 #[require(Button)]
 #[relationship_target(relationship = TooltipOf, linked_spawn)]
 pub struct Tooltips(Vec<Entity>);
 
-#[derive(Component, Debug)]
+#[derive(Reflect, Component, Debug)]
 pub struct TooltipContainerTarget {
     id: Entity,
 }
 
-#[derive(Component, Debug)]
+#[derive(Reflect, Component, Debug)]
 pub struct TooltipContainer;
 
 pub fn plugin(app: &mut App) {

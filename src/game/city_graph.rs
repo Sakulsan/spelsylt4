@@ -21,14 +21,15 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Update, gizmo_nodes.run_if(resource_exists::<CityGraph>));
 }
 
-#[derive(Component, Clone, Debug)]
+#[derive(Reflect, Component, Clone, Debug)]
 pub struct Node(pub NodeIndex, pub Vec2, pub Color);
 
-#[derive(Component, Clone, Debug)]
+#[derive(Reflect, Component, Clone, Debug)]
 pub struct CityEdge(f32);
 
-#[derive(Resource)]
+#[derive(Reflect, Resource, Default)]
 pub struct CityGraph {
+    #[reflect(ignore)]
     pub graph: CGraph,
 }
 

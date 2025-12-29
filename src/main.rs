@@ -26,7 +26,7 @@ mod prelude;
 pub struct GlobalRng(StdRng);
 
 // Enum that will be used as a global state for the game
-#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+#[derive(Reflect, Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 enum GameState {
     #[default]
     Splash,
@@ -36,7 +36,7 @@ enum GameState {
 }
 
 // Enum that will be used as a global state for the game
-#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+#[derive(Reflect, Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 enum NetworkState {
     #[default]
     SinglePlayer,
@@ -147,7 +147,7 @@ fn scale_city_nodes(
 #[derive(Component)]
 struct DefaultUiCameraMarker;
 
-#[derive(Resource)]
+#[derive(Reflect, Resource)]
 struct GlobalRngSeed(u64);
 
 fn main() {
