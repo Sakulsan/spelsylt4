@@ -1,5 +1,6 @@
 use std::collections::btree_map::Entry;
 use std::collections::BTreeSet;
+use std::collections::HashMap;
 use std::collections::HashSet;
 
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
@@ -214,10 +215,10 @@ fn popup_window(commands: &mut Commands, direction: FlexDirection) -> Entity {
             ZIndex(2),
             PopUpItem,
             Node {
-                top: Val::Vh(5.0),
-                left: Val::Vw(5.0),
-                width: Val::Vw(90.0),
-                height: Val::Vh(90.0),
+                top: Val::Vh(3.0),
+                left: Val::Vw(3.0),
+                width: Val::Vw(94.0),
+                height: Val::Vh(94.0),
                 align_items: AlignItems::Stretch,
                 justify_content: JustifyContent::Center,
                 display: Display::Flex,
@@ -1000,7 +1001,6 @@ fn wares_menu(
     building_table: Res<BuildinTable>,
 ) {
     let window = popup_window(&mut commands, FlexDirection::Row);
-
     //Basic and exotic mats
     commands.entity(window).with_children(|parent| {
         //Basic and exotic mats
@@ -1109,7 +1109,7 @@ fn wares_menu(
         parent
             .spawn((Node {
                 top: px(32),
-                width: percent(33),
+                width: percent(28),
                 height: percent(100),
                 margin: UiRect::all(px(4)),
                 justify_content: JustifyContent::FlexStart,
@@ -1144,7 +1144,7 @@ fn wares_menu(
         parent
             .spawn((Node {
                 top: px(32),
-                width: percent(33),
+                width: percent(36),
                 height: percent(100),
                 margin: UiRect::all(px(4)),
                 justify_content: JustifyContent::FlexStart,
@@ -1201,7 +1201,7 @@ fn wares_menu(
         parent
             .spawn((Node {
                 top: px(32),
-                width: percent(33),
+                width: percent(30),
                 height: percent(100),
                 margin: UiRect::all(px(4)),
                 justify_content: JustifyContent::FlexStart,
@@ -1287,11 +1287,14 @@ fn create_resource_list(
         },
         Text::new(box_name.clone()),
     ));
-
     for resource in resources {
         create_resource_icon(
             parent,
             resource,
+            town.warehouses
+                .get(&(1 as u64))
+                .unwrap_or(&HashMap::new())
+                .get(&resource.0), //Dont look....
             town.get_resource_value(&resource.0),
             &mut sylt,
         );
@@ -1301,6 +1304,7 @@ fn create_resource_list(
 fn create_resource_icon(
     parent: &mut ChildSpawnerCommands,
     resource: (Resources, TextColor),
+    player_warehouse_amount: Option<&isize>,
     cost: f64,
     //    amount: usize,
     sylt: &mut Sylt,
@@ -1365,7 +1369,48 @@ fn create_resource_icon(
                 },
                 BackgroundColor(Srgba::new(0.3, 0.3, 0.3, 1.0).into()),
             ),
-            (Text::new(resource.0.get_name()), resource.1),
+            (Node {
+                width: px(40),
+                ..default()
+            },),
+            match player_warehouse_amount {
+                None => {
+                    (
+                        Text::new(""),
+                        Node {
+                            position_type: PositionType::Absolute,
+                            left: px(64),
+                            top: px(5),
+                            width: px(40),
+                            height: px(40),
+                            ..default()
+                        },
+                        BackgroundColor(Srgba::new(0.6, 0.2, 0.2, 1.0).into()),
+                    )
+                }
+                Some(warehouse_status) => {
+                    (
+                        Text::new(format!("{}", *warehouse_status)),
+                        Node {
+                            position_type: PositionType::Absolute,
+                            left: px(60),
+                            top: px(5),
+                            width: px(40),
+                            height: px(40),
+                            ..default()
+                        },
+                        BackgroundColor(Srgba::new(0.2, 0.8, 0.2, 1.0).into()),
+                    )
+                }
+            },
+            (
+                Text::new(resource.0.get_name()),
+                resource.1,
+                TextFont {
+                    font_size: 19.0,
+                    ..default()
+                },
+            ),
             (Text::new(format!("{:.2}$", cost)),)
         ],
     ));
@@ -1550,7 +1595,7 @@ fn building_button(
                             };
                             if inpected_building.1 == Faction::Neutral {
                                 parent.spawn((
-                                    Text::new(format!("Neutral building: {}", inpected_building.0)),
+                                    Text::new(format!("Your building: {}", inpected_building.0)),
                                     BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
                                 ));
                             } else if inpected_building.1 == Faction::Player(1) {
@@ -1569,7 +1614,7 @@ fn building_button(
                                     BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
                                 ));
                                 parent.spawn((
-                                    Text::new("It is not open to the market:"),
+                                    Text::new("---Change market itneraction---"),
                                     BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
                                 ));
                                 for (button_text, button_func) in [
@@ -1582,11 +1627,11 @@ fn building_button(
                                         BuildingButton::EditMarketSellStatus(*tier, *slot, false),
                                     ),
                                     (
-                                        "Open selling to the market",
+                                        "Open buying from the market",
                                         BuildingButton::EditMarketBuyStatus(*tier, *slot, true),
                                     ),
                                     (
-                                        "Open selling to the market",
+                                        "Close buying form the market",
                                         BuildingButton::EditMarketBuyStatus(*tier, *slot, false),
                                     ),
                                 ] {
