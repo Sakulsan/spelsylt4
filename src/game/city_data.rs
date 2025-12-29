@@ -1,6 +1,6 @@
 use super::strategic_map::*;
-use crate::{game::market, network::message::PlayerId};
 use crate::prelude::*;
+use crate::{game::market, network::message::PlayerId};
 
 use super::market::*;
 use std::collections::{HashMap, HashSet};
@@ -23,7 +23,13 @@ pub struct CityData {
 }
 
 impl CityData {
-    pub fn new(name: String, race: BuildingType, tier: u8, mut rng: &mut ResMut<GlobalRng>, players: Query<&Player>) -> CityData {
+    pub fn new(
+        name: String,
+        race: BuildingType,
+        tier: u8,
+        mut rng: &mut ResMut<GlobalRng>,
+        players: Query<&Player>,
+    ) -> CityData {
         let buildings_per_tier = match tier {
             1 => (1, 0, 0, 0, 0),
             2 => (1, 1, 0, 0, 0),
@@ -40,7 +46,7 @@ impl CityData {
             t1.push((
                 (market::gen_random_building(1, &mut rng, race)),
                 Faction::Neutral,
-                (false, false)
+                (false, false),
             ));
         }
 
@@ -48,7 +54,7 @@ impl CityData {
             t2.push((
                 (market::gen_random_building(2, &mut rng, race)),
                 Faction::Neutral,
-                (false, false)
+                (false, false),
             ));
         }
 
@@ -56,7 +62,7 @@ impl CityData {
             t3.push((
                 (market::gen_random_building(3, &mut rng, race)),
                 Faction::Neutral,
-                (false, false)
+                (false, false),
             ));
         }
 
@@ -64,7 +70,7 @@ impl CityData {
             t4.push((
                 (market::gen_random_building(4, &mut rng, race)),
                 Faction::Neutral,
-                (false, false)
+                (false, false),
             ));
         }
 
@@ -72,7 +78,7 @@ impl CityData {
             t5.push((
                 (market::gen_random_building(5, &mut rng, race)),
                 Faction::Neutral,
-                (false, false)
+                (false, false),
             ));
         }
 

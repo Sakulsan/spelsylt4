@@ -27,9 +27,6 @@ pub struct Node(pub NodeIndex, pub Vec2, pub Color);
 #[derive(Component, Clone, Debug)]
 pub struct CityEdge(f32);
 
-#[derive(Component, Clone, Debug)]
-pub struct CityTypeComponent(pub CityData);
-
 #[derive(Resource)]
 pub struct CityGraph {
     pub graph: CGraph,

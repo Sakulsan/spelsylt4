@@ -5,13 +5,15 @@
 use crate::game::city_data::CityData;
 use crate::game::namelists::*;
 use crate::game::strategic_map::{CityImageMarker, CityNodeMarker};
+use bevy::color::palettes::css::CRIMSON;
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
 use bevy_ui_anchor::AnchorUiPlugin;
-use bevy_ui_anchor::AnchoredUiNodes;
+use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
+use std::time::SystemTime;
 
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
 mod game;
@@ -57,7 +59,7 @@ struct Volume(u32);
 fn move_camera(
     keys: Res<ButtonInput<KeyCode>>,
     mut cam_pos: Query<&mut Transform, With<Camera>>,
-    _proj: Query<&mut Projection>,
+    mut proj: Query<&mut Projection>,
 ) {
     let Ok(mut c) = cam_pos.single_mut() else {
         error!("we have multiple cameras or something");
@@ -185,7 +187,7 @@ fn main() {
 
 fn debug_city_names(mut rng: ResMut<GlobalRng>) {
     let names = generate_city_names((10, 10, 10, 10), &mut rng);
-    let display = |t: String, list: &Vec<String>| {
+    let mut display = |t: String, list: &Vec<String>| {
         println!("{0} cities:", t);
         for x in list {
             println!("{0}", x);

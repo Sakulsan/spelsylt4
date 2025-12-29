@@ -171,8 +171,6 @@ fn no_popup_button(
                 HudButton::FinanceAction => {
                     tab_state.set(PopupHUD::Finance);
                 }
-
-                _ => {}
             }
         }
     }
@@ -808,7 +806,7 @@ fn caravan_button(
         (&Interaction, &CaravanMenuButtons),
         (Changed<Interaction>, With<Button>),
     >,
-    hudNode: Query<Entity, With<CaravanCityUINode>>,
+    hud_node: Query<Entity, With<CaravanCityUINode>>,
     //mut menu_state: ResMut<NextState<StrategicState>>,
     selected_caravan: Res<SelectedCaravan>,
     mut caravans: Query<&mut Caravan>,
@@ -880,7 +878,7 @@ fn caravan_button(
                         .remove(resource);
                 }
                 CaravanMenuButtons::ChangeTrade(city_id, resource) => {
-                    for entity in hudNode.iter() {
+                    for entity in hud_node.iter() {
                         let order: BTreeSet<_> = selected_caravan
                             .orders
                             .iter()
@@ -931,7 +929,7 @@ fn caravan_button(
                     }
                 }
                 CaravanMenuButtons::ChangeTradeConfirm(city_id, from_res, to_res) => {
-                    for entity in hudNode.iter() {
+                    for entity in hud_node.iter() {
                         commands.entity(entity).despawn_children();
                     }
 
@@ -949,7 +947,6 @@ fn caravan_button(
                         }
                     }
                 }
-                _ => {}
             }
         }
     }
@@ -1362,7 +1359,6 @@ fn create_resource_icon(
                             Resources::Transportation => "resource_transportation",
                             Resources::Vitae => "resource_vitae",
                             Resources::Water => "resource_water",
-                            _ => "map",
                         })
                         .image,
                     ..default()
@@ -1499,7 +1495,7 @@ pub fn city_hud_setup(mut commands: Commands, selected_city: ResMut<SelectedCity
 fn building_button(
     mut commands: Commands,
     interaction_query: Query<(&Interaction, &BuildingButton), (Changed<Interaction>, With<Button>)>,
-    hudNode: Query<Entity, With<BuildingBrowser>>,
+    hud_node: Query<Entity, With<BuildingBrowser>>,
     //mut menu_state: ResMut<NextState<StrategicState>>,
     mut selected_city: ResMut<SelectedCity>,
     //mut window_state: ResMut<NextState<StrategicState>>,
@@ -1513,9 +1509,9 @@ fn building_button(
             match menu_button_action {
                 BuildingButton::NewBuilding(tier, slot) => {
                     println!("Wants to construct a new building");
-                    for hudNode in hudNode.iter() {
-                        commands.entity(hudNode).despawn_children();
-                        commands.entity(hudNode).with_children(|parent| {
+                    for hud_node in hud_node.iter() {
+                        commands.entity(hud_node).despawn_children();
+                        commands.entity(hud_node).with_children(|parent| {
                             for building_choice in get_construction_list(selected_city.race, *tier)
                             {
                                 parent.spawn((
@@ -1538,9 +1534,9 @@ fn building_button(
                 }
                 BuildingButton::EditBuilding(tier, slot) => {
                     println!("Wants to edit existing building");
-                    for hudNode in hudNode.iter() {
-                        commands.entity(hudNode).despawn_children();
-                        commands.entity(hudNode).with_children(|parent| {
+                    for hud_node in hud_node.iter() {
+                        commands.entity(hud_node).despawn_children();
+                        commands.entity(hud_node).with_children(|parent| {
                             let inpected_building = match tier {
                                 1 => &selected_city.buildings_t1[*slot],
                                 2 => &selected_city.buildings_t2[*slot],
@@ -1608,8 +1604,8 @@ fn building_button(
                 BuildingButton::BuildTypeButton(building, tier, _slot) => {
                     println!("Wants to construct a new building");
                     //Kills the hud nodes
-                    for hudNode in hudNode.iter() {
-                        commands.entity(hudNode).despawn_children();
+                    for hud_node in hud_node.iter() {
+                        commands.entity(hud_node).despawn_children();
                     }
                     match tier {
                         1 => selected_city.buildings_t1.push((
@@ -1672,7 +1668,6 @@ fn building_button(
                     .2
                      .0 = *set_buy;
                 }
-                _ => {}
             }
         }
     }

@@ -1,4 +1,3 @@
-
 use bevy::prelude::*;
 use rand::seq::IndexedRandom;
 use rand::Rng;
@@ -37,7 +36,6 @@ pub fn generate_city_names(
             hash.insert(generate_city_name(t, &mut rng));
         }
     };
-
 
     remove_duplicates(&mut names[0], BuildingType::Dwarven);
     remove_duplicates(&mut names[1], BuildingType::Elven);

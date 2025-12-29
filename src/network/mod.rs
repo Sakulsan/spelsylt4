@@ -6,7 +6,6 @@ pub mod network_menu;
 pub mod server;
 use bevy::prelude::*;
 
-
 #[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct NetworkingSet;
 
