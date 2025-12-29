@@ -4,6 +4,7 @@ use std::f32::consts::PI;
 use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::Faction;
+use crate::game::namelists::generate_city_names;
 use crate::game::strategic_map::BuildinTable;
 use crate::{prelude::*, GameState};
 
@@ -24,14 +25,14 @@ pub fn plugin(app: &mut App) {
 pub struct Node(pub NodeIndex, pub Vec2, pub Color);
 
 #[derive(Component, Clone, Debug)]
-struct CityEdge(f32);
+pub struct CityEdge(f32);
 
 #[derive(Component, Clone, Debug)]
 pub struct CityTypeComponent(pub CityData);
 
 #[derive(Resource)]
 pub struct CityGraph {
-    graph: CGraph,
+    pub graph: CGraph,
 }
 
 const CIRCLE_DIST: f32 = 100.0;
@@ -69,6 +70,7 @@ pub fn get_path(graph: &Res<CityGraph>, node1: NodeIndex, node2: NodeIndex) -> (
 }
 
 fn spawn_city(
+    name: String,
     pos: Vec2,
     color: Color,
     race: BuildingType,
@@ -80,7 +82,7 @@ fn spawn_city(
 ) {
     let mut ent = commands.spawn_empty();
     let idx = g.add_node(ent.id());
-    let mut data = CityData::new(race, tier, &mut rng);
+    let mut data = CityData::new(name, race, tier, &mut rng);
     let mut empty_market: HashMap<Resources, isize> = HashMap::new();
     for res in Resources::all_resources() {
         empty_market.insert(res, 0);
@@ -231,6 +233,11 @@ fn spawn_city(
 
 fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
     let vec2 = |x, y| Vec2::new(x, y);
+    let total_cities_per_faction = CITY_COUNTS.iter().sum::<usize>();
+    let mut namelists = generate_city_names((total_cities_per_faction, 
+                                                                    total_cities_per_faction, 
+                                                                    total_cities_per_faction, 
+                                                                    total_cities_per_faction), &mut rng);
 
     let mut g = Graph::new_undirected();
 
@@ -279,6 +286,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
         (BuildingType::Dwarven, vec2(-1495., 1100.)),
     ] {
         spawn_city(
+            "".to_string(),
             capital_pos * SCALE,
             make_color(colors[0]),
             race,
@@ -296,6 +304,13 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
 
         for (c, j) in CITY_COUNTS.into_iter().enumerate() {
             other_pos.clear();
+            let race_idx = match race {
+                BuildingType::Dwarven => 0,
+                BuildingType::Elven => 1,
+                BuildingType::Goblin => 2,
+                BuildingType::Human => 3,
+                _ => {panic!("epic embed fail")}
+            };
 
             for _ in 0..j {
                 let mut city_pos = capital_pos + gen_rand_circle(c as i32, min, max, &mut rng);
@@ -324,6 +339,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
                     other_pos.push(city_pos);
                     println!("Missing a city spawn");
                     spawn_city(
+                        namelists[race_idx].pop().unwrap(),
                         city_pos,
                         make_color(colors[(1 + c) % colors.len()]),
                         race,

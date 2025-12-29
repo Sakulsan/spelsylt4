@@ -80,6 +80,14 @@ impl Caravan {
                 let current_node = city_by_id(&caravan.position_city_id);
                 let next_node = city_by_id(&caravan.orders[caravan.order_idx].goal_city_id);
                 let (_, path) = get_path(&city, current_node.0 .0, next_node.0 .0);
+                info!("Nodes next to current node: {0:?}", city.graph.neighbors(current_node.0.0)
+                    .map(|n| nodes.get(city.graph[n]).unwrap())
+                    .map(|(_, data)| data.id.clone())
+                    .collect::<Vec<String>>());
+                info!("Nodes next to next node: {0:?}", city.graph.neighbors(next_node.0.0)
+                    .map(|n| nodes.get(city.graph[n]).unwrap())
+                    .map(|(_, data)| data.id.clone())
+                    .collect::<Vec<String>>());
 
                 let paths_mapped: Vec<String> = path
                     .iter()

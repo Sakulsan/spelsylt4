@@ -25,7 +25,7 @@ pub struct CityData {
 }
 
 impl CityData {
-    pub fn new(race: BuildingType, tier: u8, mut rng: &mut ResMut<GlobalRng>) -> CityData {
+    pub fn new(name: String, race: BuildingType, tier: u8, mut rng: &mut ResMut<GlobalRng>) -> CityData {
         let buildings_per_tier = match tier {
             1 => (1, 0, 0, 0, 0),
             2 => (1, 1, 0, 0, 0),
@@ -79,7 +79,7 @@ impl CityData {
         }
 
         CityData {
-            id: super::namelists::generate_city_name(race, &mut rng),
+            id: name,
             race: race,
             population: tier,
             buildings_t1: t1,
