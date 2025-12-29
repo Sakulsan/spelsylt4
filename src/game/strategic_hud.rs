@@ -780,7 +780,7 @@ fn create_route_showcase(
                                 ..default()
                             },
                             Text::new("New transaction"),
-                            BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into()),
+                            BackgroundColor(Srgba::new(0.05, 0.6, 0.05, 1.0).into()),
                         ));
                         if orders.len() != 1 {
                             parent.spawn((
@@ -807,10 +807,14 @@ fn create_route_showcase(
                                 width: percent(85),
                                 left: percent(10),
                                 height: px(48),
+                                margin: UiRect {
+                                    bottom: px(4),
+                                    ..default()
+                                },
                                 border: UiRect::all(px(4)),
                                 ..default()
                             },
-                            BackgroundColor(Srgba::new(0.1, 1.0, 0.1, 1.0).into()),
+                            BackgroundColor(Srgba::new(0.6, 0.3, 0.16, 1.0).into()),
                             BorderColor::all(Color::BLACK),
                             Text::new("Buys something"),
                         ))
@@ -832,6 +836,7 @@ fn create_route_showcase(
                                 Text::new(resource.get_name()),
                             ));
 
+                            //- button
                             parent.spawn((
                                 Button,
                                 CaravanMenuButtons::DecTradeAmount(
@@ -842,22 +847,48 @@ fn create_route_showcase(
                                     width: px(44),
                                     height: px(44),
                                     margin: UiRect::all(px(2)),
+                                    align_items: AlignItems::Center,
+                                    flex_direction: FlexDirection::Row,
                                     ..default()
                                 },
                                 BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
-                                BorderColor::all(Color::BLACK),
-                                Text::new("-"),
+                                children![(
+                                    Node {
+                                        width: px(44),
+                                        ..default()
+                                    },
+                                    Text::new("-"),
+                                    TextFont {
+                                        font_size: 36.0,
+                                        ..default()
+                                    },
+                                    TextLayout::new_with_justify(Justify::Center),
+                                )],
                             ));
+
+                            //Amount dispaly
                             parent.spawn((
+                                Button,
                                 Node {
                                     width: px(44),
                                     height: px(44),
                                     margin: UiRect::all(px(2)),
+                                    align_items: AlignItems::Center,
+                                    flex_direction: FlexDirection::Row,
                                     ..default()
                                 },
                                 BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
-                                Text::new(format!("{}", amount)),
+                                children![(
+                                    Node {
+                                        width: px(44),
+                                        ..default()
+                                    },
+                                    Text::new(format!("{}", amount).as_str()),
+                                    TextLayout::new_with_justify(Justify::Center),
+                                )],
                             ));
+
+                            //+ button
                             parent.spawn((
                                 Button,
                                 CaravanMenuButtons::IncTradeAmount(
@@ -868,10 +899,23 @@ fn create_route_showcase(
                                     width: px(44),
                                     height: px(44),
                                     margin: UiRect::all(px(2)),
+                                    align_items: AlignItems::Center,
+                                    flex_direction: FlexDirection::Row,
                                     ..default()
                                 },
                                 BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
-                                Text::new("+"),
+                                children![(
+                                    Node {
+                                        width: px(44),
+                                        ..default()
+                                    },
+                                    Text::new("+"),
+                                    TextFont {
+                                        font_size: 36.0,
+                                        ..default()
+                                    },
+                                    TextLayout::new_with_justify(Justify::Center),
+                                )],
                             ));
 
                             parent.spawn((
@@ -934,13 +978,19 @@ fn create_route_showcase(
                             };
 
                             parent.spawn((
-                                IncomeValue(*resource),
+                                Button,
                                 Node {
                                     height: px(44),
                                     margin: UiRect::all(px(2)),
+                                    align_items: AlignItems::Center,
+                                    flex_direction: FlexDirection::Row,
                                     ..default()
                                 },
-                                Text::new(profit_text), //TODO add next cost from  `amount` and `resource` in this town (from stop.goal_city_id)
+                                children![(
+                                    IncomeValue(*resource), //Erm etto
+                                    Text::new(profit_text),
+                                    TextLayout::new_with_justify(Justify::Center),
+                                )],
                             ));
 
                             parent.spawn((
@@ -973,6 +1023,7 @@ fn caravan_button(
     selected_caravan: Res<SelectedCaravan>,
     mut caravans: Query<&mut Caravan>,
     mut window_state: ResMut<NextState<StrategicState>>,
+    keys: Res<ButtonInput<KeyCode>>,
 ) {
     let Ok(mut selected_caravan) = caravans.get_mut(selected_caravan.0) else {
         return;
@@ -1019,7 +1070,11 @@ fn caravan_button(
                         .trade_order
                         .get_mut(resource) //Should never call a undefined resource
                         .expect("Couldn't find resource, should never happen")
-                        .0 += 1;
+                        .0 += if keys.pressed(KeyCode::ShiftLeft) {
+                        10
+                    } else {
+                        1
+                    };
                 }
                 CaravanMenuButtons::DecTradeAmount(city_id, resource) => {
                     selected_caravan
@@ -1030,7 +1085,11 @@ fn caravan_button(
                         .trade_order
                         .get_mut(resource) //Should never call a undefined resource
                         .expect("Couldn't find resource, should never happen")
-                        .0 -= 1;
+                        .0 -= if keys.pressed(KeyCode::ShiftLeft) {
+                        10
+                    } else {
+                        1
+                    };
                 }
 
                 CaravanMenuButtons::ToggleTradeStockpileExclusivity(city_id, resource) => {
