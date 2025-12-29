@@ -10,15 +10,13 @@ use bevy_renet::{
 };
 
 use crate::{
-    network::message::{ClientData, ClientMessage, NetworkMessage, PlayerId, ServerMessage},
+    network::{
+        message::{ClientData, ClientMessage, NetworkMessage, PlayerId, ServerMessage},
+        network_menu::NetworkMenuState,
+    },
     prelude::*,
-    NetworkState,
+    GlobalRngSeed, NetworkState,
 };
-
-type ClientId = u64;
-
-#[derive(Event)]
-pub struct ServerHosted;
 
 #[derive(Resource, Default)]
 pub struct ServerState {
@@ -27,8 +25,8 @@ pub struct ServerState {
     pub ip: String,
 }
 
-#[derive(Event)]
-pub struct GameStarted;
+#[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub(crate) struct ServerSet;
 
 impl ServerState {
     pub fn add_player(&mut self, client_id: u64) -> PlayerId {
@@ -78,6 +76,10 @@ pub fn plugin(app: &mut App) {
     app.add_systems(
         OnEnter(NetworkState::Host),
         (host_server, server_config).chain(),
+    )
+    .add_systems(
+        OnEnter(NetworkMenuState::Starting),
+        broadcast_seed_and_start_before_mapgen.in_set(ServerSet),
     )
     .add_systems(
         Update,
@@ -164,4 +166,15 @@ fn receive_message_system_server(
             writer.write(ClientMessage(text));
         }
     }
+}
+
+// ------------------------
+// GAME START FUNCTIONS
+// ------------------------
+fn broadcast_seed_and_start_before_mapgen(
+    mut writer: MessageWriter<ServerMessage>,
+    seed: Res<GlobalRngSeed>,
+) {
+    writer.write(ServerMessage(NetworkMessage::Map { seed: seed.0 }));
+    writer.write(ServerMessage(NetworkMessage::GameStart));
 }

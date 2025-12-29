@@ -145,6 +145,9 @@ fn scale_city_nodes(
 #[derive(Component)]
 struct DefaultUiCameraMarker;
 
+#[derive(Resource)]
+struct GlobalRngSeed(u64);
+
 fn main() {
     App::new()
         .add_plugins((
@@ -162,6 +165,7 @@ fn main() {
         ))
         // Insert as resource the initial value for the settings resources
         .insert_resource(DisplayQuality::Medium)
+        .insert_resource(GlobalRngSeed(0))
         .insert_resource(GlobalRng(StdRng::from_seed([0; 32])))
         //.insert_resource(GlobalRng(StdRng::seed_from_u64(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Error in system time.").as_secs())))
         .insert_resource(Volume(7))
@@ -173,6 +177,7 @@ fn main() {
         .add_systems(
             Update,
             (
+                update_rng.run_if(resource_changed::<GlobalRngSeed>),
                 move_camera,
                 zoom_camera,
                 scale_city_nodes.run_if(any_match_filter::<Changed<Projection>>),
@@ -181,6 +186,10 @@ fn main() {
         )
         // Adds the plugins for each state
         .run();
+}
+
+fn update_rng(seed: Res<GlobalRngSeed>, mut rng: ResMut<GlobalRng>) {
+    *rng = GlobalRng(StdRng::seed_from_u64(seed.0));
 }
 
 fn debug_city_names(mut rng: ResMut<GlobalRng>) {

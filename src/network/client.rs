@@ -9,7 +9,7 @@ use crate::{
         network_menu::NetworkMenuState,
     },
     prelude::*,
-    NetworkState,
+    GlobalRngSeed, NetworkState,
 };
 use bevy_renet::{
     netcode::{ClientAuthentication, NetcodeClientTransport},
@@ -17,13 +17,12 @@ use bevy_renet::{
 };
 
 #[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
-struct ClientSet;
+pub(crate) struct ClientSet;
 
 #[derive(States, Debug, Clone, Copy, Hash, Eq, PartialEq, Default)]
 pub enum ClientNetworkState {
     #[default]
     AwaitingId,
-    AwaitingSeed,
     AwaitingStart,
     Started,
 }
@@ -82,10 +81,7 @@ pub fn plugin(app: &mut App) {
         .add_systems(
             Update,
             (
-                read_player_joined.run_if(
-                    in_state(ClientNetworkState::AwaitingSeed)
-                        .or(in_state(ClientNetworkState::AwaitingStart)),
-                ),
+                read_player_joined.run_if(in_state(ClientNetworkState::AwaitingStart)),
                 await_id.run_if(in_state(ClientNetworkState::AwaitingId)),
                 await_seed.run_if(not(in_state(ClientNetworkState::Started))),
                 await_start.run_if(not(in_state(ClientNetworkState::Started))),
@@ -107,7 +103,19 @@ fn read_player_joined(mut messages: MessageReader<ServerMessage>, mut players: R
     }
 }
 
-fn await_start() {}
+fn await_start(
+    mut messages: MessageReader<ServerMessage>,
+    mut state: ResMut<NextState<ClientNetworkState>>,
+    mut menu_state: ResMut<NextState<NetworkMenuState>>,
+) {
+    for message in messages.read() {
+        if let NetworkMessage::GameStart = **message {
+            info!("Starting the game");
+            state.set(ClientNetworkState::Started);
+            menu_state.set(NetworkMenuState::Starting);
+        }
+    }
+}
 
 fn await_id(
     mut commands: Commands,
@@ -123,7 +131,7 @@ fn await_id(
             info!("Received id from host, set own id to {player_id}");
             commands.insert_resource(ClientData { player_id });
             commands.insert_resource(Players(existing_players.clone()));
-            state.set(ClientNetworkState::AwaitingSeed);
+            state.set(ClientNetworkState::AwaitingStart);
         }
     }
 }
@@ -131,12 +139,12 @@ fn await_id(
 fn await_seed(
     mut messages: MessageReader<ServerMessage>,
     mut state: ResMut<NextState<ClientNetworkState>>,
-    mut rng: ResMut<GlobalRng>,
+    mut rng: ResMut<GlobalRngSeed>,
 ) {
     for message in messages.read() {
         if let NetworkMessage::Map { seed } = **message {
             info!("Received seed from host, set seed to {seed}");
-            *rng = GlobalRng(StdRng::seed_from_u64(seed));
+            rng.0 = seed;
             state.set(ClientNetworkState::AwaitingStart);
         }
     }

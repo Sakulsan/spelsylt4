@@ -6,7 +6,7 @@ use bevy_simple_text_input::{TextInput, TextInputValue};
 
 use crate::network::client::JoinEvent;
 use crate::network::message::Players;
-use crate::network::server::{GameStarted, ServerState};
+use crate::network::server::ServerState;
 use crate::{prelude::*, GameState};
 
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
@@ -69,6 +69,7 @@ pub enum NetworkMenuState {
     Main,
     Join,
     Lobby,
+    Starting,
     #[default]
     Disabled,
 }
@@ -227,7 +228,7 @@ fn button_functionality(
                     info!("Connecting to ip: {}", ip_address_field.as_ref().unwrap().0);
                 }
                 NetworkMenuButton::StartButton => {
-                    commands.trigger(GameStarted);
+                    menu_state.set(NetworkMenuState::Starting);
                 }
                 NetworkMenuButton::QuitButton => {
                     println!("Lol");
@@ -421,7 +422,11 @@ fn update_lobby_ip(
         return;
     };
 
+    let Ok(field) = field.single() else {
+        return;
+    };
+
     commands
-        .entity(field.single().unwrap())
+        .entity(field)
         .insert(Text(format!("Hosting server on: {}", srv.ip)));
 }
