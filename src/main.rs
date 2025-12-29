@@ -170,8 +170,8 @@ fn main() {
         // Insert as resource the initial value for the settings resources
         .insert_resource(DisplayQuality::Medium)
         .insert_resource(GlobalRngSeed(0))
-        .insert_resource(GlobalRng(StdRng::from_seed([0; 32])))
-        //.insert_resource(GlobalRng(StdRng::seed_from_u64(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Error in system time.").as_secs())))
+        //.insert_resource(GlobalRng(StdRng::from_seed([0; 32])))
+        .insert_resource(GlobalRng(StdRng::seed_from_u64(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Error in system time.").as_secs())))
         .insert_resource(Volume(7))
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
