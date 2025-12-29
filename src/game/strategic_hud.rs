@@ -427,6 +427,10 @@ fn building_menu(
                                             }}),
                                 BackgroundColor(Srgba::new(0.5, 0.2, 0.9, 1.0).into()),
                                 Button,
+                                        BuildingButton::EditBuilding(
+                                            tiers as usize,
+                                            building_slot as usize,
+                                        ),
                                 related!(
                                     Tooltips[(
                                         Text::new(building.0.clone()),
@@ -465,7 +469,7 @@ fn building_menu(
                                         },
                                         BackgroundColor(Srgba::new(0.2, 1., 0.2, 1.0).into()),
                                         Button,
-                                        BuildingButton::SlotButton(
+                                        BuildingButton::NewBuilding(
                                             tiers as usize,
                                             building_slot as usize,
                                         ),
@@ -542,7 +546,10 @@ struct BuildingBrowser;
 
 #[derive(Component, Clone, Debug)]
 enum BuildingButton {
-    SlotButton(usize, usize),
+    NewBuilding(usize, usize),
+    EditBuilding(usize, usize),
+    EditMarketSellStatus(usize, usize, bool),
+    EditMarketBuyStatus(usize, usize, bool),
     BuildTypeButton(String, usize, usize),
 }
 
@@ -1515,7 +1522,7 @@ fn building_button(
     for (interaction, menu_button_action) in &interaction_query {
         if *interaction == Interaction::Pressed {
             match menu_button_action {
-                BuildingButton::SlotButton(tier, slot) => {
+                BuildingButton::NewBuilding(tier, slot) => {
                     println!("Wants to construct a new building");
                     for hudNode in hudNode.iter() {
                         commands.entity(hudNode).despawn_children();
@@ -1540,6 +1547,76 @@ fn building_button(
                         });
                     }
                 }
+
+                BuildingButton::EditBuilding(tier, slot) => {
+                    println!("Wants to edit existing building");
+                    for hudNode in hudNode.iter() {
+                        commands.entity(hudNode).despawn_children();
+                        commands.entity(hudNode).with_children(|parent| {
+                            let inpected_building = match tier {
+                                1 => &selected_city.buildings_t1[*slot],
+                                2 => &selected_city.buildings_t2[*slot],
+                                3 => &selected_city.buildings_t3[*slot],
+                                4 => &selected_city.buildings_t4[*slot],
+                                5 => &selected_city.buildings_t5[*slot],
+                                _ => {
+                                    error!("Wrong tier given!");
+                                    return;
+                                }
+                            };
+                            if inpected_building.1 == Faction::Neutral {
+                                parent.spawn((
+                                    Text::new(format!("Neutral building: {}", inpected_building.0)),
+                                    BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                ));
+                            } else if inpected_building.1 == Faction::Player(1) {
+                                parent.spawn((
+                                    match inpected_building.2 .1 {
+                                        true => Text::new("Sells to the market"),
+                                        false => Text::new("Does not sell to the market"),
+                                    },
+                                    BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                ));
+                                parent.spawn((
+                                    match inpected_building.2 .0 {
+                                        true => Text::new("Buys from the market"),
+                                        false => Text::new("Does not buy from the market"),
+                                    },
+                                    BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                ));
+                                parent.spawn((
+                                    Text::new("It is not open to the market:"),
+                                    BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                ));
+                                for (button_text, button_func) in [
+                                    (
+                                        "Open selling to the market",
+                                        BuildingButton::EditMarketSellStatus(*tier, *slot, true),
+                                    ),
+                                    (
+                                        "Close selling to the market",
+                                        BuildingButton::EditMarketSellStatus(*tier, *slot, false),
+                                    ),
+                                    (
+                                        "Open selling to the market",
+                                        BuildingButton::EditMarketBuyStatus(*tier, *slot, true),
+                                    ),
+                                    (
+                                        "Open selling to the market",
+                                        BuildingButton::EditMarketBuyStatus(*tier, *slot, false),
+                                    ),
+                                ] {
+                                    parent.spawn((
+                                        Button,
+                                        button_func,
+                                        Text::new(button_text.to_string()),
+                                        BackgroundColor(Srgba::new(0.8, 0.0, 0.0, 1.0).into()),
+                                    ));
+                                }
+                            }
+                        });
+                    }
+                }
                 BuildingButton::BuildTypeButton(building, tier, slot) => {
                     println!("Wants to construct a new building");
                     //Kills the hud nodes
@@ -1547,26 +1624,65 @@ fn building_button(
                         commands.entity(hudNode).despawn_children();
                     }
                     match tier {
-                        1 => selected_city
-                            .buildings_t1
-                            .push((building.clone(), Faction::Player(1), (false, false))),
-                        2 => selected_city
-                            .buildings_t2
-                            .push((building.clone(), Faction::Player(1), (false, false))),
-                        3 => selected_city
-                            .buildings_t3
-                            .push((building.clone(), Faction::Player(1), (false, false))),
-                        4 => selected_city
-                            .buildings_t4
-                            .push((building.clone(), Faction::Player(1), (false, false))),
-                        5 => selected_city
-                            .buildings_t5
-                            .push((building.clone(), Faction::Player(1), (false, false))),
+                        1 => selected_city.buildings_t1.push((
+                            building.clone(),
+                            Faction::Player(1),
+                            (false, false),
+                        )),
+                        2 => selected_city.buildings_t2.push((
+                            building.clone(),
+                            Faction::Player(1),
+                            (false, false),
+                        )),
+                        3 => selected_city.buildings_t3.push((
+                            building.clone(),
+                            Faction::Player(1),
+                            (false, false),
+                        )),
+                        4 => selected_city.buildings_t4.push((
+                            building.clone(),
+                            Faction::Player(1),
+                            (false, false),
+                        )),
+                        5 => selected_city.buildings_t5.push((
+                            building.clone(),
+                            Faction::Player(1),
+                            (false, false),
+                        )),
                         _ => {
                             error!("Wrong tier given!");
                         }
                     }
-                    //TODO: Get city and change its buildings
+                }
+                BuildingButton::EditMarketSellStatus(tier, slot, set_sell) => {
+                    match tier {
+                        1 => &mut selected_city.buildings_t1[*slot],
+                        2 => &mut selected_city.buildings_t2[*slot],
+                        3 => &mut selected_city.buildings_t3[*slot],
+                        4 => &mut selected_city.buildings_t4[*slot],
+                        5 => &mut selected_city.buildings_t5[*slot],
+                        _ => {
+                            error!("Wrong tier given!");
+                            return;
+                        }
+                    }
+                    .2
+                     .0 = *set_sell;
+                }
+                BuildingButton::EditMarketBuyStatus(tier, slot, set_buy) => {
+                    match tier {
+                        1 => &mut selected_city.buildings_t1[*slot],
+                        2 => &mut selected_city.buildings_t2[*slot],
+                        3 => &mut selected_city.buildings_t3[*slot],
+                        4 => &mut selected_city.buildings_t4[*slot],
+                        5 => &mut selected_city.buildings_t5[*slot],
+                        _ => {
+                            error!("Wrong tier given!");
+                            return;
+                        }
+                    }
+                    .2
+                     .0 = *set_buy;
                 }
                 _ => {}
             }
