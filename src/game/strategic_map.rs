@@ -152,7 +152,7 @@ impl Caravan {
                             let amount_available = current_city
                                 .1
                                 .warehouses
-                                .get(&player.player_id)
+                                .get(&player.player_id) //TODO Regularly crashes due to selling to empty warehouse
                                 .expect(&format!(
                                     "no warehouse of playerid {0} in {1}",
                                     player.player_id, current_city.1.id

@@ -25,7 +25,7 @@ use crate::GameState;
 
 pub fn plugin(app: &mut App) {
     app.init_state::<PopupHUD>()
-        .insert_resource(LockedCities(vec!()))
+        .insert_resource(LockedCities(vec![]))
         .add_systems(OnEnter(StrategicState::HUDOpen), city_hud_setup)
         .add_systems(OnEnter(PopupHUD::Buildings), building_menu)
         .add_systems(OnEnter(PopupHUD::Caravan), caravan_menu)
@@ -260,20 +260,27 @@ fn popup_window(commands: &mut Commands, direction: FlexDirection) -> Entity {
 
 fn free_city_viewer(
     mut locked_cities: ResMut<LockedCities>,
-    you: Query<&Player, With<ActivePlayer>>, 
-    selected_city: ResMut<SelectedCity>, 
-    mut commands: Commands
+    you: Query<&Player, With<ActivePlayer>>,
+    selected_city: ResMut<SelectedCity>,
+    mut commands: Commands,
 ) {
     let selected_id = &selected_city.0.id;
     let cur_player = &you.single().unwrap().player_id;
-    if locked_cities.0.iter()
-                    .find(|(city, player)| selected_id == city && cur_player == player)
-                    .is_some() 
-                    {
-        let pos = locked_cities.0.iter()
-                                                .position(|(city, player)| selected_id == city && cur_player == player);
+    if locked_cities
+        .0
+        .iter()
+        .find(|(city, player)| selected_id == city && cur_player == player)
+        .is_some()
+    {
+        let pos = locked_cities
+            .0
+            .iter()
+            .position(|(city, player)| selected_id == city && cur_player == player);
         locked_cities.0.remove(pos.unwrap());
-        commands.trigger(CityMenuExited{ player: *cur_player, city: selected_id.clone() });
+        commands.trigger(CityMenuExited {
+            player: *cur_player,
+            city: selected_id.clone(),
+        });
     }
 }
 
@@ -691,6 +698,7 @@ fn caravan_menu(mut commands: Commands) {
             Node {
                 height: percent(100),
                 width: percent(100),
+                overflow: Overflow::scroll_y(),
                 align_items: AlignItems::FlexStart,
                 flex_direction: FlexDirection::Column,
                 ..default()
@@ -720,7 +728,7 @@ fn update_caravan_menu(
             parent.spawn((
                 Node {
                     width: percent(100),
-                    height: percent(10),
+                    height: px(64),
                     ..default()
                 },
                 Text::new(format!(
@@ -731,7 +739,6 @@ fn update_caravan_menu(
             parent
                 .spawn((Node {
                     width: percent(100),
-                    height: percent(90),
                     align_items: AlignItems::FlexStart,
                     flex_direction: FlexDirection::Column,
 
@@ -744,14 +751,26 @@ fn update_caravan_menu(
                         Button,
                         CaravanMenuButtons::NewStop,
                         Node {
-                            width: percent(100),
+                            width: vw(90),
                             height: px(64),
-                            margin: UiRect::all(px(4)),
+                            margin: UiRect::all(vw(2)),
+                            align_items: AlignItems::Center,
                             flex_direction: FlexDirection::Row,
                             ..default()
                         },
-                        Text::new("New stop"),
-                        BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into()),
+                        BackgroundColor(Srgba::new(0.1, 0.6, 0.1, 1.0).into()),
+                        children![(
+                            Node {
+                                width: percent(100),
+                                ..default()
+                            },
+                            Text::new("New stop"),
+                            TextFont {
+                                font_size: 24.0,
+                                ..default()
+                            },
+                            TextLayout::new_with_justify(Justify::Center),
+                        )],
                     ));
                 });
         });
@@ -775,7 +794,7 @@ fn create_route_showcase(
                 Node {
                     left: percent(5),
                     width: percent(90),
-                    min_height: px(72 + 48 * transaction_count),
+                    min_height: px(72),
                     margin: UiRect::all(px(4)),
                     flex_direction: FlexDirection::Column,
                     ..default()
@@ -793,7 +812,13 @@ fn create_route_showcase(
                         ..default()
                     },))
                     .with_children(|parent| {
-                        parent.spawn((Text::new(stop.goal_city_id.clone())));
+                        parent.spawn((
+                            Text::new(stop.goal_city_id.clone()),
+                            TextFont {
+                                font_size: 24.0,
+                                ..default()
+                            },
+                        ));
                         parent.spawn((
                             Button,
                             CaravanMenuButtons::AddTradeToStop(stop.goal_city_id.clone()),
@@ -802,12 +827,25 @@ fn create_route_showcase(
                                 width: px(256),
                                 height: px(60),
                                 top: px(0),
-                                right: px(76),
+                                right: px(if orders.len() != 1 { 68 } else { 0 }), //Moves depending on close button
                                 border: UiRect::all(px(2)),
+                                align_items: AlignItems::Center,
+                                flex_direction: FlexDirection::Row,
                                 ..default()
                             },
-                            Text::new("New transaction"),
                             BackgroundColor(Srgba::new(0.05, 0.6, 0.05, 1.0).into()),
+                            children![(
+                                Node {
+                                    width: px(256),
+                                    ..default()
+                                },
+                                Text::new("New transaction"),
+                                TextFont {
+                                    font_size: 24.0,
+                                    ..default()
+                                },
+                                TextLayout::new_with_justify(Justify::Center),
+                            )],
                         ));
                         if orders.len() != 1 {
                             parent.spawn((
@@ -832,20 +870,20 @@ fn create_route_showcase(
                         .spawn((
                             Node {
                                 width: percent(85),
-                                left: percent(10),
-                                height: px(48),
+                                height: px(56), //magic number
                                 margin: UiRect {
+                                    left: percent(15),
                                     bottom: px(4),
+                                    right: px(20),
                                     ..default()
                                 },
                                 border: UiRect::all(px(4)),
                                 ..default()
                             },
                             BackgroundColor(Srgba::new(0.6, 0.3, 0.16, 1.0).into()),
-                            BorderColor::all(Color::BLACK),
-                            Text::new("Buys something"),
                         ))
                         .with_children(|parent| {
+                            //Resource drop down button
                             parent.spawn((
                                 Button,
                                 CaravanMenuButtons::ChangeTrade(
@@ -857,10 +895,23 @@ fn create_route_showcase(
                                     height: px(44),
                                     margin: UiRect::all(px(2)),
                                     border: UiRect::all(px(2)),
+                                    align_items: AlignItems::Center,
+                                    flex_direction: FlexDirection::Row,
                                     ..default()
                                 },
                                 BackgroundColor(Srgba::new(0.9, 0.2, 0.2, 1.0).into()),
-                                Text::new(resource.get_name()),
+                                children![(
+                                    Node {
+                                        width: px(256),
+                                        ..default()
+                                    },
+                                    Text::new(resource.get_name()),
+                                    TextFont {
+                                        font_size: 24.0,
+                                        ..default()
+                                    },
+                                    TextLayout::new_with_justify(Justify::Center),
+                                )],
                             ));
 
                             //- button
@@ -1169,9 +1220,11 @@ fn caravan_button(
                                     // Scrolling list
                                     ZIndex(10),
                                     Node {
+                                        position_type: PositionType::Absolute,
                                         flex_direction: FlexDirection::Column,
                                         align_self: AlignSelf::Stretch,
-                                        height: px(200),
+                                        top: px(64),
+                                        height: percent(100),
                                         width: px(400),
                                         overflow: Overflow::scroll_y(), // n.b.
                                         ..default()
@@ -1690,21 +1743,29 @@ fn create_resource_icon(
 pub struct BottomBar;
 
 pub fn city_hud_setup(
-    mut commands: Commands, 
-    selected_city: ResMut<SelectedCity>, 
-    mut locked_cities: ResMut<LockedCities>, 
-    you: Query<&Player, With<ActivePlayer>>, 
+    mut commands: Commands,
+    selected_city: ResMut<SelectedCity>,
+    mut locked_cities: ResMut<LockedCities>,
+    you: Query<&Player, With<ActivePlayer>>,
     mut window_state: ResMut<NextState<StrategicState>>,
 ) {
-    if locked_cities.0.iter()
-                    .find(|(id, p)| &selected_city.0.id == id && p != &you.single().unwrap().player_id)
-                    .is_some() { 
-                        window_state.set(StrategicState::Map);
-                        return; 
-                    } else { 
-                        locked_cities.0.push((selected_city.0.id.clone(), you.single().unwrap().player_id));
-                        commands.trigger(CityMenuEntered {player: you.single().unwrap().player_id, city: selected_city.0.id.clone()}); 
-                    }
+    if locked_cities
+        .0
+        .iter()
+        .find(|(id, p)| &selected_city.0.id == id && p != &you.single().unwrap().player_id)
+        .is_some()
+    {
+        window_state.set(StrategicState::Map);
+        return;
+    } else {
+        locked_cities
+            .0
+            .push((selected_city.0.id.clone(), you.single().unwrap().player_id));
+        commands.trigger(CityMenuEntered {
+            player: you.single().unwrap().player_id,
+            city: selected_city.0.id.clone(),
+        });
+    }
     let city = selected_city.0.clone();
     //Map quit upon click
     commands.spawn((
