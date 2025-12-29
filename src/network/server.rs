@@ -204,10 +204,10 @@ fn broadcast_city_updates(
             continue;
         };
 
-        if updated_city.id == selected_city.0.id {
-            selected_city.0.overwrite(updated_city);
-            commands.trigger(CityUpdateReceived);
-        }
+        //if updated_city.id == selected_city.0.id {
+        //    selected_city.0.overwrite(updated_city);
+        //    commands.trigger(CityUpdateReceived);
+        //}
 
         for mut city in cities.iter_mut() {
             if city.id == updated_city.id {
