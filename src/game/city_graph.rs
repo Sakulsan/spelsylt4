@@ -5,7 +5,7 @@ use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::Faction;
 use crate::game::namelists::generate_city_names;
-use crate::game::strategic_map::BuildinTable;
+use crate::game::strategic_map::{BuildinTable, Player};
 use crate::{prelude::*, GameState};
 
 use petgraph::algo::astar;
@@ -79,13 +79,18 @@ fn spawn_city(
     commands: &mut Commands,
     mut rng: &mut ResMut<GlobalRng>,
     g: &mut Graph<Entity, CityEdge, Undirected>,
+    players: Query<&Player>
 ) {
     let mut ent = commands.spawn_empty();
     let idx = g.add_node(ent.id());
-    let mut data = CityData::new(name, race, tier, &mut rng);
+    let mut data = CityData::new(name, race, tier, &mut rng, players);
     let mut empty_market: HashMap<Resources, isize> = HashMap::new();
     for res in Resources::all_resources() {
         empty_market.insert(res, 0);
+    }
+    let mut empty_warehouses = HashMap::new();
+    for player in players {
+        empty_warehouses.insert(player.player_id, empty_market.clone());
     }
     if capital {
         data = match race {
@@ -117,6 +122,7 @@ fn spawn_city(
                 ],
                 buildings_t5: vec![("The Great Red Forges".to_string(), Faction::Neutral)],
                 market: empty_market,
+                warehouses: empty_warehouses,
                 tier_up_counter: 0,
             },
             BuildingType::Elven => CityData {
@@ -150,6 +156,7 @@ fn spawn_city(
                     Faction::Neutral,
                 )],
                 market: empty_market,
+                warehouses: empty_warehouses,
                 tier_up_counter: 0,
             },
             BuildingType::Goblin => CityData {
@@ -183,6 +190,7 @@ fn spawn_city(
                     Faction::Neutral,
                 )],
                 market: empty_market,
+                warehouses: empty_warehouses,
                 tier_up_counter: 0,
             },
             BuildingType::Human => CityData {
@@ -213,6 +221,7 @@ fn spawn_city(
                 ],
                 buildings_t5: vec![("Sunstrider Headquarters".to_string(), Faction::Neutral)],
                 market: empty_market,
+                warehouses: empty_warehouses,
                 tier_up_counter: 0,
             },
             _ => {
@@ -231,7 +240,7 @@ fn spawn_city(
     ));
 }
 
-fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
+fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands, players: Query<&Player>) {
     let vec2 = |x, y| Vec2::new(x, y);
     let total_cities_per_faction = CITY_COUNTS.iter().fold(0, |acc, x| acc + x);
     let mut namelists = generate_city_names((total_cities_per_faction, 
@@ -295,6 +304,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
             &mut commands,
             &mut rng,
             &mut g,
+            players
         );
 
         let (min, max) = match race {
@@ -351,6 +361,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
                         &mut commands,
                         &mut rng,
                         &mut g,
+                        players
                     );
                 }
             }

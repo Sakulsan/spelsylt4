@@ -1,6 +1,6 @@
 use super::strategic_hud::PopupHUD;
 use super::strategic_map::*;
-use crate::game::market;
+use crate::{game::market, network::message::PlayerId};
 use crate::prelude::*;
 
 use super::market::*;
@@ -21,11 +21,12 @@ pub struct CityData {
     pub buildings_t4: Vec<(String, Faction)>,
     pub buildings_t5: Vec<(String, Faction)>,
     pub market: HashMap<Resources, isize>,
+    pub warehouses: HashMap<PlayerId, HashMap<Resources, isize>>,
     pub tier_up_counter: u8,
 }
 
 impl CityData {
-    pub fn new(name: String, race: BuildingType, tier: u8, mut rng: &mut ResMut<GlobalRng>) -> CityData {
+    pub fn new(name: String, race: BuildingType, tier: u8, mut rng: &mut ResMut<GlobalRng>, players: Query<&Player>) -> CityData {
         let buildings_per_tier = match tier {
             1 => (1, 0, 0, 0, 0),
             2 => (1, 1, 0, 0, 0),
@@ -78,6 +79,12 @@ impl CityData {
             market.insert(res, 0);
         }
 
+        let mut warehouses = HashMap::new();
+
+        for player in players {
+            warehouses.insert(player.player_id, market.clone());
+        }
+
         CityData {
             id: name,
             race: race,
@@ -88,6 +95,7 @@ impl CityData {
             buildings_t4: t4,
             buildings_t5: t5,
             market: market,
+            warehouses: warehouses,
             tier_up_counter: 0,
         }
     }
