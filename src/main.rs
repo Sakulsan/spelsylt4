@@ -2,6 +2,8 @@
 //! change some settings or quit. There is no actual game, it will just display the current
 //! settings for 5 seconds before going back to the menu.
 
+use std::time::SystemTime;
+
 use crate::game::city_data::CityData;
 use crate::game::namelists::*;
 use crate::game::strategic_map::{CityImageMarker, CityNodeMarker};
