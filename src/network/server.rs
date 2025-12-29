@@ -118,6 +118,7 @@ fn handle_events_system(
     mut state: ResMut<ServerState>,
 ) {
     for event in server_events.read() {
+        // TODO: use client id
         match event {
             ServerEvent::ClientConnected { client_id } => {
                 let player_id = state.add_player(*client_id);
@@ -129,6 +130,7 @@ fn handle_events_system(
                 info!("Client {client_id} connected");
             }
             ServerEvent::ClientDisconnected { client_id, reason } => {
+                // TODO: add disconnecting
                 info!("Client {client_id} disconnected: {reason}");
             }
         }
@@ -141,6 +143,8 @@ fn send_message_system_server(
 ) {
     for message in reader.read() {
         let msg = &message.0;
+
+        info!("Sending message: {msg:?}");
 
         let serialized = serde_json::to_string(msg).unwrap();
 
@@ -158,6 +162,8 @@ fn receive_message_system_server(
     for client_id in server.clients_id() {
         while let Some(message) = server.receive_message(client_id, DefaultChannel::ReliableOrdered)
         {
+            info!("Received message: {message:?}");
+
             let text: NetworkMessage = match serde_json::from_slice(&message) {
                 Ok(m) => m,
                 Err(e) => {

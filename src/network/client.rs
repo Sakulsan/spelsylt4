@@ -162,6 +162,7 @@ fn send_message_system_client(
 ) {
     for message in reader.read() {
         let msg = &message.0;
+        info!("Sending message: {msg:?}");
 
         let serialized = serde_json::to_string(msg).unwrap();
 
@@ -177,6 +178,8 @@ fn receive_message_system_client(
 ) {
     // Receive message from all clients
     while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
+        info!("Received message: {message:?}");
+
         let text: NetworkMessage = match serde_json::from_slice(&message) {
             Ok(m) => m,
             Err(e) => {
