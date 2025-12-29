@@ -1,25 +1,37 @@
 use crate::{game::strategic_map::Caravan, prelude::*};
 use serde::{Deserialize, Serialize};
 
-#[derive(Message)]
+#[derive(Message, Deref, DerefMut)]
 pub struct ClientMessage(pub NetworkMessage);
 
-#[derive(Message)]
+#[derive(Message, Deref, DerefMut)]
 pub struct ServerMessage(pub NetworkMessage);
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum NetworkMessage {
     Connected {
-        player_id: usize,
+        player_id: PlayerId,
+        existing_players: Vec<PlayerId>,
     },
     Map {
         seed: u64,
     },
+    GameStart,
     TurnEnded {
-        player_id: usize,
+        player_id: PlayerId,
         caravans: Vec<Caravan>,
     },
     TurnFinished {
         caravans: Vec<Caravan>,
     },
 }
+
+#[derive(Resource)]
+pub struct ClientData {
+    pub player_id: PlayerId,
+}
+
+#[derive(Resource)]
+pub struct Players(pub Vec<PlayerId>);
+
+pub type PlayerId = u64;

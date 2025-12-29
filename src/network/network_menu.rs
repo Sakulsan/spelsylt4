@@ -12,6 +12,7 @@ use bevy_simple_text_input::{TextInput, TextInputValue};
 use std::net::{SocketAddr, UdpSocket};
 use std::time::SystemTime;
 
+use crate::network::client::JoinEvent;
 use crate::{prelude::*, GameState};
 
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
@@ -41,8 +42,7 @@ pub fn plugin(app: &mut App) {
     .add_systems(
         Update,
         (button_hover_system, button_functionality).run_if(in_state(GameState::NetworkMenu)),
-    )
-    .add_observer(squad_up);
+    );
 }
 
 // All actions that can be triggered from a button click
@@ -195,34 +195,6 @@ fn button_hover_system(
             Interaction::None => NORMAL_BUTTON.into(),
         }
     }
-}
-#[derive(Event)]
-struct JoinEvent(String);
-
-fn squad_up(join: On<JoinEvent>, mut commands: Commands) {
-    let authentication = ClientAuthentication::Unsecure {
-        server_addr: SocketAddr::new(join.0.parse().unwrap(), 5000),
-        client_id: 0,
-        user_data: None,
-        protocol_id: 0,
-    };
-
-    let local_ip = match local_ip_address::local_ip() {
-        Ok(ip) => ip,
-        Err(e) => {
-            error!("Server failed to start: couldn't get local IP address");
-            return;
-        }
-    };
-
-    let socket = UdpSocket::bind(SocketAddr::new(local_ip, 5000)).unwrap();
-    let current_time = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap();
-
-    info!("set up client on ip {}", local_ip);
-    let mut transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
-    commands.insert_resource(transport);
 }
 
 fn button_functionality(
@@ -468,4 +440,5 @@ fn host_server(mut commands: Commands, field: Query<Entity, With<IPField>>) {
     commands
         .entity(field.single().unwrap())
         .insert(Text(format!("Hosting server on: {}", server_addr)));
+    commands.trigger(ServerHosted);
 }

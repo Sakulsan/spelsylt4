@@ -3,6 +3,7 @@ use super::strategic_hud::PopupHUD;
 use super::turn::TurnEnd;
 use crate::game::city_graph::{get_path, CityGraph, Node as CityNode};
 use crate::game::market;
+use crate::network::message::PlayerId;
 use crate::prelude::*;
 
 use super::market::*;
@@ -22,6 +23,7 @@ pub struct BuildinTable(pub HashMap<String, Building>);
 
 #[derive(Component, Default)]
 pub struct Player {
+    pub player_id: PlayerId,
     pub money: f64,
 }
 
