@@ -42,31 +42,7 @@ pub fn plugin(app: &mut App) {
         Update,
         (button_hover_system, button_functionality).run_if(in_state(GameState::NetworkMenu)),
     )
-    .add_systems(Update, handle_events_system)
-    .add_systems(
-        Update,
-        (send_message_system_client, receive_message_system_client)
-            .run_if(resource_exists::<RenetClient>),
-    )
-    .add_observer(squad_up)
-    .add_systems(
-        Update,
-        (send_message_system_server, receive_message_system_server)
-            .run_if(resource_exists::<RenetServer>),
-    );
-}
-
-fn handle_events_system(mut server_events: MessageReader<ServerEvent>) {
-    for event in server_events.read() {
-        match event {
-            ServerEvent::ClientConnected { client_id } => {
-                info!("Client {client_id} connected");
-            }
-            ServerEvent::ClientDisconnected { client_id, reason } => {
-                info!("Client {client_id} disconnected: {reason}");
-            }
-        }
-    }
+    .add_observer(squad_up);
 }
 
 // All actions that can be triggered from a button click
@@ -247,34 +223,6 @@ fn squad_up(join: On<JoinEvent>, mut commands: Commands) {
     info!("set up client on ip {}", local_ip);
     let mut transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
     commands.insert_resource(transport);
-}
-
-fn send_message_system_client(mut client: ResMut<RenetClient>) {
-    // Send a text message to the server
-    client.send_message(DefaultChannel::ReliableOrdered, "server message");
-}
-
-fn receive_message_system_client(mut client: ResMut<RenetClient>) {
-    while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
-        // Handle received message
-    }
-}
-
-fn send_message_system_server(mut server: ResMut<RenetServer>) {
-    let channel_id = 0;
-    // Send a text message for all clients
-    // The enum DefaultChannel describe the channels used by the default configuration
-    server.broadcast_message(DefaultChannel::ReliableOrdered, "server message");
-}
-
-fn receive_message_system_server(mut server: ResMut<RenetServer>) {
-    // Receive message from all clients
-    for client_id in server.clients_id() {
-        while let Some(message) = server.receive_message(client_id, DefaultChannel::ReliableOrdered)
-        {
-            // Handle received message
-        }
-    }
 }
 
 fn button_functionality(

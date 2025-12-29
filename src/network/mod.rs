@@ -1,6 +1,9 @@
 //! Everything about networking
 
 pub mod network_menu;
+pub mod server;
+pub mod client;
+pub mod message;
 use bevy::prelude::*;
 
 use crate::game::turn::*;
