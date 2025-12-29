@@ -135,9 +135,9 @@ fn no_popup_button(
     mut menu_state: ResMut<NextState<StrategicState>>,
     mut tab_state: ResMut<NextState<PopupHUD>>,
     selected_city: Res<SelectedCity>,
-    player: Option<Single<Entity, With<ActivePlayer>>>,
+    mut player: Query<(Entity, &mut Player), With<ActivePlayer>>,
 ) {
-    let Some(player) = player else {
+    let Ok((player, mut player_data)) = player.single_mut() else {
         error!("No active player exists!");
         return;
     };
@@ -151,6 +151,7 @@ fn no_popup_button(
 
                 HudButton::OperationAction => {
                     info!("Spawning caravan");
+                    player_data.money -= 500.;
                     commands.spawn((
                         Caravan {
                             position_city_id: selected_city.0.id.clone(),
@@ -160,7 +161,7 @@ fn no_popup_button(
                             }],
                             ..default()
                         },
-                        BelongsTo(*player),
+                        BelongsTo(player),
                     ));
                 }
                 HudButton::EconomyTabAction => {
@@ -265,6 +266,7 @@ fn building_menu(
     mut commands: Commands,
     city: ResMut<SelectedCity>,
     building_table: Res<BuildinTable>,
+    mut sylt: Sylt,
 ) {
     let window = popup_window(&mut commands, FlexDirection::Row);
     commands.entity(window).with_children(|parent| {
@@ -413,13 +415,23 @@ fn building_menu(
                                     margin: UiRect::all(px(16)),
                                     ..default()
                                 },
-                                        Text::new(match building.1 {
+                                        ImageNode {image: sylt.get_image( match building.1 {
                                             Faction::Neutral => {
-                                                "N".to_string()
+                                                "player_gray"
                                             }
-                                            Faction::Player(player_number) => {
-                                                format!("P:{}",player_number)
-                                            }}),
+                                            Faction::Player(0) => {                                                "player_red"
+                                            }
+                                            Faction::Player(1) => {                                                "player_blue"
+                                            }
+                                            Faction::Player(2) => {                                                "player_green"
+                                            }
+                                            Faction::Player(3) => {                                                "player_yellow"
+                                            }
+                                            Faction::Player(_) => {                                                "player_purple"
+                                        }
+                                        }
+                                        )
+                                                   ,..default()},
                                 BackgroundColor(Srgba::new(0.5, 0.2, 0.9, 1.0).into()),
                                 Button,
                                         BuildingButton::EditBuilding(
@@ -507,6 +519,7 @@ fn finance_menu(
     mut commands: Commands,
     other_players: Query<&Player, Without<ActivePlayer>>,
     you: Query<&Player, With<ActivePlayer>>,
+    mut sylt: Sylt,
 ) {
     let window = popup_window(&mut commands, FlexDirection::Column);
     commands.entity(window).with_children(|parent| {
@@ -534,7 +547,34 @@ fn finance_menu(
                 BorderColor::all(Color::BLACK),
                 children![
                     (Text::new("----You----")),
-                    (Text::new(format!("Money: {}", player.money)))
+                    (Text::new(format!("Money: {}", player.money))),
+                    (
+                        Node {
+                            width: px(40),
+                            height: px(40),
+                            ..default()
+                        },
+                        ImageNode {
+                            image: sylt.get_image(match player.player_id {
+                                0 => {
+                                    "player_red"
+                                }
+                                1 => {
+                                    "player_blue"
+                                }
+                                2 => {
+                                    "player_green"
+                                }
+                                3 => {
+                                    "player_yellow"
+                                }
+                                _ => {
+                                    "player_purple"
+                                }
+                            }),
+                            ..default()
+                        },
+                    )
                 ],
             ));
         }
@@ -553,7 +593,34 @@ fn finance_menu(
                 BorderColor::all(Color::BLACK),
                 children![
                     (Text::new(format!("----{}----", player.player_id))),
-                    (Text::new(format!("Money: {}", player.money)))
+                    (Text::new(format!("Money: {}", player.money))),
+                    (
+                        Node {
+                            width: px(40),
+                            height: px(40),
+                            ..default()
+                        },
+                        ImageNode {
+                            image: sylt.get_image(match player.player_id {
+                                0 => {
+                                    "player_red"
+                                }
+                                1 => {
+                                    "player_blue"
+                                }
+                                2 => {
+                                    "player_green"
+                                }
+                                3 => {
+                                    "player_yellow"
+                                }
+                                _ => {
+                                    "player_purple"
+                                }
+                            }),
+                            ..default()
+                        },
+                    )
                 ],
             ));
         }
@@ -687,18 +754,18 @@ fn create_route_showcase(
                 BackgroundColor(Srgba::new(0.1, 0.1, 0.1, 1.0).into()),
             ))
             .with_children(|parent| {
-                parent.spawn((
-                    Node {
+                parent
+                    .spawn((Node {
                         height: px(64),
                         margin: UiRect::all(px(4)),
                         flex_direction: FlexDirection::Row,
                         align_items: AlignItems::Center,
                         justify_content: JustifyContent::SpaceBetween,
                         ..default()
-                    },
-                    children![
-                        (Text::new(stop.goal_city_id.clone()),),
-                        (
+                    },))
+                    .with_children(|parent| {
+                        parent.spawn((Text::new(stop.goal_city_id.clone())));
+                        parent.spawn((
                             Button,
                             CaravanMenuButtons::AddTradeToStop(stop.goal_city_id.clone()),
                             Node {
@@ -712,23 +779,24 @@ fn create_route_showcase(
                             },
                             Text::new("New transaction"),
                             BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into()),
-                        ),
-                        (
-                            Button,
-                            CaravanMenuButtons::RemoveStop(stop.goal_city_id.clone()),
-                            Node {
-                                position_type: PositionType::Absolute,
-                                width: px(64),
-                                height: px(60),
-                                top: px(0),
-                                right: px(0),
-                                border: UiRect::all(px(2)),
-                                ..default()
-                            },
-                            BackgroundColor(Srgba::new(0.9, 0.1, 0.1, 1.0).into()),
-                        )
-                    ],
-                ));
+                        ));
+                        if orders.len() != 1 {
+                            parent.spawn((
+                                Button,
+                                CaravanMenuButtons::RemoveStop(stop.goal_city_id.clone()),
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    width: px(64),
+                                    height: px(60),
+                                    top: px(0),
+                                    right: px(0),
+                                    border: UiRect::all(px(2)),
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(0.9, 0.1, 0.1, 1.0).into()),
+                            ));
+                        }
+                    });
                 for (resource, (amount, open_market)) in &stop.trade_order {
                     //A single stops hud
                     parent
@@ -873,24 +941,17 @@ fn create_route_showcase(
                                 Text::new(profit_text), //TODO add next cost from  `amount` and `resource` in this town (from stop.goal_city_id)
                             ));
 
-                            //If it's the last stop,, you cant remove it
-                            println!("{}", transaction_count);
-                            if transaction_count != 1 {
-                                parent.spawn((
-                                    Button,
-                                    CaravanMenuButtons::KillTrade(
-                                        stop.goal_city_id.clone(),
-                                        *resource,
-                                    ),
-                                    Node {
-                                        width: px(44),
-                                        height: px(44),
-                                        margin: UiRect::all(px(2)),
-                                        ..default()
-                                    },
-                                    BackgroundColor(Srgba::new(0.9, 0.1, 0.1, 1.0).into()),
-                                ));
-                            }
+                            parent.spawn((
+                                Button,
+                                CaravanMenuButtons::KillTrade(stop.goal_city_id.clone(), *resource),
+                                Node {
+                                    width: px(44),
+                                    height: px(44),
+                                    margin: UiRect::all(px(2)),
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(0.9, 0.1, 0.1, 1.0).into()),
+                            ));
                         });
                 }
             });
