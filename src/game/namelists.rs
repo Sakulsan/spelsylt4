@@ -31,16 +31,17 @@ pub fn generate_city_names(
         for elem in x.clone() {
             hash.insert(elem.clone());
         }
+        info!("Removing {0} duplicates", x.len() - hash.len());
         loop {
             if hash.len() >= x.len() {
                 *x = vec![];
-                let _ = hash.into_iter().map(|e| x.push(e));
+                let _ = hash.into_iter().for_each(|e| x.push(e));
                 break;
             }
-            println!("removing duplicates...");
             hash.insert(generate_city_name(t, &mut rng));
         }
     };
+
 
     remove_duplicates(&mut names[0], BuildingType::Dwarven);
     remove_duplicates(&mut names[1], BuildingType::Elven);

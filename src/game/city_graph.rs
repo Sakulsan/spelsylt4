@@ -233,7 +233,7 @@ fn spawn_city(
 
 fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
     let vec2 = |x, y| Vec2::new(x, y);
-    let total_cities_per_faction = CITY_COUNTS.iter().sum::<usize>();
+    let total_cities_per_faction = CITY_COUNTS.iter().fold(0, |acc, x| acc + x);
     let mut namelists = generate_city_names((total_cities_per_faction, 
                                                                     total_cities_per_faction, 
                                                                     total_cities_per_faction, 
@@ -312,6 +312,9 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
                 _ => {panic!("epic embed fail")}
             };
 
+            println!("{0} {1} {2} {3}", namelists[0].len(), namelists[1].len(), namelists[2].len(), namelists[3].len());
+            println!("{}", j);
+
             for _ in 0..j {
                 let mut city_pos = capital_pos + gen_rand_circle(c as i32, min, max, &mut rng);
                 let mut attempts = 0;
@@ -337,7 +340,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands) {
                         _ => 1,
                     };
                     other_pos.push(city_pos);
-                    println!("Missing a city spawn");
+                    //println!("Missing a city spawn");
                     spawn_city(
                         namelists[race_idx].pop().unwrap(),
                         city_pos,
