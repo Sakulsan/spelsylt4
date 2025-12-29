@@ -1549,19 +1549,19 @@ fn building_button(
                     match tier {
                         1 => selected_city
                             .buildings_t1
-                            .push((building.clone(), Faction::Player(1))),
+                            .push((building.clone(), Faction::Player(1), (false, false))),
                         2 => selected_city
                             .buildings_t2
-                            .push((building.clone(), Faction::Player(1))),
+                            .push((building.clone(), Faction::Player(1), (false, false))),
                         3 => selected_city
                             .buildings_t3
-                            .push((building.clone(), Faction::Player(1))),
+                            .push((building.clone(), Faction::Player(1), (false, false))),
                         4 => selected_city
                             .buildings_t4
-                            .push((building.clone(), Faction::Player(1))),
+                            .push((building.clone(), Faction::Player(1), (false, false))),
                         5 => selected_city
                             .buildings_t5
-                            .push((building.clone(), Faction::Player(1))),
+                            .push((building.clone(), Faction::Player(1), (false, false))),
                         _ => {
                             error!("Wrong tier given!");
                         }

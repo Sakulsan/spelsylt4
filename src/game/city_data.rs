@@ -15,11 +15,11 @@ pub struct CityData {
     pub id: String,
     pub race: BuildingType,
     pub population: u8,
-    pub buildings_t1: Vec<(String, Faction)>,
-    pub buildings_t2: Vec<(String, Faction)>,
-    pub buildings_t3: Vec<(String, Faction)>,
-    pub buildings_t4: Vec<(String, Faction)>,
-    pub buildings_t5: Vec<(String, Faction)>,
+    pub buildings_t1: Vec<(String, Faction, (bool, bool))>,
+    pub buildings_t2: Vec<(String, Faction, (bool, bool))>,
+    pub buildings_t3: Vec<(String, Faction, (bool, bool))>,
+    pub buildings_t4: Vec<(String, Faction, (bool, bool))>,
+    pub buildings_t5: Vec<(String, Faction, (bool, bool))>,
     pub market: HashMap<Resources, isize>,
     pub warehouses: HashMap<PlayerId, HashMap<Resources, isize>>,
     pub tier_up_counter: u8,
@@ -43,6 +43,7 @@ impl CityData {
             t1.push((
                 (market::gen_random_building(1, &mut rng, race)),
                 Faction::Neutral,
+                (false, false)
             ));
         }
 
@@ -50,6 +51,7 @@ impl CityData {
             t2.push((
                 (market::gen_random_building(2, &mut rng, race)),
                 Faction::Neutral,
+                (false, false)
             ));
         }
 
@@ -57,6 +59,7 @@ impl CityData {
             t3.push((
                 (market::gen_random_building(3, &mut rng, race)),
                 Faction::Neutral,
+                (false, false)
             ));
         }
 
@@ -64,6 +67,7 @@ impl CityData {
             t4.push((
                 (market::gen_random_building(4, &mut rng, race)),
                 Faction::Neutral,
+                (false, false)
             ));
         }
 
@@ -71,6 +75,7 @@ impl CityData {
             t5.push((
                 (market::gen_random_building(5, &mut rng, race)),
                 Faction::Neutral,
+                (false, false)
             ));
         }
 
