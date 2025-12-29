@@ -16,6 +16,7 @@ use crate::game::market;
 use crate::game::strategic_map::UpdatedCity;
 use crate::game::strategic_map::{ActivePlayer, BelongsTo, Faction};
 use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
+use crate::network::network_menu::CityUpdateReceived;
 use crate::prelude::*;
 use crate::GameState;
 
@@ -65,6 +66,7 @@ pub fn plugin(app: &mut App) {
         )
         .add_systems(Update, update_caravan_order_idx)
         .add_observer(on_scroll_handler)
+        .add_observer(update_button_networking)
         .add_systems(Update, popup_button);
 }
 
@@ -1717,6 +1719,17 @@ pub fn city_hud_setup(mut commands: Commands, selected_city: ResMut<SelectedCity
             ),
         ],
     ));
+}
+
+fn update_button_networking(
+    ev: On<CityUpdateReceived>,
+    mut commands: Commands,
+    interaction_query: Query<(&Interaction, &BuildingButton), (Changed<Interaction>, With<Button>)>,
+    hud_node: Query<Entity, With<BuildingBrowser>>,
+    mut selected_city: ResMut<SelectedCity>,
+    mut you: Single<&mut Player, With<ActivePlayer>>,
+) {
+    building_button(commands, interaction_query, hud_node, selected_city, you);
 }
 
 fn building_button(

@@ -1,12 +1,11 @@
 use std::{
-    net::{IpAddr, SocketAddr, UdpSocket},
-    time::SystemTime,
+    net::{IpAddr, SocketAddr, UdpSocket}, process::CommandArgs, time::SystemTime
 };
 
 use crate::{
     GlobalRngSeed, NetworkState, game::{city_data::CityData, namelists::CityNameList, strategic_map::SelectedCity}, network::{
         message::{ClientData, ClientMessage, NetworkMessage, Players, ServerMessage},
-        network_menu::NetworkMenuState,
+        network_menu::{CityUpdateReceived, NetworkMenuState},
     }, prelude::*
 };
 use bevy_renet::{
@@ -194,7 +193,8 @@ fn receive_message_system_client(
 fn receive_city_updates(
     mut reader: MessageReader<ServerMessage>,
     mut cities: Query<&mut CityData>,
-    mut selected_city: ResMut<SelectedCity>
+    mut selected_city: ResMut<SelectedCity>,
+    mut commands: Commands
 ) {
     for msg in reader.read() {
         let NetworkMessage::CityUpdated { updated_city } = &**msg else {
@@ -202,7 +202,7 @@ fn receive_city_updates(
         };
 
         if updated_city.id == selected_city.0.id {
-            selected_city.0 = updated_city.clone();
+            commands.trigger(CityUpdateReceived);
         }
 
         for mut city in cities.iter_mut() {

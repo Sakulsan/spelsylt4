@@ -71,6 +71,9 @@ pub enum NetworkMenuState {
     Disabled,
 }
 
+#[derive(Event)]
+pub struct CityUpdateReceived;
+
 fn spawn_network_menu(mut commands: Commands, mut state: ResMut<NextState<NetworkMenuState>>) {
     state.set(NetworkMenuState::Main);
 
