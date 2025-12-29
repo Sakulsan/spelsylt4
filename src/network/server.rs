@@ -10,14 +10,10 @@ use bevy_renet::{
 };
 
 use crate::{
-    game::city_data::CityData,
-    game::namelists::CityNameList,
-    network::{
+    GlobalRngSeed, NetworkState, game::{city_data::CityData, namelists::CityNameList, strategic_map::SelectedCity}, network::{
         message::{ClientData, ClientMessage, NetworkMessage, PlayerId, Players, ServerMessage},
         network_menu::NetworkMenuState,
-    },
-    prelude::*,
-    GlobalRngSeed, NetworkState,
+    }, prelude::*
 };
 
 #[derive(Reflect, Resource, Default)]
@@ -200,11 +196,16 @@ fn broadcast_city_updates(
     mut reader: MessageReader<ClientMessage>,
     mut writer: MessageWriter<ServerMessage>,
     mut cities: Query<&mut CityData>,
+    mut selected_city: ResMut<SelectedCity>
 ) {
     for msg in reader.read() {
         let upd @ NetworkMessage::CityUpdated { updated_city } = &**msg else {
             continue;
         };
+
+        if updated_city.id == selected_city.0.id {
+            selected_city.0 = updated_city.clone();
+        }
 
         for mut city in cities.iter_mut() {
             if city.id == updated_city.id {
