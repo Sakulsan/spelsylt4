@@ -842,7 +842,7 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>,
                             if amount.0 < 0 {
                                 profit = city.get_bulk_sell_price(resource, amount.0.abs() as usize);
                             } else {
-                                profit = city.get_bulk_buy_price(resource, amount.0.abs() as usize);
+                                profit = -city.get_bulk_buy_price(resource, amount.0.abs() as usize);
                             }
 
                             parent.spawn((
