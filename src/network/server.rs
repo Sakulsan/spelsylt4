@@ -1,6 +1,13 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    net::{SocketAddr, UdpSocket},
+    time::SystemTime,
+};
 
-use bevy_renet::renet::{DefaultChannel, RenetServer, ServerEvent};
+use bevy_renet::{
+    netcode::{NetcodeServerTransport, ServerAuthentication, ServerConfig},
+    renet::{ConnectionConfig, DefaultChannel, RenetServer, ServerEvent},
+};
 
 use crate::{
     network::message::{ClientData, ClientMessage, NetworkMessage, PlayerId, ServerMessage},
@@ -14,9 +21,10 @@ type ClientId = u64;
 pub struct ServerHosted;
 
 #[derive(Resource, Default)]
-struct ServerState {
-    id_map: HashMap<u64, PlayerId>,
-    next_id: PlayerId,
+pub struct ServerState {
+    pub id_map: HashMap<u64, PlayerId>,
+    pub next_id: PlayerId,
+    pub ip: String,
 }
 
 #[derive(Event)]
@@ -35,8 +43,43 @@ impl ServerState {
     }
 }
 
+fn host_server(mut commands: Commands) {
+    let server = RenetServer::new(ConnectionConfig::default());
+    commands.insert_resource(server);
+
+    let server = RenetServer::new(ConnectionConfig::default());
+    commands.insert_resource(server);
+
+    let local_ip = match local_ip_address::local_ip() {
+        Ok(ip) => ip,
+        Err(e) => {
+            error!("Server failed to start: couldn't get local IP address");
+            return;
+        }
+    };
+
+    let server_addr = SocketAddr::new(local_ip, 5000);
+
+    let socket = UdpSocket::bind(server_addr).unwrap();
+    let server_config = ServerConfig {
+        current_time: SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap(),
+        max_clients: 64,
+        protocol_id: 0,
+        public_addresses: vec![server_addr],
+        authentication: ServerAuthentication::Unsecure,
+    };
+    let transport = NetcodeServerTransport::new(server_config, socket).unwrap();
+    commands.insert_resource(transport);
+}
+
 pub fn plugin(app: &mut App) {
     app.add_systems(
+        OnEnter(NetworkState::Host),
+        (host_server, server_config).chain(),
+    )
+    .add_systems(
         Update,
         (
             send_message_system_server,
@@ -44,15 +87,22 @@ pub fn plugin(app: &mut App) {
             handle_events_system,
         )
             .run_if(resource_exists::<RenetServer>),
-    )
-    .add_observer(on_host);
+    );
 }
 
-fn on_host(_: On<ServerHosted>, mut commands: Commands, mut net: ResMut<NextState<NetworkState>>) {
-    net.set(NetworkState::Host);
+fn server_config(mut commands: Commands) {
+    let ip = match local_ip_address::local_ip() {
+        Ok(ip) => ip,
+        Err(e) => {
+            error!("Server failed to start: couldn't get local IP address");
+            "127.0.0.1".parse().unwrap()
+        }
+    };
+
     commands.insert_resource(ServerState {
         id_map: HashMap::from([(0, 0)]),
         next_id: 1,
+        ip: ip.to_string(),
     });
     commands.insert_resource(ClientData { player_id: 0 });
 }
