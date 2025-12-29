@@ -229,7 +229,7 @@ fn update_miku_cat(
     cities: Query<(Entity, &MikuCaravanSlot)>,
     mut sylt: Sylt,
 ) {
-    let image = sylt.get_image("lmao3");
+    let image = sylt.get_image("carrige_icon");
 
     for (c_ent, caravan) in caravans {
         let Some((city, _)) = cities
@@ -243,7 +243,8 @@ fn update_miku_cat(
             Button,
             ChildOf(city),
             Node {
-                width: px(30.0),
+                height: px(60.0),
+                width: px(60.0),
                 ..default()
             },
             ImageNode::new(image.clone()),
@@ -606,13 +607,13 @@ fn check_outline_button(
                 tab_state.set(PopupHUD::Caravan);
             }
             Interaction::Hovered => {
-                caravan_node.width = px(60.0);
-                caravan_node.height = px(60.0);
+                caravan_node.width = px(120.0);
+                caravan_node.height = px(120.0);
                 *node_color = BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into())
             }
             Interaction::None => {
-                caravan_node.width = px(30.0);
-                caravan_node.height = px(30.0);
+                caravan_node.width = px(60.0);
+                caravan_node.height = px(60.0);
                 *node_color = BackgroundColor(Srgba::new(0.8, 0.1, 0.1, 1.0).into())
             }
         }
