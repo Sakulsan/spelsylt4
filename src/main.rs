@@ -16,6 +16,7 @@ use bevy_ui_anchor::AnchorUiPlugin;
 use bevy_ui_anchor::AnchoredUiNodes;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
+use rand_xoshiro::Xoshiro256StarStar;
 
 const TEXT_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
 mod game;
@@ -25,7 +26,7 @@ mod assets;
 mod prelude;
 
 #[derive(Resource, DerefMut, Deref)]
-pub struct GlobalRng(StdRng);
+pub struct GlobalRng(Xoshiro256StarStar);
 
 // Enum that will be used as a global state for the game
 #[derive(Reflect, Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -173,7 +174,7 @@ fn main() {
         .insert_resource(DisplayQuality::Medium)
         .insert_resource(GlobalRngSeed(0))
         //.insert_resource(GlobalRng(StdRng::from_seed([0; 32])))
-        .insert_resource(GlobalRng(StdRng::seed_from_u64(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Error in system time.").as_secs())))
+        .insert_resource(GlobalRng(Xoshiro256StarStar::seed_from_u64(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Error in system time.").as_secs())))
         .insert_resource(Volume(7))
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
@@ -195,7 +196,7 @@ fn main() {
 }
 
 fn update_rng(seed: Res<GlobalRngSeed>, mut rng: ResMut<GlobalRng>) {
-    *rng = GlobalRng(StdRng::seed_from_u64(seed.0));
+    *rng = GlobalRng(Xoshiro256StarStar::seed_from_u64(seed.0));
 }
 
 fn debug_city_names(mut rng: ResMut<GlobalRng>) {
