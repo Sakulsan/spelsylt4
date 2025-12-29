@@ -52,7 +52,7 @@ pub struct Caravan {
 #[derive(Clone, Default, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Order {
     pub goal_city_id: String,
-    pub trade_order: BTreeMap<Resources, isize>,
+    pub trade_order: BTreeMap<Resources, (isize, bool)>,
 }
 
 impl Caravan {
@@ -124,8 +124,8 @@ impl Caravan {
                     let available_commodies = current_city.1.available_commodities(&building_table);
                     let cargo_access = caravan.cargo.clone();
                     info!("Caravan currently has {:?} stored", cargo_access);
-                    for (trade, amount) in caravan.orders[caravan.order_idx].trade_order.clone() {
-                        if amount > 0 && available_commodies.contains(&trade) {
+                    for (trade, (amount, interacts_with_warehouse)) in caravan.orders[caravan.order_idx].trade_order.clone() {
+                        if amount > 0 && available_commodies.contains(&trade) && !interacts_with_warehouse {
                             let amount_available = current_city.1.market[&trade];
                             let amount_bought = amount.abs().min(amount_available);
                             let price = current_city
@@ -141,8 +141,26 @@ impl Caravan {
                                 .1
                                 .market
                                 .insert(trade, amount_available - amount_bought);
+                        } else if amount > 0 {
+                            let amount_available = current_city.1.warehouses
+                                                                        .get(&player.player_id)
+                                                                        .expect(&format!("no warehouse of playerid {0} in {1}", player.player_id, current_city.1.id))
+                                                                        .get(&trade)
+                                                                        .expect(&format!("malformed warehouse in {0}", current_city.1.id)).clone();
+
+                            let amount_taken = amount.min(amount_available);
+
+                            caravan.cargo.insert(
+                                trade,
+                                cargo_access.get(&trade).unwrap_or(&0) + amount_taken as usize,
+                            );
+
+                            current_city.1.warehouses
+                                        .get_mut(&player.player_id)
+                                        .expect(&format!("no warehouse of playerid {0} in current city", player.player_id))
+                                        .insert(trade, amount_available - amount_taken);
                         }
-                        if amount < 0 {
+                        if amount < 0 && !interacts_with_warehouse {
                             let amount_available = current_city.1.market[&trade];
                             let amount_sold = amount
                                 .abs()
@@ -160,6 +178,23 @@ impl Caravan {
                                 .1
                                 .market
                                 .insert(trade, amount_available + amount_sold);
+                        } else if amount < 0 {
+                            let amount_available = current_city.1.warehouses
+                                                                        .get(&player.player_id)
+                                                                        .expect(&format!("no warehouse of playerid {0} in {1}", player.player_id, current_city.1.id))
+                                                                        .get(&trade)
+                                                                        .expect(&format!("malformed warehouse in {0}", current_city.1.id)).clone();
+
+                            let amount_deposited = amount.abs().min(*cargo_access.get(&trade).unwrap_or(&0) as isize);
+
+                            caravan.cargo.insert(
+                                trade,
+                                cargo_access.get(&trade).unwrap_or(&0) - amount_deposited as usize,
+                            );
+                            current_city.1.warehouses
+                                        .get_mut(&player.player_id)
+                                        .expect(&format!("no warehouse of playerid {0} in current city", player.player_id))
+                                        .insert(trade, amount_available + amount_deposited);
                         }
                     }
 
