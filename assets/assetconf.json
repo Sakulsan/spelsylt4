@@ -1,1 +1,204 @@
-{"assets":[{"name":"resource_complex_labour","path":"","info":null},{"name":"resource_common_ore","path":"sprites/Common ore.png","info":null},{"name":"resource_military","path":"","info":null},{"name":"town_map_icon","path":"sprites/small.png","info":null},{"name":"carrige_icon","path":"sprites/Häst och vagn.png","info":null},{"name":"resource_stone","path":"sprites/Sten.png","info":null},{"name":"lmao3","path":"sprites/mascot.png","info":null},{"name":"resource_rare_ore","path":"sprites/Rare ore.png","info":null},{"name":"resource_machinery","path":"","info":null},{"name":"town_ui_icon","path":"sprites/Big.png","info":null},{"name":"misc","path":"","info":null},{"name":"resource_water","path":"sprites/resurs_vatten.png","info":null},{"name":"resource_glass","path":"","info":null},{"name":"resource_luxuries","path":"","info":null},{"name":"lmao2","path":null,"info":null},{"name":"resource_crystall","path":null,"info":null},{"name":"resource_medecines","path":"","info":null},{"name":"resource_refined_valuables","path":"","info":null},{"name":"resource_textiles","path":"","info":null},{"name":"lmao4","path":null,"info":null},{"name":"resource_slaves","path":"","info":null},{"name":"resource_plants","path":"sprites/Plant format 1.png","info":null},{"name":"resource_manufactured_good","path":"","info":null},{"name":"resource_vitae","path":"","info":null},{"name":"resource_lumber","path":"sprites/Yxa.png","info":null},{"name":"resource_common_alloys","path":"","info":null},{"name":"resource_transportation","path":"","info":null},{"name":"resource_simple_labour","path":"","info":null},{"name":"resource_reagents","path":"","info":null},{"name":"resource_coal","path":"sprites/Coal.png","info":null},{"name":"parchment","path":"sprites/Parchment.png","info":null},{"name":"resource_food","path":null,"info":null},{"name":"map","path":"map.png","info":null},{"name":"resource_drugs","path":"","info":null}]}
+{
+    "assets": [
+        {
+            "name": "resource_complex_labour",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "resource_common_ore",
+            "path": "sprites/Common ore.png",
+            "info": null
+        },
+        {
+            "name": "resource_military",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "town_map_icon",
+            "path": "sprites/small.png",
+            "info": null
+        },
+        {
+            "name": "carrige_icon",
+            "path": "sprites/Häst och vagn.png",
+            "info": null
+        },
+        {
+            "name": "resource_stone",
+            "path": "sprites/Sten.png",
+            "info": null
+        },
+        {
+            "name": "lmao3",
+            "path": "sprites/mascot.png",
+            "info": null
+        },
+        {
+            "name": "resource_rare_ore",
+            "path": "sprites/Rare ore.png",
+            "info": null
+        },
+        {
+            "name": "resource_machinery",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "town_ui_icon",
+            "path": "sprites/Big.png",
+            "info": null
+        },
+        {
+            "name": "misc",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "resource_water",
+            "path": "sprites/resurs_vatten.png",
+            "info": null
+        },
+        {
+            "name": "resource_glass",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "resource_luxuries",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "lmao2",
+            "path": null,
+            "info": null
+        },
+        {
+            "name": "resource_crystall",
+            "path": null,
+            "info": null
+        },
+        {
+            "name": "resource_medecines",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "resource_refined_valuables",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "resource_textiles",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "lmao4",
+            "path": null,
+            "info": null
+        },
+        {
+            "name": "resource_slaves",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "resource_plants",
+            "path": "sprites/Plant format 1.png",
+            "info": null
+        },
+        {
+            "name": "resource_manufactured_good",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "resource_vitae",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "resource_lumber",
+            "path": "sprites/Yxa.png",
+            "info": null
+        },
+        {
+            "name": "resource_common_alloys",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "resource_transportation",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "resource_simple_labour",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "resource_reagents",
+            "path": "",
+            "info": null
+        },
+        {
+            "name": "resource_coal",
+            "path": "sprites/Coal.png",
+            "info": null
+        },
+        {
+            "name": "parchment",
+            "path": "sprites/Parchment.png",
+            "info": null
+        },
+        {
+            "name": "player_gray",
+            "path": "sprites/gray_player.png",
+            "info": null
+        },
+        {
+            "name": "player_red",
+            "path": "sprites/red_player.png",
+            "info": null
+        },
+        {
+            "name": "player_blue",
+            "path": "sprites/blue_player.png",
+            "info": null
+        },
+        {
+            "name": "player_green",
+            "path": "sprites/green_player.png",
+            "info": null
+        },
+        {
+            "name": "player_purple",
+            "path": "sprites/purple_player.png",
+            "info": null
+        },
+        {
+            "name": "player_yellow",
+            "path": "sprites/yellow_player.png",
+            "info": null
+        },
+        {
+            "name": "resource_food",
+            "path": "sprites/wheat.png",
+            "info": null
+        },
+        {
+            "name": "map",
+            "path": "map.png",
+            "info": null
+        },
+        {
+            "name": "resource_drugs",
+            "path": "",
+            "info": null
+        }
+    ]
+}
