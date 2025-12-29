@@ -7,6 +7,8 @@ use crate::game::namelists::*;
 use crate::game::strategic_map::{CityImageMarker, CityNodeMarker};
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
+use bevy_egui::EguiPlugin;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_simple_text_input::TextInputPlugin;
 use bevy_ui_anchor::AnchorUiPlugin;
 use bevy_ui_anchor::AnchoredUiNodes;
@@ -156,6 +158,8 @@ fn main() {
             TextInputPlugin,
             AnchorUiPlugin::<DefaultUiCameraMarker>::new(),
         ))
+        .add_plugins(EguiPlugin::default())
+        .add_plugins(WorldInspectorPlugin::new())
         .add_plugins((
             splash::splash_plugin,
             menu::menu_plugin,
@@ -174,8 +178,7 @@ fn main() {
         .init_state::<NetworkState>()
         //.add_systems(Startup, debug_city_names)
         .add_systems(Startup, setup)
-        .add_systems(Update,  update_rng.run_if(resource_changed::<GlobalRngSeed>)
-        )
+        .add_systems(Update, update_rng.run_if(resource_changed::<GlobalRngSeed>))
         .add_systems(
             Update,
             (

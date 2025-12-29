@@ -25,9 +25,9 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         OnEnter(NetworkMenuState::Starting),
         (spawn_players, start_game)
-            .chain()
             .after(client::ClientSet)
-            .after(server::ServerSet),
+            .after(server::ServerSet)
+            .chain(),
     );
 }
 

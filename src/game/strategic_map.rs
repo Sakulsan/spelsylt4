@@ -241,6 +241,7 @@ pub fn plugin(app: &mut App) {
             check_turn_button,
             check_outline_button,
         )
+            .run_if(in_state(GameState::Game))
             .run_if(in_state(PopupHUD::Off)),
     )
     .add_systems(
