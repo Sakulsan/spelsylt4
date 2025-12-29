@@ -204,6 +204,10 @@ fn receive_city_updates(
             continue;
         };
 
+        if updated_city.id == selected_city.0.id {
+            selected_city.0 = updated_city.clone();
+        }
+
         for mut city in cities.iter_mut() {
             if city.id == updated_city.id {
                 *city = updated_city.clone();
