@@ -584,6 +584,7 @@ fn update_caravan_menu(
     caravan_box: Query<Entity, With<CaravanMenu>>,
     selected_caravan: ResMut<SelectedCaravan>,
     caravans: Query<&Caravan>,
+    cities: Query<&CityData>,
     mut commands: Commands,
 ) {
     info!("updating caravan menu");
@@ -617,7 +618,7 @@ fn update_caravan_menu(
                 },))
                 //Actually content
                 .with_children(|parent| {
-                    create_route_showcase(parent, &selected_caravan.orders);
+                    create_route_showcase(parent, &selected_caravan.orders, cities);
                     parent.spawn((
                         Button,
                         CaravanMenuButtons::NewStop,
@@ -639,7 +640,7 @@ fn update_caravan_menu(
 #[derive(Component, Default, Clone, Debug)]
 struct CaravanCityUINode(String);
 
-fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>) {
+fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>, cities: Query<&CityData>) {
     for stop in orders {
         let transaction_count = stop.trade_order.len();
 
@@ -757,7 +758,7 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>)
                                     ..default()
                                 },
                                 BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
-                                Text::new(format!("{}", amount)),
+                                Text::new(format!("{}", amount.0)),
                             ));
                             parent.spawn((
                                 Button,
@@ -812,6 +813,13 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>)
                                     ),
                                 ));
                             }
+                            let city = cities.iter().find(|x| x.id == stop.goal_city_id).expect(&format!("Caravan wants to go to non-existant city {0}", stop.goal_city_id));
+                            let mut profit = 0.0;
+                            if amount.0 < 0 {
+                                profit = city.get_bulk_sell_price(resource, amount.0.abs() as usize);
+                            } else {
+                                profit = city.get_bulk_buy_price(resource, amount.0.abs() as usize);
+                            }
 
                             parent.spawn((
                                 IncomeValue(*resource),
@@ -820,7 +828,7 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>)
                                     margin: UiRect::all(px(2)),
                                     ..default()
                                 },
-                                Text::new("Proft: 567$"), //TODO add next cost from  `amount` and `resource` in this town (from stop.goal_city_id)
+                                Text::new(&format!("Profit: {0:.2}$", profit)), //TODO add next cost from  `amount` and `resource` in this town (from stop.goal_city_id)
                             ));
 
                             parent.spawn((
@@ -873,7 +881,7 @@ fn caravan_button(
                         match order.entry(resource) {
                             Entry::Occupied(_) => continue,
                             Entry::Vacant(e) => {
-                                e.insert(0);
+                                e.insert((0, false));
                                 break;
                             }
                         }
@@ -889,24 +897,24 @@ fn caravan_button(
                     }
                 }
                 CaravanMenuButtons::IncTradeAmount(city_id, resource) => {
-                    *selected_caravan
+                    selected_caravan
                         .orders
                         .iter_mut()
                         .find(|order| order.goal_city_id == *city_id)
                         .expect(format!("Couldn't find city named {}", city_id).as_str())
                         .trade_order
                         .get_mut(resource) //Should never call a undefined resource
-                        .expect("Couldn't find resource, should never happen") += 1;
+                        .expect("Couldn't find resource, should never happen").0 += 1;
                 }
                 CaravanMenuButtons::DecTradeAmount(city_id, resource) => {
-                    *selected_caravan
+                    selected_caravan
                         .orders
                         .iter_mut()
                         .find(|order| order.goal_city_id == *city_id)
                         .expect(format!("Couldn't find city named {}", city_id).as_str())
                         .trade_order
                         .get_mut(resource) //Should never call a undefined resource
-                        .expect("Couldn't find resource, should never happen") -= 1;
+                        .expect("Couldn't find resource, should never happen").0 -= 1;
                 }
 
                 CaravanMenuButtons::ToggleTradeStockpileExclusivity(city_id, resource) => {
