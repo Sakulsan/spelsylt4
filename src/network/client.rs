@@ -74,7 +74,7 @@ fn squad_up(
 }
 
 #[derive(Reflect, Resource, Default)]
-pub struct CityNameList(Vec<Vec<String>>);
+pub struct CityNameList(pub Vec<Vec<String>>);
 
 pub fn plugin(app: &mut App) {
     app.init_state::<ClientNetworkState>()
@@ -149,12 +149,12 @@ fn await_map(
     mut messages: MessageReader<ServerMessage>,
     mut state: ResMut<NextState<ClientNetworkState>>,
     mut rng: ResMut<GlobalRngSeed>,
-    mut city_names: ResMut<CityNameList>,
+    mut my_city_names: ResMut<CityNameList>,
 ) {
     for message in messages.read() {
         if let NetworkMessage::Map { seed, city_names } = **message {
             info!("Received seed from host, set seed to {seed}");
-            city_name.0 = city_names;
+            my_city_names = city_names;
             rng.0 = seed;
             state.set(ClientNetworkState::AwaitingStart);
         }

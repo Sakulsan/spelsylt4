@@ -188,7 +188,7 @@ fn broadcast_seed_and_start_before_mapgen(
 ) {
     writer.write(ServerMessage(NetworkMessage::Map {
         seed: seed.0,
-        city_names: city_names.0,
+        city_names: city_names.0.clone(),
     }));
     writer.write(ServerMessage(NetworkMessage::GameStart));
 }
