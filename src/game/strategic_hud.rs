@@ -502,7 +502,11 @@ fn building_menu(
     });
 }
 
-fn finance_menu(mut commands: Commands, players: Query<&Player>) {
+fn finance_menu(
+    mut commands: Commands,
+    other_players: Query<&Player, Without<ActivePlayer>>,
+    you: Query<&Player, With<ActivePlayer>>,
+) {
     let window = popup_window(&mut commands, FlexDirection::Column);
     commands.entity(window).with_children(|parent| {
         parent.spawn((
@@ -513,7 +517,27 @@ fn finance_menu(mut commands: Commands, players: Query<&Player>) {
             },
             Text::new("Finances"),
         ));
-        for player in players.iter() {
+
+        for player in you.iter() {
+            parent.spawn((
+                Node {
+                    width: percent(100),
+                    height: percent(25),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    border: UiRect::all(px(4)),
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },
+                BackgroundColor(Srgba::new(0.8, 0.3, 0.3, 1.0).into()),
+                BorderColor::all(Color::BLACK),
+                children![
+                    (Text::new("----You----")),
+                    (Text::new(format!("Money: {}", player.money)))
+                ],
+            ));
+        }
+        for player in other_players.iter() {
             parent.spawn((
                 Node {
                     width: percent(100),
@@ -527,7 +551,7 @@ fn finance_menu(mut commands: Commands, players: Query<&Player>) {
                 BackgroundColor(Srgba::new(0.8, 0.1, 0.1, 1.0).into()),
                 BorderColor::all(Color::BLACK),
                 children![
-                    (Text::new(format!("----{}----", "NO NAME"))),
+                    (Text::new(format!("----{}----", player.player_id))),
                     (Text::new(format!("Money: {}", player.money)))
                 ],
             ));
@@ -1600,6 +1624,7 @@ fn building_button(
     hud_node: Query<Entity, With<BuildingBrowser>>,
     //mut menu_state: ResMut<NextState<StrategicState>>,
     mut selected_city: ResMut<SelectedCity>,
+    you: Single<&Player, With<ActivePlayer>>,
     //mut window_state: ResMut<NextState<StrategicState>>,
 ) {
     /*    let Ok(mut selected_city) = caravans.get_mut(selected_caravan.0) else {
@@ -1650,54 +1675,87 @@ fn building_button(
                                     return;
                                 }
                             };
-                            if inpected_building.1 == Faction::Neutral {
-                                parent.spawn((
-                                    Text::new(format!("Your building: {}", inpected_building.0)),
-                                    BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
-                                ));
-                            } else if inpected_building.1 == Faction::Player(1) {
-                                parent.spawn((
-                                    match inpected_building.2 .1 {
-                                        true => Text::new("Sells to the market"),
-                                        false => Text::new("Does not sell to the market"),
-                                    },
-                                    BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
-                                ));
-                                parent.spawn((
-                                    match inpected_building.2 .0 {
-                                        true => Text::new("Buys from the market"),
-                                        false => Text::new("Does not buy from the market"),
-                                    },
-                                    BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
-                                ));
-                                parent.spawn((
-                                    Text::new("---Change market itneraction---"),
-                                    BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
-                                ));
-                                for (button_text, button_func) in [
-                                    (
-                                        "Open selling to the market",
-                                        BuildingButton::EditMarketSellStatus(*tier, *slot, true),
-                                    ),
-                                    (
-                                        "Close selling to the market",
-                                        BuildingButton::EditMarketSellStatus(*tier, *slot, false),
-                                    ),
-                                    (
-                                        "Open buying from the market",
-                                        BuildingButton::EditMarketBuyStatus(*tier, *slot, true),
-                                    ),
-                                    (
-                                        "Close buying form the market",
-                                        BuildingButton::EditMarketBuyStatus(*tier, *slot, false),
-                                    ),
-                                ] {
+
+                            match inpected_building.1 {
+                                Faction::Neutral => {
                                     parent.spawn((
-                                        Button,
-                                        button_func,
-                                        Text::new(button_text.to_string()),
-                                        BackgroundColor(Srgba::new(0.8, 0.0, 0.0, 1.0).into()),
+                                        Text::new(format!(
+                                            "Neutral building: {}",
+                                            inpected_building.0
+                                        )),
+                                        BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
                                     ));
+                                }
+                                Faction::Player(owner_id) => {
+                                    if owner_id == you.player_id {
+                                        parent.spawn((
+                                            Text::new(format!(
+                                                "Your building: {}",
+                                                inpected_building.0
+                                            )),
+                                            BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                        ));
+                                        parent.spawn((
+                                            match inpected_building.2 .1 {
+                                                true => Text::new("Sells to the market"),
+                                                false => Text::new("Does not sell to the market"),
+                                            },
+                                            BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                        ));
+                                        parent.spawn((
+                                            match inpected_building.2 .0 {
+                                                true => Text::new("Buys from the market"),
+                                                false => Text::new("Does not buy from the market"),
+                                            },
+                                            BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                        ));
+                                        parent.spawn((
+                                            Text::new("---Change market itneraction---"),
+                                            BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                        ));
+                                        for (button_text, button_func) in [
+                                            (
+                                                "Open selling to the market",
+                                                BuildingButton::EditMarketSellStatus(
+                                                    *tier, *slot, true,
+                                                ),
+                                            ),
+                                            (
+                                                "Close selling to the market",
+                                                BuildingButton::EditMarketSellStatus(
+                                                    *tier, *slot, false,
+                                                ),
+                                            ),
+                                            (
+                                                "Open buying from the market",
+                                                BuildingButton::EditMarketBuyStatus(
+                                                    *tier, *slot, true,
+                                                ),
+                                            ),
+                                            (
+                                                "Close buying form the market",
+                                                BuildingButton::EditMarketBuyStatus(
+                                                    *tier, *slot, false,
+                                                ),
+                                            ),
+                                        ] {
+                                            parent.spawn((
+                                                Button,
+                                                button_func,
+                                                Text::new(button_text.to_string()),
+                                                BackgroundColor(
+                                                    Srgba::new(0.8, 0.0, 0.0, 1.0).into(),
+                                                ),
+                                            ));
+                                        }
+                                    }
+                                    //Someone else owns this building
+                                    else {
+                                        parent.spawn((
+                                            Text::new(format!("Building owned by: {}", owner_id)),
+                                            BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                        ));
+                                    }
                                 }
                             }
                         });
@@ -1712,27 +1770,27 @@ fn building_button(
                     match tier {
                         1 => selected_city.buildings_t1.push((
                             building.clone(),
-                            Faction::Player(1),
+                            Faction::Player(you.player_id),
                             (false, false),
                         )),
                         2 => selected_city.buildings_t2.push((
                             building.clone(),
-                            Faction::Player(1),
+                            Faction::Player(you.player_id),
                             (false, false),
                         )),
                         3 => selected_city.buildings_t3.push((
                             building.clone(),
-                            Faction::Player(1),
+                            Faction::Player(you.player_id),
                             (false, false),
                         )),
                         4 => selected_city.buildings_t4.push((
                             building.clone(),
-                            Faction::Player(1),
+                            Faction::Player(you.player_id),
                             (false, false),
                         )),
                         5 => selected_city.buildings_t5.push((
                             building.clone(),
-                            Faction::Player(1),
+                            Faction::Player(you.player_id),
                             (false, false),
                         )),
                         _ => {

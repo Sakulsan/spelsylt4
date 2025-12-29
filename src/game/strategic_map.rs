@@ -217,6 +217,7 @@ pub fn plugin(app: &mut App) {
             spawn_map_sprite,
             spawn_city_ui_nodes,
             spawn_player.run_if(in_state(NetworkState::SinglePlayer)),
+            spawn_game_ost,
         )
             .in_set(MapGenSet)
             .after(NodeGenSet),
@@ -311,6 +312,16 @@ fn spawn_player(mut commands: Commands) {
             money: 5000.0,
         },
         ActivePlayer,
+    ));
+}
+
+fn spawn_game_ost(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn((
+        AudioPlayer::new(asset_server.load("music/Moneymoneymoney.ogg")),
+        PlaybackSettings {
+            mode: bevy::audio::PlaybackMode::Loop,
+            ..default()
+        },
     ));
 }
 
@@ -525,7 +536,7 @@ fn spawn_city_ui_nodes(
 pub enum Faction {
     #[default]
     Neutral,
-    Player(usize),
+    Player(PlayerId),
 }
 
 #[derive(Component, Default, Clone, Debug)]
