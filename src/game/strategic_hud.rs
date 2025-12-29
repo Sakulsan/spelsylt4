@@ -664,7 +664,11 @@ fn update_caravan_menu(
 #[derive(Reflect, Component, Default, Clone, Debug)]
 struct CaravanCityUINode(String);
 
-fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>, cities: Query<&CityData>) {
+fn create_route_showcase(
+    parent: &mut ChildSpawnerCommands,
+    orders: &Vec<Order>,
+    cities: Query<&CityData>,
+) {
     for stop in orders {
         let transaction_count = stop.trade_order.len();
 
@@ -724,8 +728,7 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>,
                         )
                     ],
                 ));
-
-                for (resource, amount) in &stop.trade_order {
+                for (resource, (amount, open_market)) in &stop.trade_order {
                     //A single stops hud
                     parent
                         .spawn((
@@ -782,7 +785,7 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>,
                                     ..default()
                                 },
                                 BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
-                                Text::new(format!("{}", amount.0)),
+                                Text::new(format!("{}", amount)),
                             ));
                             parent.spawn((
                                 Button,
@@ -800,51 +803,63 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>,
                                 Text::new("+"),
                             ));
 
-                            if true {
-                                parent.spawn((
+                            parent.spawn((
+                                Node {
+                                    width: px(44),
+                                    height: px(44),
+                                    margin: UiRect::all(px(2)),
+                                    ..default()
+                                },
+                                BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
+                                Button,
+                                CaravanMenuButtons::ToggleTradeStockpileExclusivity(
+                                    stop.goal_city_id.clone(),
+                                    *resource,
+                                ),
+                                children![(
                                     Node {
-                                        width: px(44),
-                                        height: px(44),
-                                        margin: UiRect::all(px(2)),
+                                        width: px(34),
+                                        height: px(34),
+                                        margin: UiRect::all(px(5)),
                                         ..default()
                                     },
-                                    BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
-                                    Button,
-                                    CaravanMenuButtons::ToggleTradeStockpileExclusivity(
-                                        stop.goal_city_id.clone(),
-                                        *resource,
-                                    ),
-                                    children![(
-                                        Node {
-                                            width: px(34),
-                                            height: px(34),
-                                            margin: UiRect::all(px(5)),
-                                            ..default()
-                                        },
-                                        BackgroundColor(Srgba::new(0.1, 0.8, 0.1, 1.0).into()),
-                                    )],
-                                    related!(
-                                        Tooltips[(
-                                            Text::new("Toggle trades with warehouses"),
-                                            // Set the justification of the Text
-                                            TextLayout::new_with_justify(Justify::Center),
-                                            // Set the style of the Node itself.
-                                            Node { ..default() },
-                                            BackgroundColor(
-                                                Srgba::new(0.05, 0.05, 0.05, 1.0).into()
-                                            ),
-                                        )]
-                                    ),
-                                ));
-                            }
-                            let city = cities.iter().find(|x| x.id == stop.goal_city_id).expect(&format!("Caravan wants to go to non-existant city {0}", stop.goal_city_id));
-                            let mut profit = 0.0;
-                            if amount.0 < 0 {
-                                profit = city.get_bulk_sell_price(resource, amount.0.abs() as usize);
+                                    if *open_market {
+                                        BackgroundColor(Srgba::new(0.1, 0.8, 0.1, 0.0).into())
+                                    //Jank
+                                    } else {
+                                        BackgroundColor(Srgba::new(0.1, 0.8, 0.1, 1.0).into())
+                                    },
+                                )],
+                                related!(
+                                    Tooltips[(
+                                        Text::new("Toggle trades with warehouses"),
+                                        // Set the justification of the Text
+                                        TextLayout::new_with_justify(Justify::Center),
+                                        // Set the style of the Node itself.
+                                        Node { ..default() },
+                                        BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
+                                    )]
+                                ),
+                            ));
+                            let city =
+                                cities
+                                    .iter()
+                                    .find(|x| x.id == stop.goal_city_id)
+                                    .expect(&format!(
+                                        "Caravan wants to go to non-existant city {0}",
+                                        stop.goal_city_id
+                                    ));
+                            let profit_text = if *amount < 0 {
+                                &format!(
+                                    "Profit: {0:.2}$",
+                                    city.get_bulk_sell_price(resource, amount.abs() as usize)
+                                )
                             } else {
-                                profit = -city.get_bulk_buy_price(resource, amount.0.abs() as usize);
-                            }
-
+                                &format!(
+                                    "Cost: {0:.2}$",
+                                    city.get_bulk_sell_price(resource, amount.abs() as usize)
+                                )
+                            };
                             parent.spawn((
                                 IncomeValue(*resource),
                                 Node {
@@ -852,20 +867,27 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>,
                                     margin: UiRect::all(px(2)),
                                     ..default()
                                 },
-                                Text::new(&format!("Profit: {0:.2}$", profit)), //TODO add next cost from  `amount` and `resource` in this town (from stop.goal_city_id)
+                                Text::new(profit_text), //TODO add next cost from  `amount` and `resource` in this town (from stop.goal_city_id)
                             ));
 
-                            parent.spawn((
-                                Button,
-                                CaravanMenuButtons::KillTrade(stop.goal_city_id.clone(), *resource),
-                                Node {
-                                    width: px(44),
-                                    height: px(44),
-                                    margin: UiRect::all(px(2)),
-                                    ..default()
-                                },
-                                BackgroundColor(Srgba::new(0.9, 0.1, 0.1, 1.0).into()),
-                            ));
+                            //If it's the last stop,, you cant remove it
+                            println!("{}", transaction_count);
+                            if transaction_count != 1 {
+                                parent.spawn((
+                                    Button,
+                                    CaravanMenuButtons::KillTrade(
+                                        stop.goal_city_id.clone(),
+                                        *resource,
+                                    ),
+                                    Node {
+                                        width: px(44),
+                                        height: px(44),
+                                        margin: UiRect::all(px(2)),
+                                        ..default()
+                                    },
+                                    BackgroundColor(Srgba::new(0.9, 0.1, 0.1, 1.0).into()),
+                                ));
+                            }
                         });
                 }
             });
@@ -928,7 +950,8 @@ fn caravan_button(
                         .expect(format!("Couldn't find city named {}", city_id).as_str())
                         .trade_order
                         .get_mut(resource) //Should never call a undefined resource
-                        .expect("Couldn't find resource, should never happen").0 += 1;
+                        .expect("Couldn't find resource, should never happen")
+                        .0 += 1;
                 }
                 CaravanMenuButtons::DecTradeAmount(city_id, resource) => {
                     selected_caravan
@@ -938,16 +961,28 @@ fn caravan_button(
                         .expect(format!("Couldn't find city named {}", city_id).as_str())
                         .trade_order
                         .get_mut(resource) //Should never call a undefined resource
-                        .expect("Couldn't find resource, should never happen").0 -= 1;
+                        .expect("Couldn't find resource, should never happen")
+                        .0 -= 1;
                 }
 
                 CaravanMenuButtons::ToggleTradeStockpileExclusivity(city_id, resource) => {
-                    todo!();
                     selected_caravan
                         .orders
                         .iter_mut()
                         .find(|order| order.goal_city_id == *city_id)
-                        .expect(format!("Couldn't find city named {}", city_id).as_str());
+                        .expect(format!("Couldn't find city named {}", city_id).as_str())
+                        .trade_order
+                        .get_mut(resource)
+                        .unwrap()
+                        .1 = !selected_caravan
+                        .orders
+                        .iter_mut()
+                        .find(|order| order.goal_city_id == *city_id)
+                        .expect(format!("Couldn't find city named {}", city_id).as_str())
+                        .trade_order
+                        .get_mut(resource)
+                        .unwrap()
+                        .1;
                 }
 
                 CaravanMenuButtons::KillTrade(city_id, resource) => {
@@ -1622,15 +1657,9 @@ fn building_button(
     mut commands: Commands,
     interaction_query: Query<(&Interaction, &BuildingButton), (Changed<Interaction>, With<Button>)>,
     hud_node: Query<Entity, With<BuildingBrowser>>,
-    //mut menu_state: ResMut<NextState<StrategicState>>,
     mut selected_city: ResMut<SelectedCity>,
-    you: Single<&Player, With<ActivePlayer>>,
-    //mut window_state: ResMut<NextState<StrategicState>>,
+    mut you: Single<&mut Player, With<ActivePlayer>>,
 ) {
-    /*    let Ok(mut selected_city) = caravans.get_mut(selected_caravan.0) else {
-        return;
-    };*/
-
     for (interaction, menu_button_action) in &interaction_query {
         if *interaction == Interaction::Pressed {
             match menu_button_action {
@@ -1653,7 +1682,13 @@ fn building_button(
                                         ..default()
                                     },
                                     BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
-                                    children![(Text::new(building_choice))],
+                                    children![
+                                        (Text::new(format!(
+                                            "{} costing: {}$",
+                                            building_choice,
+                                            500 * (tier * tier + tier)
+                                        )))
+                                    ],
                                 ));
                             }
                         });
@@ -1767,6 +1802,7 @@ fn building_button(
                     for hud_node in hud_node.iter() {
                         commands.entity(hud_node).despawn_children();
                     }
+                    you.money -= (500 * (tier * tier + tier)) as f64;
                     match tier {
                         1 => selected_city.buildings_t1.push((
                             building.clone(),
