@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 
 // This plugin will contain the game. In this case, it's just be a screen that will
 // display the current settings for 5 seconds before returning to the menu
-#[derive(Resource, Deref)]
+#[derive(Resource, Deref, DerefMut)]
 pub struct SelectedCity(pub CityData);
 
 #[derive(Resource, Deref, Debug)]

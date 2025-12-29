@@ -13,7 +13,7 @@ use super::market::*;
 use super::strategic_map::{Caravan, Order, Player, SelectedCaravan, SelectedCity, StrategicState};
 use super::tooltip::Tooltips;
 use crate::game::market;
-use crate::game::strategic_map::{ActivePlayer, BelongsTo};
+use crate::game::strategic_map::{ActivePlayer, BelongsTo, Faction};
 use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
 use crate::game::tooltip::TooltipOf;
 use crate::prelude::*;
@@ -44,6 +44,16 @@ pub fn plugin(app: &mut App) {
         .add_systems(
             Update,
             (caravan_button, send_scroll_events).run_if(in_state(PopupHUD::Caravan)),
+        )
+        .add_systems(
+            Update,
+            building_button.run_if(in_state(PopupHUD::Buildings)),
+        )
+        .add_systems(
+            Update,
+            (kill_popup_menu, update_buildings, building_menu)
+                .chain()
+                .run_if(in_state(PopupHUD::Buildings).and(resource_changed::<SelectedCity>)),
         )
         .add_systems(
             Update,
@@ -242,144 +252,179 @@ fn popup_window(commands: &mut Commands, direction: FlexDirection) -> Entity {
         .id()
 }
 
+fn update_buildings(city_new: Res<SelectedCity>, mut city_data: Query<&mut CityData>) {
+    let Some(mut city) = city_data.iter_mut().find(|n| n.id == city_new.id) else {
+        panic!("Could not find city to update");
+    };
+    *city = city_new.clone();
+}
+
+fn kill_popup_menu(mut commands: Commands, old_window: Query<Entity, With<PopUpItem>>) {
+    for e in old_window.iter() {
+        println!("About to kill a popupitem");
+        commands.entity(e).despawn();
+    }
+}
+
 fn building_menu(
     mut commands: Commands,
     city: ResMut<SelectedCity>,
     building_table: Res<BuildinTable>,
 ) {
-    let window = popup_window(&mut commands, FlexDirection::ColumnReverse);
+    let window = popup_window(&mut commands, FlexDirection::Row);
     commands.entity(window).with_children(|parent| {
-        let population = city.0.population + 1;
-        for tiers in 1..population {
-            parent
-                .spawn((
-                    Node {
-                        width: percent(50),
-                        height: percent(15),
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center,
-                        flex_direction: FlexDirection::Row,
-                        ..default()
-                    },
-                    Text::new(format!("Tier {}", tiers)),
-                    //BackgroundColor(Srgba::new(0.2, 0.2, 1.0, 1.0).into()),
-                ))
-                .with_children(|parent| {
-                    for building_slot in 0..population - tiers {
-                        //println!("Tier {} has slot {}", tiers, building_slot);
-                        if let Some(building) = match tiers {
-                            1 => city.buildings_t1.get(building_slot as usize),
-                            2 => city.buildings_t2.get(building_slot as usize),
-                            3 => city.buildings_t3.get(building_slot as usize),
-                            4 => city.buildings_t4.get(building_slot as usize),
-                            5 => city.buildings_t5.get(building_slot as usize),
-                            _ => None,
-                        } {
-                            println!("Found building {}", building.0);
-                            let mut production_text = "Produces: ".to_string();
-                            let mut consumption_text = "Consumes: ".to_string();
-                            let mut production = vec![];
-                            let mut consumption = vec![];
-                            for prod in &building_table
-                                .0
-                                .get(&building.0)
-                                .expect(
-                                    format!("Tried to access invalid building {:?}", building.0)
-                                        .as_str(),
-                                )
-                                .output
-                            {
-                                production.push(prod);
-                            }
-                            for cons in &building_table
-                                .0
-                                .get(&building.0)
-                                .expect(
-                                    format!("Tried to access invalid building {:?}", building.0)
-                                        .as_str(),
-                                )
-                                .input
-                            {
-                                consumption.push(cons);
-                            }
+        parent
+            .spawn((Node {
+                width: percent(50),
+                height: percent(100),
+                flex_direction: FlexDirection::ColumnReverse,
+                ..default()
+            },))
+            .with_children(|parent| {
+                let population = city.0.population + 1;
+                for tiers in 1..population {
+                    parent
+                        .spawn((
+                            Node {
+                                width: percent(100),
+                                height: percent(15),
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::Center,
+                                flex_direction: FlexDirection::Row,
+                                ..default()
+                            },
+                            Text::new(format!("Tier {}", tiers)),
+                            //BackgroundColor(Srgba::new(0.2, 0.2, 1.0, 1.0).into()),
+                        ))
+                        .with_children(|parent| {
+                            for building_slot in 0..population - tiers {
+                                //println!("Tier {} has slot {}", tiers, building_slot);
+                                if let Some(building) = match tiers {
+                                    1 => city.buildings_t1.get(building_slot as usize),
+                                    2 => city.buildings_t2.get(building_slot as usize),
+                                    3 => city.buildings_t3.get(building_slot as usize),
+                                    4 => city.buildings_t4.get(building_slot as usize),
+                                    5 => city.buildings_t5.get(building_slot as usize),
+                                    _ => None,
+                                } {
+                                    println!("Found building {}", building.0);
+                                    let mut production_text = "Produces: ".to_string();
+                                    let mut consumption_text = "Consumes: ".to_string();
+                                    let mut production = vec![];
+                                    let mut consumption = vec![];
+                                    for prod in &building_table
+                                        .0
+                                        .get(&building.0)
+                                        .expect(
+                                            format!(
+                                                "Tried to access invalid building {:?}",
+                                                building.0
+                                            )
+                                            .as_str(),
+                                        )
+                                        .output
+                                    {
+                                        production.push(prod);
+                                    }
+                                    for cons in &building_table
+                                        .0
+                                        .get(&building.0)
+                                        .expect(
+                                            format!(
+                                                "Tried to access invalid building {:?}",
+                                                building.0
+                                            )
+                                            .as_str(),
+                                        )
+                                        .input
+                                    {
+                                        consumption.push(cons);
+                                    }
 
-                            for i in 0..production.len() - 1 {
-                                production_text += format!(
-                                    "{0} x{1}, ",
-                                    production[i].0.get_name(),
-                                    production[i].1
-                                )
-                                .as_str();
-                                if i % 2 == 1 {
-                                    production_text += "\n";
-                                }
-                            }
-                            if production.len() == 1 {
-                                production_text += format!(
-                                    "{0} x{1}",
-                                    production
-                                        .last()
-                                        .expect("weird ass building table")
-                                        .0
-                                        .get_name(),
-                                    production.last().expect("weird ass building table").1
-                                )
-                                .as_str();
-                            } else {
-                                production_text += format!(
-                                    "and {0} x{1}",
-                                    production
-                                        .last()
-                                        .expect("weird ass building table")
-                                        .0
-                                        .get_name(),
-                                    production.last().expect("weird ass building table").1
-                                )
-                                .as_str();
-                            }
+                                    for i in 0..production.len() - 1 {
+                                        production_text += format!(
+                                            "{0} x{1}, ",
+                                            production[i].0.get_name(),
+                                            production[i].1
+                                        )
+                                        .as_str();
+                                        if i % 2 == 1 {
+                                            production_text += "\n";
+                                        }
+                                    }
+                                    if production.len() == 1 {
+                                        production_text += format!(
+                                            "{0} x{1}",
+                                            production
+                                                .last()
+                                                .expect("weird ass building table")
+                                                .0
+                                                .get_name(),
+                                            production.last().expect("weird ass building table").1
+                                        )
+                                        .as_str();
+                                    } else {
+                                        production_text += format!(
+                                            "and {0} x{1}",
+                                            production
+                                                .last()
+                                                .expect("weird ass building table")
+                                                .0
+                                                .get_name(),
+                                            production.last().expect("weird ass building table").1
+                                        )
+                                        .as_str();
+                                    }
 
-                            for i in 0..consumption.len() - 1 {
-                                consumption_text += format!(
-                                    "{0} x{1}, ",
-                                    consumption[i].0.get_name(),
-                                    consumption[i].1
-                                )
-                                .as_str();
-                                if i % 2 == 1 {
-                                    consumption_text += "\n";
-                                }
-                            }
-                            if consumption.len() == 1 {
-                                consumption_text += format!(
-                                    "{0} x{1}",
-                                    consumption
-                                        .last()
-                                        .expect("weird ass building table")
-                                        .0
-                                        .get_name(),
-                                    consumption.last().expect("weird ass building table").1
-                                )
-                                .as_str();
-                            } else {
-                                consumption_text += format!(
-                                    "and {0} x{1}",
-                                    consumption
-                                        .last()
-                                        .expect("weird ass building table")
-                                        .0
-                                        .get_name(),
-                                    consumption.last().expect("weird ass building table").1
-                                )
-                                .as_str();
-                            }
+                                    for i in 0..consumption.len() - 1 {
+                                        consumption_text += format!(
+                                            "{0} x{1}, ",
+                                            consumption[i].0.get_name(),
+                                            consumption[i].1
+                                        )
+                                        .as_str();
+                                        if i % 2 == 1 {
+                                            consumption_text += "\n";
+                                        }
+                                    }
+                                    if consumption.len() == 1 {
+                                        consumption_text += format!(
+                                            "{0} x{1}",
+                                            consumption
+                                                .last()
+                                                .expect("weird ass building table")
+                                                .0
+                                                .get_name(),
+                                            consumption.last().expect("weird ass building table").1
+                                        )
+                                        .as_str();
+                                    } else {
+                                        consumption_text += format!(
+                                            "and {0} x{1}",
+                                            consumption
+                                                .last()
+                                                .expect("weird ass building table")
+                                                .0
+                                                .get_name(),
+                                            consumption.last().expect("weird ass building table").1
+                                        )
+                                        .as_str();
+                                    }
 
-                            parent.spawn((
+                                    parent.spawn((
                                 Node {
                                     width: px(64),
                                     height: px(64),
-                                    margin: UiRect::all(px(4)),
+                                    margin: UiRect::all(px(16)),
                                     ..default()
                                 },
+                                        Text::new(match building.1 {
+                                            Faction::Neutral => {
+                                                "N".to_string()
+                                            }
+                                            Faction::Player(player_number) => {
+                                                format!("P:{}",player_number)
+                                            }}),
                                 BackgroundColor(Srgba::new(0.5, 0.2, 0.9, 1.0).into()),
                                 Button,
                                 related!(
@@ -410,20 +455,52 @@ fn building_menu(
                                     )]
                                 ),
                             ));
-                        } else {
-                            parent.spawn((
-                                Node {
-                                    width: px(64),
-                                    height: px(64),
-                                    margin: UiRect::all(px(16)),
-                                    ..default()
-                                },
-                                BackgroundColor(Srgba::new(0.2, 1., 0.2, 1.0).into()),
-                            ));
-                        }
-                    }
-                });
-        }
+                                } else {
+                                    parent.spawn((
+                                        Node {
+                                            width: px(64),
+                                            height: px(64),
+                                            margin: UiRect::all(px(16)),
+                                            ..default()
+                                        },
+                                        BackgroundColor(Srgba::new(0.2, 1., 0.2, 1.0).into()),
+                                        Button,
+                                        BuildingButton::SlotButton(
+                                            tiers as usize,
+                                            building_slot as usize,
+                                        ),
+                                        related!(
+                                            Tooltips[(
+                                                Text::new("Build a new building"),
+                                                TextShadow::default(),
+                                                // Set the justification of the Text
+                                                TextLayout::new_with_justify(Justify::Center),
+                                                // Set the style of the Node itself.
+                                                Node { ..default() },
+                                                BackgroundColor(
+                                                    Srgba::new(0.05, 0.05, 0.05, 1.0).into()
+                                                ),
+                                            )]
+                                        ),
+                                    ));
+                                }
+                            }
+                        });
+                }
+            });
+    });
+
+    commands.entity(window).with_children(|parent| {
+        parent.spawn((
+            BuildingBrowser,
+            Node {
+                flex_direction: FlexDirection::Column,
+                width: percent(50),
+                height: percent(100),
+                ..default()
+            },
+            BackgroundColor(Srgba::new(0.8, 0.1, 0.1, 1.0).into()),
+        ));
     });
 }
 
@@ -458,6 +535,15 @@ fn finance_menu(mut commands: Commands, players: Query<&Player>) {
             ));
         }
     });
+}
+
+#[derive(Component, Default, Clone, Debug)]
+struct BuildingBrowser;
+
+#[derive(Component, Clone, Debug)]
+enum BuildingButton {
+    SlotButton(usize, usize),
+    BuildTypeButton(String, usize, usize),
 }
 
 #[derive(Component, Default, Clone, Debug)]
@@ -1409,6 +1495,83 @@ pub fn city_hud_setup(mut commands: Commands, selected_city: ResMut<SelectedCity
             ),
         ],
     ));
+}
+
+fn building_button(
+    mut commands: Commands,
+    mut interaction_query: Query<
+        (&Interaction, &BuildingButton),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut hudNode: Query<Entity, With<BuildingBrowser>>,
+    //mut menu_state: ResMut<NextState<StrategicState>>,
+    mut selected_city: ResMut<SelectedCity>,
+    //mut window_state: ResMut<NextState<StrategicState>>,
+) {
+    /*    let Ok(mut selected_city) = caravans.get_mut(selected_caravan.0) else {
+        return;
+    };*/
+
+    for (interaction, menu_button_action) in &interaction_query {
+        if *interaction == Interaction::Pressed {
+            match menu_button_action {
+                BuildingButton::SlotButton(tier, slot) => {
+                    println!("Wants to construct a new building");
+                    for hudNode in hudNode.iter() {
+                        commands.entity(hudNode).despawn_children();
+                        commands.entity(hudNode).with_children(|parent| {
+                            for building_choice in get_construction_list(selected_city.race, *tier)
+                            {
+                                parent.spawn((
+                                    Button,
+                                    BuildingButton::BuildTypeButton(
+                                        building_choice.to_string(),
+                                        *tier,
+                                        *slot,
+                                    ),
+                                    Node {
+                                        height: px(32),
+                                        ..default()
+                                    },
+                                    BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                    children![(Text::new(building_choice))],
+                                ));
+                            }
+                        });
+                    }
+                }
+                BuildingButton::BuildTypeButton(building, tier, slot) => {
+                    println!("Wants to construct a new building");
+                    //Kills the hud nodes
+                    for hudNode in hudNode.iter() {
+                        commands.entity(hudNode).despawn_children();
+                    }
+                    match tier {
+                        1 => selected_city
+                            .buildings_t1
+                            .push((building.clone(), Faction::Player(1))),
+                        2 => selected_city
+                            .buildings_t2
+                            .push((building.clone(), Faction::Player(1))),
+                        3 => selected_city
+                            .buildings_t3
+                            .push((building.clone(), Faction::Player(1))),
+                        4 => selected_city
+                            .buildings_t4
+                            .push((building.clone(), Faction::Player(1))),
+                        5 => selected_city
+                            .buildings_t5
+                            .push((building.clone(), Faction::Player(1))),
+                        _ => {
+                            error!("Wrong tier given!");
+                        }
+                    }
+                    //TODO: Get city and change its buildings
+                }
+                _ => {}
+            }
+        }
+    }
 }
 
 /// Injects scroll events into the UI hierarchy.

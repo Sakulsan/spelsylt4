@@ -317,9 +317,15 @@ fn lobby_menu_setup(mut commands: Commands) {
                 PlayerContainer,
                 Node {
                     width: vw(100),
-                    height: vh(70),
+                    height: vh(60),
                     ..default()
                 },
+            ),
+            (
+                Text::new("Start game"),
+                Button,
+                NetworkMenuButton::StartButton,
+                button_node.clone()
             )
         ],
     ));

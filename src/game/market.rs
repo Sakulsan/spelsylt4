@@ -477,6 +477,104 @@ pub fn gen_random_building(
     result.to_string()
 }
 
+//I dont like to borrow string but its ass
+pub fn get_construction_list(race: BuildingType, tier: usize) -> Vec<&'static str> {
+    if race == BuildingType::Illegal || race == BuildingType::Generic {
+        panic!("generated a random building of race {:?}", race)
+    }
+
+    let mut race_result = match race {
+        BuildingType::Dwarven => match tier {
+            1 => vec!["Mushroom Farm", "Automated Clothier", "Gem Cutters"],
+            2 => vec!["Preparatory Facilities", "Core Drill", "Growth Vats"],
+            3 => vec!["Automation Components", "Megabreweries"],
+            4 => vec!["Industrial Smeltery", "Dwarven Assembly Lines"],
+            5 => vec!["Adamantium Smeltery"],
+            _ => panic!(
+                "gen_random_building tried to generate a building of tier {:?}",
+                tier
+            ),
+        },
+        BuildingType::Elven => match tier {
+            1 => vec!["Earth Spirit Aid", "Ironwood Forestry", "Forest Foraging"],
+            2 => vec![
+                "Domesticated Orchards",
+                "Amber Plantations",
+                "Gardens of Wonder",
+            ],
+            3 => vec!["Elemental Springs", "Integrated Farms"],
+            4 => vec!["Gaian Meadows", "Self-spinning Weavers"],
+            5 => vec!["Archmage's Tower"],
+            _ => panic!(
+                "gen_random_building tried to generate a building of tier {:?}",
+                tier
+            ),
+        },
+        BuildingType::Goblin => match tier {
+            1 => vec!["Deep Mines", "Animated Objects", "Alchemical Enhancements"],
+            2 => vec!["Glaziery", "Charcoal Kilns", "Hill Quarries"],
+            3 => vec!["Hill Quarries", "Artisan District"],
+            4 => vec!["Siege-Factories", "Golem Automatons"],
+            5 => vec!["Alchemic Factories"],
+            _ => panic!(
+                "gen_random_building tried to generate a building of tier {:?}",
+                tier
+            ),
+        },
+        BuildingType::Human => match tier {
+            1 => vec![
+                "Large Industrial District",
+                "Fishing Port",
+                "Tree Plantations",
+            ],
+            2 => vec![
+                "Water Cleaning Facilities",
+                "Hired Workforces",
+                "Small-scale Forges",
+            ],
+            3 => vec!["Manufactories", "Mercenary Guild"],
+            4 => vec!["Teleportation Circle Network", "Strip Mines"],
+            5 => vec!["Relic Hunters"],
+            _ => panic!(
+                "gen_random_building tried to generate a building of tier {:?}",
+                tier
+            ),
+        },
+        _ => {
+            panic!("got a unkown race");
+        }
+    };
+    race_result.extend(match tier {
+        1 => vec![
+            "Standard Farms",
+            "Standard Mines",
+            "Quarry",
+            "Forestry Site",
+            "Workers",
+        ],
+        2 => vec![
+            "Educated Workers",
+            "Well",
+            "Glassworks",
+            "Wagons",
+            "Cloth Mills",
+        ],
+        3 => vec![
+            "Apothecary's Workshop",
+            "Basic Industry",
+            "Hired Mercenaries",
+        ],
+        4 => vec!["Modern Artificers", "Modern Soldiers"],
+        5 => vec!["Modern Comforts"],
+        _ => panic!(
+            "gen_random_building tried to generate a building of tier {:?}",
+            tier
+        ),
+    });
+    race_result
+    //result.to_string()
+}
+
 fn quick_hash(array: Vec<(Resources, isize)>) -> HashMap<Resources, isize> {
     array
         .into_iter()
