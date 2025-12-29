@@ -4,14 +4,10 @@ use std::{
 };
 
 use crate::{
-    game::city_data::CityData,
-    game::namelists::CityNameList,
-    network::{
+    GlobalRngSeed, NetworkState, game::{city_data::CityData, namelists::CityNameList, strategic_map::SelectedCity}, network::{
         message::{ClientData, ClientMessage, NetworkMessage, Players, ServerMessage},
         network_menu::NetworkMenuState,
-    },
-    prelude::*,
-    GlobalRngSeed, NetworkState,
+    }, prelude::*
 };
 use bevy_renet::{
     netcode::{ClientAuthentication, NetcodeClientTransport},
@@ -198,6 +194,7 @@ fn receive_message_system_client(
 fn receive_city_updates(
     mut reader: MessageReader<ServerMessage>,
     mut cities: Query<&mut CityData>,
+    mut selected_city: ResMut<SelectedCity>
 ) {
     for msg in reader.read() {
         let NetworkMessage::CityUpdated { updated_city } = &**msg else {
