@@ -1,13 +1,10 @@
-use super::strategic_hud::PopupHUD;
 use super::strategic_map::*;
 use crate::{game::market, network::message::PlayerId};
 use crate::prelude::*;
 
 use super::market::*;
-use crate::GameState;
 use std::collections::{HashMap, HashSet};
 
-use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
 use serde::{Deserialize, Serialize};
 
 #[derive(Component, Default, Clone, Debug, Serialize, Deserialize)]
@@ -39,7 +36,7 @@ impl CityData {
         };
         let (mut t1, mut t2, mut t3, mut t4, mut t5) = (vec![], vec![], vec![], vec![], vec![]);
 
-        for i in 0..buildings_per_tier.0 {
+        for _i in 0..buildings_per_tier.0 {
             t1.push((
                 (market::gen_random_building(1, &mut rng, race)),
                 Faction::Neutral,
@@ -47,7 +44,7 @@ impl CityData {
             ));
         }
 
-        for i in 0..buildings_per_tier.1 {
+        for _i in 0..buildings_per_tier.1 {
             t2.push((
                 (market::gen_random_building(2, &mut rng, race)),
                 Faction::Neutral,
@@ -55,7 +52,7 @@ impl CityData {
             ));
         }
 
-        for i in 0..buildings_per_tier.2 {
+        for _i in 0..buildings_per_tier.2 {
             t3.push((
                 (market::gen_random_building(3, &mut rng, race)),
                 Faction::Neutral,
@@ -63,7 +60,7 @@ impl CityData {
             ));
         }
 
-        for i in 0..buildings_per_tier.3 {
+        for _i in 0..buildings_per_tier.3 {
             t4.push((
                 (market::gen_random_building(4, &mut rng, race)),
                 Faction::Neutral,
@@ -71,7 +68,7 @@ impl CityData {
             ));
         }
 
-        for i in 0..buildings_per_tier.4 {
+        for _i in 0..buildings_per_tier.4 {
             t5.push((
                 (market::gen_random_building(5, &mut rng, race)),
                 Faction::Neutral,
@@ -115,7 +112,7 @@ impl CityData {
         sigmoid.max(0.3)
     }
 
-    fn get_theoretical_resource_value_modifier(&self, res: &Resources, amount: isize) -> f64 {
+    fn get_theoretical_resource_value_modifier(&self, _res: &Resources, amount: isize) -> f64 {
         let sigmoid = 2.0 / (1.0 + (std::f64::consts::E).powf(amount as f64 * 1.0 / 200.0));
         sigmoid.max(0.3)
     }
@@ -137,7 +134,7 @@ impl CityData {
             .as_str(),
         );
         let mut total_cost = 0.0;
-        for i in 0..amount {
+        for _i in 0..amount {
             let price = self.get_theoretical_resource_value(res, amount_available);
             total_cost += price;
             amount_available -= 1;
@@ -154,7 +151,7 @@ impl CityData {
             .as_str(),
         );
         let mut total_profit = 0.0;
-        for i in 0..amount {
+        for _i in 0..amount {
             let price = self.get_theoretical_resource_value(res, amount_available);
             total_profit += price;
             amount_available += 1;
@@ -212,8 +209,8 @@ impl CityData {
 
         let mut hash = resources
             .iter()
-            .filter(|(k, v)| v >= &&0)
-            .map(|(k, v)| *k)
+            .filter(|(_k, v)| v >= &&0)
+            .map(|(k, _v)| *k)
             .collect::<HashSet<Resources>>();
 
         for (res, amount) in self.market.clone() {

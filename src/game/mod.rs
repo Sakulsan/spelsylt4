@@ -8,7 +8,6 @@ pub mod strategic_hud;
 pub mod strategic_map;
 use bevy::prelude::*;
 
-use crate::game::turn::*;
 pub mod city_data;
 pub mod tooltip;
 pub mod turn;

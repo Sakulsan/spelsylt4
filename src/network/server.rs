@@ -52,7 +52,7 @@ fn host_server(mut commands: Commands) {
 
     let local_ip = match local_ip_address::local_ip() {
         Ok(ip) => ip,
-        Err(e) => {
+        Err(_e) => {
             error!("Server failed to start: couldn't get local IP address");
             return;
         }
@@ -93,7 +93,7 @@ pub fn plugin(app: &mut App) {
 fn server_config(mut commands: Commands) {
     let ip = match local_ip_address::local_ip() {
         Ok(ip) => ip,
-        Err(e) => {
+        Err(_e) => {
             error!("Server failed to start: couldn't get local IP address");
             "127.0.0.1".parse().unwrap()
         }

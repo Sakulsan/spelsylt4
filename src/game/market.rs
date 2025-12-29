@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use crate::prelude::*;
-use bevy::pbr::generate;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
@@ -306,7 +305,7 @@ pub fn gen_building_tables() -> HashMap<String, Building> {
 
 pub fn gen_random_building(
     tier: u8,
-    mut rng: &mut ResMut<GlobalRng>,
+    rng: &mut ResMut<GlobalRng>,
     mut race: BuildingType,
 ) -> String {
     if race == BuildingType::Illegal || race == BuildingType::Generic {

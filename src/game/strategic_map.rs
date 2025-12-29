@@ -2,7 +2,6 @@ use super::city_data::*;
 use super::strategic_hud::PopupHUD;
 use super::turn::TurnEnd;
 use crate::game::city_graph::{get_path, CityGraph, Node as CityNode};
-use crate::game::market;
 use crate::network::message::PlayerId;
 use crate::{prelude::*, NetworkState};
 
@@ -82,14 +81,22 @@ impl Caravan {
                 let current_node = city_by_id(&caravan.position_city_id);
                 let next_node = city_by_id(&caravan.orders[caravan.order_idx].goal_city_id);
                 let (_, path) = get_path(&city, current_node.0 .0, next_node.0 .0);
-                info!("Nodes next to current node: {0:?}", city.graph.neighbors(current_node.0.0)
-                    .map(|n| nodes.get(city.graph[n]).unwrap())
-                    .map(|(_, data)| data.id.clone())
-                    .collect::<Vec<String>>());
-                info!("Nodes next to next node: {0:?}", city.graph.neighbors(next_node.0.0)
-                    .map(|n| nodes.get(city.graph[n]).unwrap())
-                    .map(|(_, data)| data.id.clone())
-                    .collect::<Vec<String>>());
+                info!(
+                    "Nodes next to current node: {0:?}",
+                    city.graph
+                        .neighbors(current_node.0 .0)
+                        .map(|n| nodes.get(city.graph[n]).unwrap())
+                        .map(|(_, data)| data.id.clone())
+                        .collect::<Vec<String>>()
+                );
+                info!(
+                    "Nodes next to next node: {0:?}",
+                    city.graph
+                        .neighbors(next_node.0 .0)
+                        .map(|n| nodes.get(city.graph[n]).unwrap())
+                        .map(|(_, data)| data.id.clone())
+                        .collect::<Vec<String>>()
+                );
 
                 let paths_mapped: Vec<String> = path
                     .iter()
@@ -202,7 +209,7 @@ pub fn plugin(app: &mut App) {
     )
     .add_systems(
         Update,
-        (update_ui_nodes, update_miku_cat, open_miku_cat).run_if(in_state(GameState::Game)),
+        (update_miku_cat, open_miku_cat).run_if(in_state(GameState::Game)),
     )
     .add_observer(Caravan::update_orders);
 }
@@ -385,9 +392,9 @@ fn spawn_city_ui_nodes(
     mut commands: Commands,
     graph_nodes: Query<(Entity, &CityNode, &CityData)>,
     mut sylt: Sylt,
-    mut rng: ResMut<GlobalRng>,
+    _rng: ResMut<GlobalRng>,
 ) {
-    for (ent, node, city_data) in graph_nodes {
+    for (ent, _node, city_data) in graph_nodes {
         let capitals = vec![
             "Great Lancastershire",
             //"Jewel of All Creation", These capitals aren't represented on the map yet.
@@ -479,32 +486,6 @@ fn spawn_city_ui_nodes(
     }
 }
 
-fn update_ui_nodes(
-    nodes: Query<(&mut UiTransform, &CityNode)>,
-    camera: Option<Single<(&GlobalTransform, &Camera), With<Camera2d>>>,
-) {
-    return;
-
-    let Some((cam_trans, cam)) = camera.map(|c| c.into_inner()) else {
-        error!("Missing camera!");
-        return;
-    };
-
-    for (mut transform, node) in nodes {
-        let Some(ndc_pos) = cam.world_to_ndc(cam_trans, node.1.extend(0.0)) else {
-            continue;
-        };
-        let ndc_pos = ndc_pos / 2.0 + Vec3::splat(0.5);
-        let ndc_pos = Vec2::new(ndc_pos.x, 1.0 - ndc_pos.y) * 100.0;
-
-        transform.translation.x = Val::Vw(ndc_pos.x);
-        transform.translation.y = Val::Vh(ndc_pos.y);
-    }
-}
-
-//#[derive(Component)]
-//struct Demographic<T>();
-
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States, Serialize, Deserialize)]
 pub enum Faction {
     #[default]
@@ -528,7 +509,7 @@ struct CaravanHudItem(Entity);
 
 fn city_interaction_system(
     mut interaction_query: Query<(&Interaction, &CityNodeMarker), Changed<Interaction>>,
-    mut city_data: Query<&CityData>,
+    city_data: Query<&CityData>,
     //ui_entities: Query<Entity, With<super::strategic_hud::PopUpItem>>,
     mut menu_state: ResMut<NextState<StrategicState>>,
     mut selected_city: ResMut<SelectedCity>,

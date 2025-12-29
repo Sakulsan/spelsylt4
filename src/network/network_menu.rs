@@ -3,8 +3,6 @@ use bevy_renet::netcode::{NetcodeClientPlugin, NetcodeServerPlugin};
 use bevy_renet::renet::RenetClient;
 use bevy_renet::{renet::ConnectionConfig, RenetClientPlugin, RenetServerPlugin};
 use bevy_simple_text_input::{TextInput, TextInputValue};
-use std::net::{SocketAddr, UdpSocket};
-use std::time::SystemTime;
 
 use crate::network::client::JoinEvent;
 use crate::network::message::Players;
@@ -349,7 +347,7 @@ fn join_menu_setup(mut commands: Commands) {
         ..default()
     };
 
-    let button_text_style = (
+    let _button_text_style = (
         TextFont {
             font_size: 33.0,
             ..default()

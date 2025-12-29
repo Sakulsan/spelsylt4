@@ -1,8 +1,7 @@
 use std::collections::btree_map::Entry;
+use std::collections::BTreeSet;
 use std::collections::HashSet;
-use std::collections::{BTreeMap, BTreeSet};
 
-use bevy::color::palettes::css::*;
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::math::usize;
 use bevy::picking::hover::HoverMap;
@@ -15,7 +14,6 @@ use super::tooltip::Tooltips;
 use crate::game::market;
 use crate::game::strategic_map::{ActivePlayer, BelongsTo, Faction};
 use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
-use crate::game::tooltip::TooltipOf;
 use crate::prelude::*;
 use crate::GameState;
 
@@ -131,7 +129,7 @@ fn off_city_scout(
 
 fn no_popup_button(
     mut commands: Commands,
-    mut interaction_query: Query<(&Interaction, &HudButton), (Changed<Interaction>, With<Button>)>,
+    interaction_query: Query<(&Interaction, &HudButton), (Changed<Interaction>, With<Button>)>,
     mut menu_state: ResMut<NextState<StrategicState>>,
     mut tab_state: ResMut<NextState<PopupHUD>>,
     selected_city: Res<SelectedCity>,
@@ -182,13 +180,10 @@ fn no_popup_button(
 
 fn popup_button(
     mut commands: Commands,
-    mut interaction_query: Query<
-        (&Interaction, &PopupButton),
-        (Changed<Interaction>, With<Button>),
-    >,
+    interaction_query: Query<(&Interaction, &PopupButton), (Changed<Interaction>, With<Button>)>,
     //mut menu_state: ResMut<NextState<StrategicState>>,
     mut tab_state: ResMut<NextState<PopupHUD>>,
-    mut popup_items: Query<Entity, With<PopUpItem>>,
+    popup_items: Query<Entity, With<PopUpItem>>,
 ) {
     for (interaction, menu_button_action) in &interaction_query {
         if *interaction == Interaction::Pressed {
@@ -809,11 +804,11 @@ fn create_route_showcase(parent: &mut ChildSpawnerCommands, orders: &Vec<Order>)
 
 fn caravan_button(
     mut commands: Commands,
-    mut interaction_query: Query<
+    interaction_query: Query<
         (&Interaction, &CaravanMenuButtons),
         (Changed<Interaction>, With<Button>),
     >,
-    mut hudNode: Query<Entity, With<CaravanCityUINode>>,
+    hudNode: Query<Entity, With<CaravanCityUINode>>,
     //mut menu_state: ResMut<NextState<StrategicState>>,
     selected_caravan: Res<SelectedCaravan>,
     mut caravans: Query<&mut Caravan>,
@@ -830,7 +825,7 @@ fn caravan_button(
                     window_state.set(StrategicState::DestinationPicker);
                 }
                 CaravanMenuButtons::AddTradeToStop(stop_name) => {
-                    let mut order = &mut selected_caravan
+                    let order = &mut selected_caravan
                         .orders
                         .iter_mut()
                         .find(|order| order.goal_city_id == *stop_name)
@@ -886,7 +881,7 @@ fn caravan_button(
                 }
                 CaravanMenuButtons::ChangeTrade(city_id, resource) => {
                     for entity in hudNode.iter() {
-                        let mut order: BTreeSet<_> = selected_caravan
+                        let order: BTreeSet<_> = selected_caravan
                             .orders
                             .iter()
                             .find(|order| order.goal_city_id == *city_id)
@@ -960,7 +955,7 @@ fn caravan_button(
     }
 }
 
-fn update_caravan_order_idx(mut caravan_query: Query<(&mut Caravan), (Changed<Caravan>)>) {
+fn update_caravan_order_idx(caravan_query: Query<&mut Caravan, Changed<Caravan>>) {
     for mut caravan in caravan_query {
         if caravan.orders[caravan.order_idx].goal_city_id == caravan.position_city_id
             && caravan.orders.len() > 1
@@ -971,11 +966,8 @@ fn update_caravan_order_idx(mut caravan_query: Query<(&mut Caravan), (Changed<Ca
 }
 
 fn caravan_destination_buttons(
-    mut commands: Commands,
-    mut interaction_query: Query<
-        (&Interaction, &CityNodeMarker),
-        (Changed<Interaction>, With<Button>),
-    >,
+    _commands: Commands,
+    interaction_query: Query<(&Interaction, &CityNodeMarker), (Changed<Interaction>, With<Button>)>,
     city_data_query: Query<&CityData>,
     selected_caravan: Res<SelectedCaravan>,
     mut caravans: Query<&mut Caravan>,
@@ -1506,11 +1498,8 @@ pub fn city_hud_setup(mut commands: Commands, selected_city: ResMut<SelectedCity
 
 fn building_button(
     mut commands: Commands,
-    mut interaction_query: Query<
-        (&Interaction, &BuildingButton),
-        (Changed<Interaction>, With<Button>),
-    >,
-    mut hudNode: Query<Entity, With<BuildingBrowser>>,
+    interaction_query: Query<(&Interaction, &BuildingButton), (Changed<Interaction>, With<Button>)>,
+    hudNode: Query<Entity, With<BuildingBrowser>>,
     //mut menu_state: ResMut<NextState<StrategicState>>,
     mut selected_city: ResMut<SelectedCity>,
     //mut window_state: ResMut<NextState<StrategicState>>,
@@ -1547,7 +1536,6 @@ fn building_button(
                         });
                     }
                 }
-
                 BuildingButton::EditBuilding(tier, slot) => {
                     println!("Wants to edit existing building");
                     for hudNode in hudNode.iter() {
@@ -1617,7 +1605,7 @@ fn building_button(
                         });
                     }
                 }
-                BuildingButton::BuildTypeButton(building, tier, slot) => {
+                BuildingButton::BuildTypeButton(building, tier, _slot) => {
                     println!("Wants to construct a new building");
                     //Kills the hud nodes
                     for hudNode in hudNode.iter() {

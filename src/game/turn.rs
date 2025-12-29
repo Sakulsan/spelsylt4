@@ -1,5 +1,4 @@
 use super::city_data::CityData;
-use crate::game::city_graph::{CityGraph, Node as CityNode};
 use crate::game::strategic_map::{ActivePlayer, BuildinTable, Player};
 use crate::prelude::*;
 
@@ -14,7 +13,7 @@ pub(super) fn plugin(app: &mut App) {
 pub struct GameEnd;
 
 pub fn market_updater(
-    ev: On<TurnEnd>,
+    _ev: On<TurnEnd>,
     nodes: Query<&mut CityData>,
     building_table: Res<BuildinTable>,
 ) {
@@ -25,7 +24,7 @@ pub fn market_updater(
 }
 
 pub fn debt_collector(
-    ev: On<TurnEnd>,
+    _ev: On<TurnEnd>,
     mut player: Single<&mut Player, With<ActivePlayer>>,
     mut commands: Commands,
 ) {

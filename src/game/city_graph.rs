@@ -5,7 +5,7 @@ use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::Faction;
 use crate::game::namelists::generate_city_names;
-use crate::game::strategic_map::{BuildinTable, Player};
+use crate::game::strategic_map::Player;
 use crate::{prelude::*, GameState};
 
 use petgraph::algo::astar;
@@ -79,7 +79,7 @@ fn spawn_city(
     commands: &mut Commands,
     mut rng: &mut ResMut<GlobalRng>,
     g: &mut Graph<Entity, CityEdge, Undirected>,
-    players: Query<&Player>
+    players: Query<&Player>,
 ) {
     let mut ent = commands.spawn_empty();
     let idx = g.add_node(ent.id());
@@ -101,26 +101,70 @@ fn spawn_city(
                 buildings_t1: vec![
                     ("Gem Cutters".to_string(), Faction::Neutral, (false, false)),
                     ("Gem Cutters".to_string(), Faction::Neutral, (false, false)),
-                    ("Standard Mines".to_string(), Faction::Neutral, (false, false)),
-                    ("Standard Mines".to_string(), Faction::Neutral, (false, false)),
-                    ("Standard Mines".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Standard Mines".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Standard Mines".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Standard Mines".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
                 buildings_t2: vec![
                     ("Growth Vats".to_string(), Faction::Neutral, (false, false)),
                     ("Core Drill".to_string(), Faction::Neutral, (false, false)),
-                    ("Preparatory Facilities".to_string(), Faction::Neutral, (false, false)),
-                    ("Educated Workers".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Preparatory Facilities".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Educated Workers".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
                 buildings_t3: vec![
-                    ("Automation Components".to_string(), Faction::Neutral, (false, false)),
-                    ("Megabreweries".to_string(), Faction::Neutral, (false, false)),
-                    ("Megabreweries".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Automation Components".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Megabreweries".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Megabreweries".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
                 buildings_t4: vec![
-                    ("Industrial Smeltery".to_string(), Faction::Neutral, (false, false)),
-                    ("Dwarven Assembly Lines".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Industrial Smeltery".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Dwarven Assembly Lines".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
-                buildings_t5: vec![("The Great Red Forges".to_string(), Faction::Neutral, (false, false))],
+                buildings_t5: vec![(
+                    "The Great Red Forges".to_string(),
+                    Faction::Neutral,
+                    (false, false),
+                )],
                 market: empty_market,
                 warehouses: empty_warehouses,
                 tier_up_counter: 0,
@@ -130,31 +174,87 @@ fn spawn_city(
                 race: BuildingType::Elven,
                 population: 5,
                 buildings_t1: vec![
-                    ("Earth Spirit Aid".to_string(), Faction::Neutral, (false, false)),
-                    ("Ironwood Forestry".to_string(), Faction::Neutral, (false, false)),
-                    ("Forest Foraging".to_string(), Faction::Neutral, (false, false)),
-                    ("Standard Mines".to_string(), Faction::Neutral, (false, false)),
-                    ("Standard Mines".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Earth Spirit Aid".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Ironwood Forestry".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Forest Foraging".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Standard Mines".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Standard Mines".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
                 buildings_t2: vec![
-                    ("Amber Plantations".to_string(), Faction::Neutral, (false, false)),
-                    ("Amber Plantations".to_string(), Faction::Neutral, (false, false)),
-                    ("Gardens of Wonder".to_string(), Faction::Neutral, (false, false)),
-                    ("Gardens of Wonder".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Amber Plantations".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Amber Plantations".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Gardens of Wonder".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Gardens of Wonder".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
                 buildings_t3: vec![
-                    ("Integrated Farms".to_string(), Faction::Neutral, (false, false)),
-                    ("Elemental Springs".to_string(), Faction::Neutral, (false, false)),
-                    ("Basic Industry".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Integrated Farms".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Elemental Springs".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Basic Industry".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
                 buildings_t4: vec![
-                    ("Gaian Meadows".to_string(), Faction::Neutral, (false, false)),
-                    ("Self-spinning Weavers".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Gaian Meadows".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Self-spinning Weavers".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
                 buildings_t5: vec![(
                     "Tower of the Luminous Science".to_string(),
                     Faction::Neutral,
-                    (false, false)
+                    (false, false),
                 )],
                 market: empty_market,
                 warehouses: empty_warehouses,
@@ -167,29 +267,65 @@ fn spawn_city(
                 buildings_t1: vec![
                     ("Deep Mines".to_string(), Faction::Neutral, (false, false)),
                     ("Deep Mines".to_string(), Faction::Neutral, (false, false)),
-                    ("Animated Objects".to_string(), Faction::Neutral, (false, false)),
-                    ("Alchemical Enhancements".to_string(), Faction::Neutral, (false, false)),
-                    ("Alchemical Enhancements".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Animated Objects".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Alchemical Enhancements".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Alchemical Enhancements".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
                 buildings_t2: vec![
                     ("Glaziery".to_string(), Faction::Neutral, (false, false)),
                     ("Glaziery".to_string(), Faction::Neutral, (false, false)),
-                    ("Charcoal Kilns".to_string(), Faction::Neutral, (false, false)),
-                    ("Hill Quarries".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Charcoal Kilns".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Hill Quarries".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
                 buildings_t3: vec![
-                    ("Artisan District".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Artisan District".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                     ("Trains".to_string(), Faction::Neutral, (false, false)),
-                    ("Apothecary's Workshop".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Apothecary's Workshop".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
                 buildings_t4: vec![
-                    ("Siege-Factories".to_string(), Faction::Neutral, (false, false)),
-                    ("Golem Automatons".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Siege-Factories".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Golem Automatons".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
                 buildings_t5: vec![(
                     "Cauldronworks of the Four Clans".to_string(),
                     Faction::Neutral,
-                    (false, false)
+                    (false, false),
                 )],
                 market: empty_market,
                 warehouses: empty_warehouses,
@@ -200,28 +336,76 @@ fn spawn_city(
                 race: BuildingType::Human,
                 population: 5,
                 buildings_t1: vec![
-                    ("Large Industrial District".to_string(), Faction::Neutral, (false, false)),
-                    ("Large Industrial District".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Large Industrial District".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Large Industrial District".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                     ("Fishing Port".to_string(), Faction::Neutral, (false, false)),
                     ("Fishing Port".to_string(), Faction::Neutral, (false, false)),
-                    ("Tree Plantations".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Tree Plantations".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
                 buildings_t2: vec![
-                    ("Water Cleaning Facilities".to_string(), Faction::Neutral, (false, false)),
-                    ("Water Cleaning Facilities".to_string(), Faction::Neutral, (false, false)),
-                    ("Hired Workforces".to_string(), Faction::Neutral, (false, false)),
-                    ("Small-scale Forges".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Water Cleaning Facilities".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Water Cleaning Facilities".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Hired Workforces".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Small-scale Forges".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
                 buildings_t3: vec![
-                    ("Manufactories".to_string(), Faction::Neutral, (false, false)),
-                    ("Mercenary Guild".to_string(), Faction::Neutral, (false, false)),
-                    ("Apothecary's Workshop".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Manufactories".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Mercenary Guild".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
+                    (
+                        "Apothecary's Workshop".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                 ],
                 buildings_t4: vec![
-                    ("Teleportation Circle Network".to_string(), Faction::Neutral, (false, false)),
+                    (
+                        "Teleportation Circle Network".to_string(),
+                        Faction::Neutral,
+                        (false, false),
+                    ),
                     ("Strip Mines".to_string(), Faction::Neutral, (false, false)),
                 ],
-                buildings_t5: vec![("Sunstrider Headquarters".to_string(), Faction::Neutral, (false, false))],
+                buildings_t5: vec![(
+                    "Sunstrider Headquarters".to_string(),
+                    Faction::Neutral,
+                    (false, false),
+                )],
                 market: empty_market,
                 warehouses: empty_warehouses,
                 tier_up_counter: 0,
@@ -245,10 +429,15 @@ fn spawn_city(
 fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands, players: Query<&Player>) {
     let vec2 = |x, y| Vec2::new(x, y);
     let total_cities_per_faction = CITY_COUNTS.iter().fold(0, |acc, x| acc + x);
-    let mut namelists = generate_city_names((total_cities_per_faction, 
-                                                                    total_cities_per_faction, 
-                                                                    total_cities_per_faction, 
-                                                                    total_cities_per_faction), &mut rng);
+    let mut namelists = generate_city_names(
+        (
+            total_cities_per_faction,
+            total_cities_per_faction,
+            total_cities_per_faction,
+            total_cities_per_faction,
+        ),
+        &mut rng,
+    );
 
     let mut g = Graph::new_undirected();
 
@@ -306,7 +495,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands, players: Query<&Pla
             &mut commands,
             &mut rng,
             &mut g,
-            players
+            players,
         );
 
         let (min, max) = match race {
@@ -321,10 +510,18 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands, players: Query<&Pla
                 BuildingType::Elven => 1,
                 BuildingType::Goblin => 2,
                 BuildingType::Human => 3,
-                _ => {panic!("epic embed fail")}
+                _ => {
+                    panic!("epic embed fail")
+                }
             };
 
-            println!("{0} {1} {2} {3}", namelists[0].len(), namelists[1].len(), namelists[2].len(), namelists[3].len());
+            println!(
+                "{0} {1} {2} {3}",
+                namelists[0].len(),
+                namelists[1].len(),
+                namelists[2].len(),
+                namelists[3].len()
+            );
             println!("{}", j);
 
             for _ in 0..j {
@@ -363,7 +560,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands, players: Query<&Pla
                         &mut commands,
                         &mut rng,
                         &mut g,
-                        players
+                        players,
                     );
                 }
             }
@@ -433,14 +630,6 @@ fn gen_edges(nodes: Query<&Node>, mut g: ResMut<CityGraph>) {
 
     for n in &nodes {
         scratch.clear();
-        for neighbor in g.neighbors(n.0) {
-            break;
-            let Ok(&Node(_, pos, _)) = nodes.get(g[neighbor]) else {
-                error!("Couldn't find entity in query");
-                continue;
-            };
-            scratch.push(pos - n.1);
-        }
 
         all_nodes.sort_by_key(|&Node(_, t2, _)| (n.1.distance(*t2) * 1_000_000.0) as u64);
 
@@ -486,7 +675,7 @@ fn remove_random_edges(mut rng: ResMut<GlobalRng>, mut g: ResMut<CityGraph>) {
             error!("This fucking blows dude");
             return;
         };
-        let Some((n1, n2)) = g.edge_endpoints(random_edge) else {
+        let Some((_n1, _n2)) = g.edge_endpoints(random_edge) else {
             continue;
         };
         g_test.remove_edge(random_edge);

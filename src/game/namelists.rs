@@ -1,14 +1,10 @@
-use std::default;
-use std::sync::MutexGuard;
 
 use bevy::prelude::*;
 use rand::seq::IndexedRandom;
 use rand::Rng;
 use std::collections::HashSet;
 
-use crate::assets::Sylt;
 use crate::game::market::BuildingType;
-use crate::GameState;
 use crate::GlobalRng;
 
 pub fn generate_city_names(
@@ -17,7 +13,7 @@ pub fn generate_city_names(
 ) -> Vec<Vec<String>> {
     let mut names = vec![vec![], vec![], vec![], vec![]];
     let mut city_iter = |citytype: BuildingType, amount: usize, idx: usize| {
-        for i in 0..amount {
+        for _i in 0..amount {
             names[idx].push(generate_city_name(citytype, &mut rng));
         }
     };
@@ -57,7 +53,7 @@ pub fn generate_city_name(city_type: BuildingType, mut rng: &mut ResMut<GlobalRn
         BuildingType::Elven => get_elven_name(&mut rng),
         BuildingType::Goblin => get_goblin_name(&mut rng),
         BuildingType::Human => get_human_name(&mut rng),
-        default => panic!("Tried to get name for {:?}", city_type),
+        _default => panic!("Tried to get name for {:?}", city_type),
     }
 }
 
