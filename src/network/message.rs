@@ -1,4 +1,7 @@
-use crate::{game::strategic_map::Caravan, prelude::*};
+use crate::{
+    game::{city_data::CityData, strategic_map::Caravan},
+    prelude::*,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Message, Deref, DerefMut)]
@@ -20,6 +23,12 @@ pub enum NetworkMessage {
     TurnEnded {
         player_id: PlayerId,
         caravans: Vec<Caravan>,
+    },
+    CityUpdated {
+        updated_city: CityData,
+    },
+    NewCaravan {
+        player_id: PlayerId,
     },
     TurnFinished {
         caravans: Vec<Caravan>,

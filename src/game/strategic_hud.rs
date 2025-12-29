@@ -13,6 +13,7 @@ use super::market::*;
 use super::strategic_map::{Caravan, Order, Player, SelectedCaravan, SelectedCity, StrategicState};
 use super::tooltip::Tooltips;
 use crate::game::market;
+use crate::game::strategic_map::UpdatedCity;
 use crate::game::strategic_map::{ActivePlayer, BelongsTo, Faction};
 use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
 use crate::prelude::*;
@@ -849,6 +850,7 @@ fn create_route_showcase(
                                         "Caravan wants to go to non-existant city {0}",
                                         stop.goal_city_id
                                     ));
+
                             let profit_text = if *amount < 0 {
                                 &format!(
                                     "Profit: {0:.2}$",
@@ -860,6 +862,7 @@ fn create_route_showcase(
                                     city.get_bulk_sell_price(resource, amount.abs() as usize)
                                 )
                             };
+
                             parent.spawn((
                                 IncomeValue(*resource),
                                 Node {
@@ -1866,6 +1869,8 @@ fn building_button(
                 }
             }
         }
+
+        commands.trigger(UpdatedCity(selected_city.clone()));
     }
 }
 

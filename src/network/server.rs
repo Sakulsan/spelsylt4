@@ -10,6 +10,7 @@ use bevy_renet::{
 };
 
 use crate::{
+    game::city_data::CityData,
     network::{
         message::{ClientData, ClientMessage, NetworkMessage, PlayerId, Players, ServerMessage},
         network_menu::NetworkMenuState,
@@ -87,8 +88,9 @@ pub fn plugin(app: &mut App) {
             send_message_system_server,
             receive_message_system_server,
             handle_events_system,
+            broadcast_city_updates,
         )
-            .run_if(resource_exists::<RenetServer>),
+            .run_if(in_state(NetworkState::Host)),
     );
 }
 
@@ -178,4 +180,27 @@ fn broadcast_seed_and_start_before_mapgen(
 ) {
     writer.write(ServerMessage(NetworkMessage::Map { seed: seed.0 }));
     writer.write(ServerMessage(NetworkMessage::GameStart));
+}
+
+// ------------------------
+// GAME RUNNING FUNCTIONS
+// ------------------------
+fn broadcast_city_updates(
+    mut reader: MessageReader<ClientMessage>,
+    mut writer: MessageWriter<ServerMessage>,
+    mut cities: Query<&mut CityData>,
+) {
+    for msg in reader.read() {
+        let upd @ NetworkMessage::CityUpdated { updated_city } = &**msg else {
+            continue;
+        };
+
+        for mut city in cities.iter_mut() {
+            if city.id == updated_city.id {
+                *city = updated_city.clone();
+            }
+        }
+
+        writer.write(ServerMessage(upd.clone()));
+    }
 }

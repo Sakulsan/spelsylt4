@@ -4,6 +4,7 @@ use std::{
 };
 
 use crate::{
+    game::city_data::CityData,
     network::{
         message::{ClientData, ClientMessage, NetworkMessage, Players, ServerMessage},
         network_menu::NetworkMenuState,
@@ -76,7 +77,12 @@ pub fn plugin(app: &mut App) {
     app.init_state::<ClientNetworkState>()
         .add_systems(
             Update,
-            (send_message_system_client, receive_message_system_client).in_set(ClientSet),
+            (
+                send_message_system_client,
+                receive_message_system_client,
+                receive_city_updates,
+            )
+                .in_set(ClientSet),
         )
         .add_systems(
             Update,
@@ -91,7 +97,7 @@ pub fn plugin(app: &mut App) {
         )
         .add_observer(squad_up);
 
-    app.configure_sets(Update, ClientSet.run_if(resource_exists::<RenetClient>));
+    app.configure_sets(Update, ClientSet.run_if(in_state(NetworkState::Client)));
 }
 
 fn read_player_joined(mut messages: MessageReader<ServerMessage>, mut players: ResMut<Players>) {
@@ -180,5 +186,22 @@ fn receive_message_system_client(
         };
 
         writer.write(ServerMessage(text));
+    }
+}
+
+fn receive_city_updates(
+    mut reader: MessageReader<ClientMessage>,
+    mut cities: Query<&mut CityData>,
+) {
+    for msg in reader.read() {
+        let NetworkMessage::CityUpdated { updated_city } = &**msg else {
+            continue;
+        };
+
+        for mut city in cities.iter_mut() {
+            if city.id == updated_city.id {
+                *city = updated_city.clone();
+            }
+        }
     }
 }
