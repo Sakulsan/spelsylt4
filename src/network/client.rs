@@ -196,7 +196,7 @@ fn receive_message_system_client(
 }
 
 fn receive_city_updates(
-    mut reader: MessageReader<ClientMessage>,
+    mut reader: MessageReader<ServerMessage>,
     mut cities: Query<&mut CityData>,
 ) {
     for msg in reader.read() {
