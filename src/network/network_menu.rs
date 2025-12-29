@@ -42,25 +42,7 @@ pub fn plugin(app: &mut App) {
         Update,
         (button_hover_system, button_functionality).run_if(in_state(GameState::NetworkMenu)),
     )
-    .add_systems(Update, handle_events_system)
-    .add_systems(
-        Update,
-        (send_message_system, receive_message_system).run_if(resource_exists::<RenetClient>),
-    )
     .add_observer(squad_up);
-}
-
-fn handle_events_system(mut server_events: MessageReader<ServerEvent>) {
-    for event in server_events.read() {
-        match event {
-            ServerEvent::ClientConnected { client_id } => {
-                info!("Client {client_id} connected");
-            }
-            ServerEvent::ClientDisconnected { client_id, reason } => {
-                info!("Client {client_id} disconnected: {reason}");
-            }
-        }
-    }
 }
 
 // All actions that can be triggered from a button click
@@ -241,17 +223,6 @@ fn squad_up(join: On<JoinEvent>, mut commands: Commands) {
     info!("set up client on ip {}", local_ip);
     let mut transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
     commands.insert_resource(transport);
-}
-
-fn send_message_system(mut client: ResMut<RenetClient>) {
-    // Send a text message to the server
-    client.send_message(DefaultChannel::ReliableOrdered, "server message");
-}
-
-fn receive_message_system(mut client: ResMut<RenetClient>) {
-    while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
-        // Handle received message
-    }
 }
 
 fn button_functionality(
@@ -476,9 +447,6 @@ fn host_server(mut commands: Commands, field: Query<Entity, With<IPField>>) {
 
     let server_addr = SocketAddr::new(local_ip, 5000);
 
-    commands
-        .entity(field.single().unwrap())
-        .insert(Text(format!("Hosting server on: {}", server_addr)));
     let socket = UdpSocket::bind(server_addr).unwrap();
     let server_config = ServerConfig {
         current_time: SystemTime::now()
@@ -491,4 +459,7 @@ fn host_server(mut commands: Commands, field: Query<Entity, With<IPField>>) {
     };
     let transport = NetcodeServerTransport::new(server_config, socket).unwrap();
     commands.insert_resource(transport);
+    commands
+        .entity(field.single().unwrap())
+        .insert(Text(format!("Hosting server on: {}", server_addr)));
 }
