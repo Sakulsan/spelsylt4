@@ -2,9 +2,11 @@
 //! change some settings or quit. There is no actual game, it will just display the current
 //! settings for 5 seconds before going back to the menu.
 
+use std::arch::global_asm;
 use std::time::SystemTime;
 
 use crate::game::city_data::CityData;
+use crate::game::city_graph::CITY_COUNTS;
 use crate::game::namelists::*;
 use crate::game::strategic_map::{CityImageMarker, CityNodeMarker};
 use bevy::feathers::FeathersPlugins;
@@ -176,11 +178,12 @@ fn main() {
         //.insert_resource(GlobalRng(StdRng::from_seed([0; 32])))
         .insert_resource(GlobalRng(Xoshiro256StarStar::seed_from_u64(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Error in system time.").as_secs())))
         .insert_resource(Volume(7))
+        .insert_resource(CityNameList(vec!()))
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
         .init_state::<NetworkState>()
         //.add_systems(Startup, debug_city_names)
-        .add_systems(Startup, setup)
+        .add_systems(Startup, (setup, setup_city_names))
         .add_systems(Update, update_rng.run_if(resource_changed::<GlobalRngSeed>))
         .add_systems(
             Update,
@@ -197,6 +200,20 @@ fn main() {
 
 fn update_rng(seed: Res<GlobalRngSeed>, mut rng: ResMut<GlobalRng>) {
     *rng = GlobalRng(Xoshiro256StarStar::seed_from_u64(seed.0));
+}
+
+fn setup_city_names(mut rng: ResMut<GlobalRng>, mut namelist: ResMut<CityNameList>) {
+    let total_cities_per_faction = CITY_COUNTS.iter().fold(0, |acc, x| acc + x);
+    let namelists = generate_city_names(
+        (
+            total_cities_per_faction,
+            total_cities_per_faction,
+            total_cities_per_faction,
+            total_cities_per_faction,
+        ),
+        &mut rng,
+    );
+    namelist.0 = namelists;
 }
 
 fn debug_city_names(mut rng: ResMut<GlobalRng>) {

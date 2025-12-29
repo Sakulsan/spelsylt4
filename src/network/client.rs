@@ -5,6 +5,7 @@ use std::{
 
 use crate::{
     game::city_data::CityData,
+    game::namelists::CityNameList,
     network::{
         message::{ClientData, ClientMessage, NetworkMessage, Players, ServerMessage},
         network_menu::NetworkMenuState,
@@ -72,9 +73,6 @@ fn squad_up(
     commands.insert_resource(transport);
     menu_state.set(NetworkMenuState::Lobby);
 }
-
-#[derive(Reflect, Resource, Default)]
-pub struct CityNameList(pub Vec<Vec<String>>);
 
 pub fn plugin(app: &mut App) {
     app.init_state::<ClientNetworkState>()
@@ -152,10 +150,10 @@ fn await_map(
     mut my_city_names: ResMut<CityNameList>,
 ) {
     for message in messages.read() {
-        if let NetworkMessage::Map { seed, city_names } = **message {
+        if let NetworkMessage::Map { seed, city_names } = &**message {
             info!("Received seed from host, set seed to {seed}");
-            my_city_names = city_names;
-            rng.0 = seed;
+            my_city_names.0 = city_names.clone();
+            rng.0 = *seed;
             state.set(ClientNetworkState::AwaitingStart);
         }
     }

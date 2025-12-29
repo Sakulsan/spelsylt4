@@ -4,7 +4,7 @@ use std::f32::consts::PI;
 use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::Faction;
-use crate::game::namelists::generate_city_names;
+use crate::game::namelists::{CityNameList, generate_city_names};
 use crate::game::strategic_map::Player;
 use crate::{prelude::*, GameState};
 
@@ -36,7 +36,7 @@ pub struct CityGraph {
 const CIRCLE_DIST: f32 = 100.0;
 const ANGULAR_CONSTRAINT: f32 = PI / 9.0;
 const JITTER: f32 = 15.0;
-const CITY_COUNTS: [usize; 9] = [3, 4, 4, 5, 8, 12, 15, 20, 15];
+pub const CITY_COUNTS: [usize; 9] = [3, 4, 4, 5, 8, 12, 15, 20, 15];
 const MIN_CITY_DIST: f32 = 25.0;
 const SCALE: f32 = 1.0;
 
@@ -424,18 +424,9 @@ fn spawn_city(
     ));
 }
 
-fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands, players: Query<&Player>) {
+fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands, players: Query<&Player>, namelists: ResMut<CityNameList>) {
     let vec2 = |x, y| Vec2::new(x, y);
-    let total_cities_per_faction = CITY_COUNTS.iter().fold(0, |acc, x| acc + x);
-    let mut namelists = generate_city_names(
-        (
-            total_cities_per_faction,
-            total_cities_per_faction,
-            total_cities_per_faction,
-            total_cities_per_faction,
-        ),
-        &mut rng,
-    );
+    let mut namelists = namelists.0.clone();
 
     let mut g = Graph::new_undirected();
 

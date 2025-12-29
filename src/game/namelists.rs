@@ -6,6 +6,9 @@ use std::collections::HashSet;
 use crate::game::market::BuildingType;
 use crate::GlobalRng;
 
+#[derive(Reflect, Resource, Default)]
+pub struct CityNameList(pub Vec<Vec<String>>);
+
 pub fn generate_city_names(
     amount: (usize, usize, usize, usize),
     mut rng: &mut ResMut<GlobalRng>,

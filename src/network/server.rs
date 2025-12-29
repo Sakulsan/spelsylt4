@@ -11,8 +11,8 @@ use bevy_renet::{
 
 use crate::{
     game::city_data::CityData,
+    game::namelists::CityNameList,
     network::{
-        client::CityNameList,
         message::{ClientData, ClientMessage, NetworkMessage, PlayerId, Players, ServerMessage},
         network_menu::NetworkMenuState,
     },
