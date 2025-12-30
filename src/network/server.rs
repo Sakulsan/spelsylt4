@@ -345,7 +345,7 @@ fn broadcast_created_caravan(
 fn update_and_echo_caravan_edits(
     mut reader: Reader,
     mut writer: Writer,
-    mut caravans: Query<(&mut Caravan, &CaravanId), Added<CaravanId>>,
+    mut caravans: Query<(&mut Caravan, &CaravanId)>,
 ) {
     for msg in reader.read() {
         let msg @ NetworkMessage::CaravanUpdated {
