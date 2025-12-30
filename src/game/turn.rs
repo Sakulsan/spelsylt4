@@ -58,6 +58,9 @@ fn send_turn_update(
 }
 
 fn every_turn_ended(mut commands: Commands, players: Query<(&Player, Option<&TurnEnded>)>) {
+    if players.iter().count() == 0 {
+        return;
+    }
     if players.iter().all(|(_, p)| p.is_some()) {
         commands.trigger(TurnEndSinglePlayer);
     }

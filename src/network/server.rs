@@ -372,20 +372,22 @@ fn update_and_echo_turnend(
     mut reader: Reader,
     mut writer: Writer,
     mut commands: Commands,
-    players: Query<(Entity, &Player)>,
+    mut players: Query<(Entity, &mut Player)>,
 ) {
     for msg in reader.read() {
         let msg @ NetworkMessage::TurnEnded { player_id, money } = &**msg else {
             continue;
         };
 
-        let Some((c, _)) = players
-            .iter()
+        let Some((c, mut p)) = players
+            .iter_mut()
             .find(|(_, player)| player.player_id == *player_id)
         else {
             error!("wtf");
             continue;
         };
+
+        p.money = *money;
 
         commands.entity(c).insert(TurnEnded);
 
