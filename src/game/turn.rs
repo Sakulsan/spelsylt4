@@ -1,7 +1,7 @@
 use super::city_data::CityData;
 use crate::NetworkState;
 use crate::game::strategic_map::{ActivePlayer, BuildinTable, Player};
-use crate::network::message::PlayerId;
+use crate::network::message::{PlayerId, ServerMessage};
 use crate::prelude::*;
 
 #[derive(Resource, Default, Deref, DerefMut)]
@@ -19,11 +19,12 @@ pub struct TurnEnd(pub PlayerId);
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<Turn>()
         .add_systems(
+            Update,
+            every_turn_ended.run_if(in_state(NetworkState::Host)),
+        )
+        .add_systems(
             PreUpdate,
-            (
-                every_turn_ended.run_if(in_state(NetworkState::Host)),
-                send_turn_update.run_if(in_state(NetworkState::Host).and(resource_changed::<Turn>)),
-            ),
+            send_turn_update.run_if(in_state(NetworkState::Host).and(resource_changed::<Turn>)),
         )
         .add_observer(market_updater)
         .add_observer(debt_collector)
@@ -33,7 +34,26 @@ pub(super) fn plugin(app: &mut App) {
         .add_observer(server::update_turnend);
 }
 
-fn send_turn_update() {}
+fn send_turn_update(
+    mut commands: Commands,
+    writer: server::Writer,
+    caravans: Query<(&CaravanId, &Caravan)>,
+    players: Query<(Entity, &Player)>,
+) {
+    let caravans: Vec<_> = caravans
+        .into_iter()
+        .map(|(id, c)| (id.clone(), c.clone()))
+        .collect();
+    let mut economy = HashMap::new();
+    for (ent, player) in players {
+        economy.insert(player.player_id, player.money);
+        commands.entity(ent).remove::<TurnEnd>();
+    }
+
+    writer.write(ServerMessage(
+        crate::network::message::NetworkMessage::TurnFinished { caravans, economy },
+    ))
+}
 
 fn every_turn_ended(mut commands: Commands, players: Query<(&Player, Option<&TurnEnded>)>) {
     if players.iter().all(|(_, p)| p.is_some()) {
