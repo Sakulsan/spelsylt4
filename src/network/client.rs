@@ -21,6 +21,9 @@ use bevy_renet::{
     renet::{DefaultChannel, RenetClient},
 };
 
+pub type Reader = MessageReader<ServerMessage>;
+pub type Writer = MessageWriter<ClientMessage>;
+
 #[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct ClientSet;
 

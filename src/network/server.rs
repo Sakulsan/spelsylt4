@@ -22,6 +22,9 @@ use crate::{
     prelude::*,
 };
 
+pub type Reader = MessageReader<ClientMessage>;
+pub type Writer = MessageWriter<ServerMessage>;
+
 #[derive(Reflect, Resource, Default)]
 pub struct ServerState {
     pub id_map: HashMap<u64, PlayerId>,
