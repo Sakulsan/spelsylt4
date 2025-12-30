@@ -1615,8 +1615,8 @@ fn create_resource_list(
             parent,
             resource,
             town.warehouses
-                .get(&(1 as u64))
-                .unwrap_or(&HashMap::new())
+                .get(&(1))
+                .unwrap_or(&HashMap::from_iter(vec![(resource.0, 10)])) //TODO Test this shit
                 .get(&resource.0), //Dont look....
             town.get_resource_value(&resource.0),
             &mut sylt,
@@ -1722,7 +1722,7 @@ fn create_resource_icon(
                             height: px(40),
                             ..default()
                         },
-                        BackgroundColor(Srgba::new(0.2, 0.8, 0.2, 1.0).into()),
+                        BackgroundColor(Srgba::new(0.1, 0.6, 0.1, 1.0).into()),
                     )
                 }
             },

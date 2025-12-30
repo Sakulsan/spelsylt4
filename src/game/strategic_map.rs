@@ -1,7 +1,8 @@
 use super::city_data::*;
 use super::strategic_hud::PopupHUD;
-use super::turn::TurnEnd;
+use super::turn::TurnEndSinglePlayer;
 use crate::game::city_graph::{get_path, CityGraph, Node as CityNode};
+use crate::game::turn::{TurnEndClient, TurnEndHost};
 use crate::network::message::NetworkMessage;
 use crate::network::message::{ClientMessage, PlayerId, ServerMessage};
 use crate::{prelude::*, NetworkState};
@@ -59,7 +60,7 @@ pub struct Order {
 
 impl Caravan {
     pub fn update_orders(
-        _: On<TurnEnd>,
+        _: On<TurnEndSinglePlayer>,
         players: Query<(&mut Player, &Owns)>,
         mut caravans: Query<&mut Caravan>,
         city: Res<CityGraph>,
@@ -385,7 +386,11 @@ fn spawn_game_ost(mut commands: Commands, asset_server: Res<AssetServer>) {
     ));
 }
 
-fn spawn_map_sprite(mut commands: Commands, mut sylt: Sylt) {
+fn spawn_map_sprite(
+    mut commands: Commands,
+    mut sylt: Sylt,
+    network_state: Res<State<NetworkState>>,
+) {
     commands.spawn((
         Sprite {
             image: sylt.get_sprite("map").image,
@@ -397,22 +402,39 @@ fn spawn_map_sprite(mut commands: Commands, mut sylt: Sylt) {
     //Next turn button
     commands.spawn((
         Button,
-        TurnButton {},
+        TurnButton,
         Node {
             position_type: PositionType::Absolute,
             top: px(0),
             right: px(0),
-            width: px(128),
+            width: vw(20),
             height: px(64),
             border: UiRect::all(Val::Px(2.0)),
             align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
+            flex_direction: FlexDirection::Row,
             ..default()
         },
         BorderColor::all(Color::BLACK),
         DespawnOnExit(GameState::Game),
-        BackgroundColor(Srgba::new(0.2, 0.8, 0.2, 1.0).into()),
-        children![(Text::new("Next turn"))],
+        BackgroundColor(Srgba::new(0.1, 0.6, 0.1, 1.0).into()),
+        children![(
+            Node {
+                width: percent(100),
+                ..default()
+            },
+            TextLayout::new_with_justify(Justify::Center),
+            Text::new(match network_state.get() {
+                NetworkState::SinglePlayer => {
+                    "Next turn"
+                }
+                NetworkState::Client => {
+                    "End your turn"
+                }
+                NetworkState::Host => {
+                    "End everyones turn"
+                }
+            })
+        )],
     ));
 
     //Outliner menu
@@ -602,7 +624,7 @@ pub enum Faction {
 }
 
 #[derive(Component, Default, Clone, Debug)]
-struct TurnButton {}
+struct TurnButton;
 
 #[derive(Component, Default, Clone, Debug)]
 struct CaravanHudEntity {}
@@ -678,17 +700,28 @@ fn check_turn_button(
         (Changed<Interaction>, With<TurnButton>),
     >,
     mut commands: Commands,
+    network_state: Res<State<NetworkState>>,
 ) {
     for (interaction, mut node_color) in interaction_query.iter_mut() {
         match *interaction {
-            Interaction::Pressed => {
-                println!("New turn");
-                commands.trigger(TurnEnd);
-            }
+            Interaction::Pressed => match network_state.get() {
+                NetworkState::SinglePlayer => {
+                    println!("Singleplayer: New turn");
+                    commands.trigger(TurnEndSinglePlayer);
+                }
+                NetworkState::Client => {
+                    println!("Client: sending orders");
+                    commands.trigger(TurnEndClient);
+                }
+                NetworkState::Host => {
+                    println!("Host: New turn");
+                    commands.trigger(TurnEndHost);
+                }
+            },
             Interaction::Hovered => {
-                *node_color = BackgroundColor(Srgba::new(1.0, 0.1, 0.1, 1.0).into())
+                *node_color = BackgroundColor(Srgba::new(0.6, 0.1, 0.1, 1.0).into())
             }
-            _ => *node_color = BackgroundColor(Srgba::new(0.2, 0.8, 0.2, 1.0).into()),
+            _ => *node_color = BackgroundColor(Srgba::new(0.1, 0.6, 0.1, 1.0).into()),
         }
     }
 }

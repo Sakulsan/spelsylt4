@@ -33,8 +33,8 @@ pub fn plugin(app: &mut App) {
         (
             update_players.run_if(resource_changed::<Players>),
             update_lobby_ip,
-            button_hover_system,
             button_functionality,
+            button_hover_system.run_if(in_state(GameState::NetworkMenu)),
         )
             .in_set(NetworkMenuLabel),
     )
@@ -77,7 +77,7 @@ pub struct CityUpdateReceived;
 #[derive(Event)]
 pub struct CityMenuEntered {
     pub player: PlayerId,
-    pub city: String
+    pub city: String,
 }
 
 #[derive(Event)]
@@ -197,8 +197,6 @@ fn button_hover_system(
         (Changed<Interaction>, With<Button>),
     >,
 ) {
-    return;
-
     for (interaction, mut background_color) in &mut interaction_query {
         *background_color = match *interaction {
             Interaction::Pressed => PRESSED_BUTTON.into(),
@@ -256,7 +254,17 @@ fn button_functionality(
 
 use crate::NetworkState;
 
-fn lobby_menu_setup(mut commands: Commands, network_state: Res<State<NetworkState>>) {
+#[derive(Component, Default)]
+pub struct LobbyNode;
+fn lobby_menu_setup(
+    mut commands: Commands,
+    network_state: Res<State<NetworkState>>,
+    old_lobby: Query<Entity, With<LobbyNode>>,
+) {
+    for entity in old_lobby.iter() {
+        commands.entity(entity).despawn();
+    }
+
     let button_node = Node {
         width: px(200),
         height: px(65),
@@ -268,6 +276,7 @@ fn lobby_menu_setup(mut commands: Commands, network_state: Res<State<NetworkStat
     };
 
     commands.spawn((
+        LobbyNode,
         DespawnOnExit(NetworkMenuState::Lobby),
         Node {
             width: vw(100),
@@ -289,8 +298,7 @@ fn lobby_menu_setup(mut commands: Commands, network_state: Res<State<NetworkStat
                 },
                 BackgroundColor(CRIMSON.into()),
             ),
-            (Text::new("IP: 192.128......"), IPField),
-            (Text::new("World seed: SEED")),
+            (Text::new("IP: Unkown"), IPField),
             (
                 PlayerContainer,
                 Node {

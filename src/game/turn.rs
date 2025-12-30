@@ -3,7 +3,13 @@ use crate::game::strategic_map::{ActivePlayer, BuildinTable, Player};
 use crate::prelude::*;
 
 #[derive(Event)]
-pub struct TurnEnd;
+pub struct TurnEndSinglePlayer;
+
+#[derive(Event)]
+pub struct TurnEndClient;
+
+#[derive(Event)]
+pub struct TurnEndHost;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_observer(market_updater);
@@ -13,7 +19,7 @@ pub(super) fn plugin(app: &mut App) {
 pub struct GameEnd;
 
 pub fn market_updater(
-    _ev: On<TurnEnd>,
+    _ev: On<TurnEndSinglePlayer>,
     nodes: Query<&mut CityData>,
     building_table: Res<BuildinTable>,
     mut players: Query<&mut Player>,
@@ -25,7 +31,7 @@ pub fn market_updater(
 }
 
 pub fn debt_collector(
-    _ev: On<TurnEnd>,
+    _ev: On<TurnEndSinglePlayer>,
     mut player: Single<&mut Player, With<ActivePlayer>>,
     mut commands: Commands,
 ) {
