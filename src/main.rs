@@ -502,7 +502,7 @@ mod menu {
                 children![
                     // Display the game name
                     (
-                        Text::new("Spelsylt game"),
+                        Text::new("The Big Trade"),
                         TextFont {
                             font_size: 67.0,
                             ..default()
