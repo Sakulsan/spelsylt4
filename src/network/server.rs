@@ -123,6 +123,7 @@ fn handle_events_system(
     mut server_events: MessageReader<ServerEvent>,
     mut writer: MessageWriter<ServerMessage>,
     mut state: ResMut<ServerState>,
+    mut players: ResMut<Players>,
 ) {
     for event in server_events.read() {
         // TODO: use client id
@@ -130,6 +131,7 @@ fn handle_events_system(
             ServerEvent::ClientConnected { client_id } => {
                 let player_id = state.add_player(*client_id);
                 let existing_players = state.current_players();
+                players.0.push(player_id);
                 writer.write(ServerMessage(NetworkMessage::Connected {
                     player_id,
                     existing_players,
