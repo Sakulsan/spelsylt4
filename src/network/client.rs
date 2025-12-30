@@ -5,7 +5,6 @@ use std::{
 };
 
 use crate::{
-    GlobalRngSeed, NetworkState,
     game::{
         city_data::CityData,
         namelists::CityNameList,
@@ -18,6 +17,7 @@ use crate::{
         network_menu::{CityMenuEntered, CityMenuExited, CityUpdateReceived, NetworkMenuState},
     },
     prelude::*,
+    GlobalRngSeed, NetworkState,
 };
 use bevy_renet::{
     netcode::{ClientAuthentication, NetcodeClientTransport},
@@ -345,5 +345,22 @@ fn update_turnend(mut reader: Reader, mut commands: Commands, players: Query<(En
         };
 
         commands.entity(c).insert(TurnEnded);
+    }
+}
+
+fn receive_host_finished_turn(
+    mut commands: Commands,
+    mut reader: MessageReader<ServerMessage>,
+    turn_end_entity: Query<Entity, With<TurnEnded>>,
+    //mut caravans:
+) {
+    for msg in reader.read() {
+        let NetworkMessage::TurnFinished { caravans, economy } = &**msg else {
+            continue;
+        };
+
+        //for entity in turn_end_entity.iter() {
+        //    commands.entity(turn_end_entity).remove();
+        //}
     }
 }
