@@ -34,7 +34,7 @@ pub fn market_updater(
 
 pub fn debt_collector(
     _ev: On<TurnEndSinglePlayer>,
-    mut player: Single<&mut Player, With<ActivePlayer>>,
+    mut player: Single<&mut Player>,
     mut commands: Commands,
 ) {
     println!("player has {} money", player.money);
@@ -45,22 +45,5 @@ pub fn debt_collector(
 
     if player.money < -10000.0 {
         commands.trigger(GameEnd);
-    }
-}
-
-pub fn debt_collector_server(
-    _ev: On<TurnEndHost>,
-    mut players: Query<&mut Player>,
-    mut commands: Commands,
-) {
-    for mut player in players.iter_mut() {
-        println!("player {} has {} money", player.player_id, player.money);
-        if player.money < 0.0 {
-            player.money *= 1.02;
-        }
-
-        if player.money < -10000.0 {
-            commands.trigger(GameEnd);
-        }
     }
 }
