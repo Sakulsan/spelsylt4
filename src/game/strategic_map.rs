@@ -127,7 +127,7 @@ impl Caravan {
                     for (trade, (amount, interacts_with_warehouse)) in
                         caravan.orders[caravan.order_idx].trade_order.clone()
                     {
-                        println!("open market is set to: interacts_with_warehouse");
+                        println!("open market is set to: {interacts_with_warehouse}");
                         //Buy from market
                         if amount > 0 && interacts_with_warehouse {
                             if available_commodies.contains(&trade) {
@@ -136,12 +136,13 @@ impl Caravan {
                                 let price = current_city
                                     .1
                                     .get_bulk_buy_price(&trade, amount_bought as usize);
-                                info!("Caravan paid {0} for {1}", price, trade.get_name());
+                                info!("Caravan paid {0} for {2} {1}", price, trade.get_name(), amount_bought);
                                 player.money -= price;
                                 caravan.cargo.insert(
                                     trade,
                                     cargo_access.get(&trade).unwrap_or(&0) + amount_bought as usize,
                                 );
+                                info!("Caravan now has {0} {1}", caravan.cargo.get(&trade).unwrap_or(&0), &trade.get_name());
                                 current_city
                                     .1
                                     .market
@@ -189,14 +190,14 @@ impl Caravan {
                                 trade,
                                 cargo_access.get(&trade).unwrap_or(&0) - amount_sold as usize,
                             );
-                            info!("Caravan sold {0} for {1}", price, trade.get_name());
+                            info!("Caravan sold {1} for {0}", price, trade.get_name());
                             current_city
                                 .1
                                 .market
                                 .insert(trade, amount_available + amount_sold);
                         }
                         //Put into warehouse
-                        else {
+                        else if amount < 0 {
                             let city_id = current_city.1.id.clone();
                             let Some(mut warehouse) =
                                 current_city.1.warehouses.get_mut(&player.player_id)
@@ -236,6 +237,7 @@ impl Caravan {
 }
 
 pub fn plugin(app: &mut App) {
+<<<<<<< HEAD
     app.insert_resource(CaravanIdTracker(0))
         .add_systems(
             OnEnter(GameState::Game),
@@ -248,6 +250,15 @@ pub fn plugin(app: &mut App) {
             )
                 .in_set(MapGenSet)
                 .after(NodeGenSet),
+=======
+    app.add_systems(
+        OnEnter(GameState::Game),
+        (
+            crate::kill_music,
+            spawn_map_sprite,
+            spawn_city_ui_nodes,
+            spawn_game_ost,
+>>>>>>> 34f8d99 (fixed caravans)
         )
         .insert_resource(SelectedCity(CityData {
             id: "Placeholder".to_string(),
@@ -359,7 +370,7 @@ fn update_miku_cat(
     }
 }
 
-fn spawn_player(mut commands: Commands) {
+pub fn spawn_player(mut commands: Commands) {
     commands.spawn((
         Player {
             player_id: 0,

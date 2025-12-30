@@ -103,6 +103,7 @@ impl CityData {
 
         let mut warehouses = HashMap::new();
 
+        //println!("players: {0:?}", players);
         for player in players {
             warehouses.insert(player.player_id, market.clone());
         }
