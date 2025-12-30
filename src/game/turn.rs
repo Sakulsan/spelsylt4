@@ -4,6 +4,9 @@ use crate::game::strategic_map::{ActivePlayer, BuildinTable, Player};
 use crate::network::message::PlayerId;
 use crate::prelude::*;
 
+#[derive(Resource, Default, Deref, DerefMut)]
+struct Turn(u64);
+
 #[derive(Event)]
 pub struct TurnEndSinglePlayer;
 
@@ -14,11 +17,28 @@ pub struct TurnEnded;
 pub struct TurnEnd(pub PlayerId);
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_observer(market_updater)
+    app.init_resource::<Turn>()
+        .add_systems(
+            PreUpdate,
+            (
+                every_turn_ended.run_if(in_state(NetworkState::Host)),
+                send_turn_update.run_if(in_state(NetworkState::Host).and(resource_changed::<Turn>)),
+            ),
+        )
+        .add_observer(market_updater)
         .add_observer(debt_collector)
         .add_observer(update_turnend)
+        .add_observer(|_: On<TurnEndSinglePlayer>, mut turn: ResMut<Turn>| **turn += 1)
         .add_observer(client::update_turnend)
         .add_observer(server::update_turnend);
+}
+
+fn send_turn_update() {}
+
+fn every_turn_ended(mut commands: Commands, players: Query<(&Player, Option<&TurnEnded>)>) {
+    if players.iter().all(|(_, p)| p.is_some()) {
+        commands.trigger(TurnEndSinglePlayer);
+    }
 }
 
 fn update_turnend(player: On<TurnEnd>, mut commands: Commands, players: Query<(Entity, &Player)>) {
