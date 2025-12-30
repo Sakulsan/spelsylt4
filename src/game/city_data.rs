@@ -282,28 +282,39 @@ impl CityData {
                         //println!("building didnt have proper faction");
                         continue; 
                     };
-                    println!("processing player building: {b:?}");
+                    //println!("processing player building: {b:?}");
                     let building = &building_table.0
                                                 .get(&b.0)
                                                 .expect(format!("Couldn't retrieve value for {:?}", &b.0).as_str());
                     let mut demands_met = false;
                     if b.2.0 {
                         let mut warehouse_meets_demands = true;
+                        //info!("building wants {0}", &building.input);
                         for (res, amount) in &building.input {
+                            //info!("checking city for stored {0}", &res.get_name());
                             warehouse_meets_demands = warehouse_meets_demands
                                 && amount <= self.warehouses
-                                                                            .get(&(player_id as u64))
-                                                                            .expect(format!("PlayerId {:?} doesn't exist", player_id).as_str())
-                                                                            .get(&res)
-                                                                            .expect(format!("Warehouse for player {:?} improperly initialized", player_id).as_str());
+                                                    .get(&(player_id as u64))
+                                                    .expect(format!("PlayerId {:?} doesn't exist", player_id).as_str())
+                                                    .get(&res)
+                                                    .expect(format!("Warehouse for player {:?} improperly initialized", player_id).as_str());
+                            //info!("city has {0} {1} stored, compared to {2} wanted",
+                            //                    self.warehouses
+                            //                        .get(&(player_id as u64))
+                            //                        .expect(format!("PlayerId {:?} doesn't exist", player_id).as_str())
+                            //                        .get(&res)
+                            //                        .expect(format!("Warehouse for player {:?} improperly initialized", player_id).as_str()), 
+                            //                        &res.get_name(),
+                            //                        amount);
                         }
                         if warehouse_meets_demands {
                             demands_met = true;
                             for (res, amount) in &building.input {
-                                let cur_amount = self.warehouses.get_mut(&(player_id as u64))
-                                                                .expect(&format!("PlayerId {:?} doesn't exist", player_id))
-                                                                .entry(*res)
-                                                                .or_insert(0);
+                                let cur_amount = self.warehouses
+                                                    .get_mut(&(player_id as u64))
+                                                    .expect(&format!("PlayerId {:?} doesn't exist", player_id))
+                                                    .entry(*res)
+                                                    .or_insert(0);
                                 *cur_amount -= amount;
                             }
                         }

@@ -2062,7 +2062,7 @@ fn building_button(
                                                 ..default()
                                             },
                                             children![
-                                                (match inpected_building.2.1 {
+                                                (match !inpected_building.2.1 {
                                                     true => Text::new("Sells output to the market"),
                                                     false =>
                                                         Text::new("Stores output in warehouses"),
@@ -2115,7 +2115,7 @@ fn building_button(
                                                 ..default()
                                             },
                                             children![
-                                                (match inpected_building.2.0 {
+                                                (match !inpected_building.2.0 {
                                                     true => Text::new("Buys from the market"),
                                                     false =>
                                                         Text::new("Does not buy raw from market"),

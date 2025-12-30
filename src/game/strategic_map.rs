@@ -201,7 +201,7 @@ impl Caravan {
                                 trade,
                                 cargo_access.get(&trade).unwrap_or(&0) - amount_sold as usize,
                             );
-                            info!("Caravan sold {1} for {0}", price, trade.get_name());
+                            //info!("Caravan sold {1} for {0}", price, trade.get_name());
                             current_city
                                 .1
                                 .market
@@ -224,28 +224,28 @@ impl Caravan {
                                 .expect(&format!("malformed warehouse in {0}", city_id))
                                 .clone();
 
-                            info!("found {0} {1} in city", amount_available, &trade.get_name());
+                            //info!("found {0} {1} in city", amount_available, &trade.get_name());
 
                             let amount_deposited = amount
                                 .abs()
                                 .min(*cargo_access.get(&trade).unwrap_or(&0) as isize);
 
-                            info!("want to deposit {0} {1} in city", amount_deposited, &trade.get_name());
+                            //info!("want to deposit {0} {1} in city", amount_deposited, &trade.get_name());
                             
                             caravan.cargo.insert(
                                 trade,
                                 cargo_access.get(&trade).unwrap_or(&0) - amount_deposited as usize,
                             );
-                            info!("removed {0} {1} from caravan inventory", cargo_access.get(&trade).unwrap_or(&0) - amount_deposited as usize, &trade.get_name());
+                            //info!("removed {0} {1} from caravan inventory", cargo_access.get(&trade).unwrap_or(&0) - amount_deposited as usize, &trade.get_name());
                             warehouse.insert(trade, amount_available + amount_deposited);
-                            info!("warehouse now has {0:?} {1}", warehouse.get(&trade), &trade.get_name());
+                            //info!("warehouse now has {0:?} {1}", warehouse.get(&trade), &trade.get_name());
                         }
                     }
 
-                    info!(
-                        "Caravan finished trading, new goal is {0:?}",
-                        caravan.orders[(caravan.order_idx + 1) % caravan.orders.len()].goal_city_id
-                    );
+                    //info!(
+                    //    "Caravan finished trading, new goal is {0:?}",
+                    //    caravan.orders[(caravan.order_idx + 1) % caravan.orders.len()].goal_city_id
+                    //);
                     caravan.order_idx = (caravan.order_idx + 1) % caravan.orders.len();
                 }
             }
