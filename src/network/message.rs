@@ -47,7 +47,7 @@ pub enum NetworkMessage {
         caravan: Caravan,
     },
     TurnFinished {
-        caravans: Vec<Caravan>,
+        caravans: Vec<(CaravanId, Caravan)>,
         economy: HashMap<PlayerId, isize>,
     },
     CityViewing {
