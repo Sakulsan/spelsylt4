@@ -19,6 +19,7 @@ use crate::game::strategic_map::UpdatedCity;
 use crate::game::strategic_map::{ActivePlayer, BelongsTo, Faction};
 use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
 use crate::network::client;
+use crate::network::message::ClientMessage;
 use crate::network::message::NetworkMessage;
 use crate::network::message::PlayerId;
 use crate::network::network_menu::CityMenuEntered;
@@ -219,10 +220,10 @@ fn no_popup_button(
                     {
                         commands.spawn((caravan, BelongsTo(player)));
                     } else {
-                        message_writer.write(NetworkMessage::CaravanRequest {
+                        message_writer.write(ClientMessage(NetworkMessage::CaravanRequest {
                             player_id: player_data.player_id,
                             caravan,
-                        });
+                        }));
                     }
                 }
                 HudButton::EconomyTabAction => {
@@ -1390,6 +1391,7 @@ fn wares_menu(
     mut sylt: Sylt,
     town: Res<SelectedCity>,
     building_table: Res<BuildinTable>,
+    player: Single<&Player, With<ActivePlayer>>,
 ) {
     let window = popup_window(&mut commands, FlexDirection::Row);
     //Basic and exotic mats
@@ -1526,6 +1528,7 @@ fn wares_menu(
                             color_coded_basics,
                             "Basic materials".to_string(),
                             &city_data,
+                            player.player_id,
                             &mut sylt,
                         );
                     });
@@ -1561,6 +1564,7 @@ fn wares_menu(
                             color_coded_illegal,
                             "Illegal materials".to_string(),
                             &city_data,
+                            player.player_id,
                             &mut sylt,
                         );
                     });
@@ -1583,6 +1587,7 @@ fn wares_menu(
                             color_coded_advanced,
                             "Advanced materials".to_string(),
                             &city_data,
+                            player.player_id,
                             &mut sylt,
                         );
                     });
@@ -1618,6 +1623,7 @@ fn wares_menu(
                             color_coded_service,
                             "Services".to_string(),
                             &city_data,
+                            player.player_id,
                             &mut sylt,
                         );
                     });
@@ -1640,6 +1646,7 @@ fn wares_menu(
                             color_coded_exotics,
                             "Exotic materials".to_string(),
                             &city_data,
+                            player.player_id,
                             &mut sylt,
                         );
                     });
@@ -1667,6 +1674,7 @@ fn create_resource_list(
     resources: Vec<(Resources, TextColor)>,
     box_name: String,
     town: &CityData,
+    player_id: u64,
     mut sylt: &mut Sylt,
 ) {
     //out.push((resource, data[resource], CALCULATE(data[resource])));
@@ -1679,13 +1687,17 @@ fn create_resource_list(
         Text::new(box_name.clone()),
     ));
     for resource in resources {
+        let warehouse_store = if let Some(player_warehouse) = town.warehouses.get(&player_id) {
+            player_warehouse.get(&resource.0)
+        } else {
+            info!("No warehouse for player {} in city {}", player_id, town.id);
+            None
+        };
+
         create_resource_icon(
             parent,
             resource,
-            town.warehouses
-                .get(&(1))
-                .unwrap_or(&HashMap::from_iter(vec![(resource.0, 10)])) //TODO Test this shit
-                .get(&resource.0), //Dont look....
+            warehouse_store,
             town.get_resource_value(&resource.0),
             &mut sylt,
         );
@@ -2010,59 +2022,112 @@ fn building_button(
                                             )),
                                             BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
                                         ));
+
                                         parent.spawn((
-                                            match inpected_building.2.1 {
-                                                true => Text::new("Sells to the market"),
-                                                false => Text::new("Does not sell to the market"),
+                                            Node {
+                                                width: percent(100),
+                                                height: px(64),
+                                                flex_direction: FlexDirection::Row,
+                                                ..default()
                                             },
-                                            BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                            children![
+                                                (match inpected_building.2.1 {
+                                                    true => Text::new("Sells output to the market"),
+                                                    false =>
+                                                        Text::new("Stores output in warehouses"),
+                                                }),
+                                                (
+                                                    Node {
+                                                        width: px(44),
+                                                        height: px(44),
+                                                        margin: UiRect::all(px(2)),
+                                                        ..default()
+                                                    },
+                                                    BackgroundColor(
+                                                        Srgba::new(0.1, 0.1, 0.6, 1.0).into()
+                                                    ),
+                                                    Button,
+                                                    BuildingButton::EditMarketSellStatus(
+                                                        *tier,
+                                                        *slot,
+                                                        inpected_building.2.1,
+                                                    ),
+                                                    children![(
+                                                        Node {
+                                                            width: px(34),
+                                                            height: px(34),
+                                                            margin: UiRect::all(px(5)),
+                                                            ..default()
+                                                        },
+                                                        if inpected_building.2.1 {
+                                                            BackgroundColor(
+                                                                Srgba::new(0.1, 0.8, 0.1, 0.0)
+                                                                    .into(),
+                                                            )
+                                                            //Jank
+                                                        } else {
+                                                            BackgroundColor(
+                                                                Srgba::new(0.1, 0.8, 0.1, 1.0)
+                                                                    .into(),
+                                                            )
+                                                        },
+                                                    )],
+                                                )
+                                            ],
                                         ));
+
                                         parent.spawn((
-                                            match inpected_building.2.0 {
-                                                true => Text::new("Buys from the market"),
-                                                false => Text::new("Does not buy from the market"),
+                                            Node {
+                                                width: percent(100),
+                                                height: px(64),
+                                                flex_direction: FlexDirection::Row,
+                                                ..default()
                                             },
-                                            BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                            children![
+                                                (match inpected_building.2.0 {
+                                                    true => Text::new("Buys from the market"),
+                                                    false =>
+                                                        Text::new("Does not buy raw from market"),
+                                                }),
+                                                (
+                                                    Node {
+                                                        width: px(44),
+                                                        height: px(44),
+                                                        margin: UiRect::all(px(2)),
+                                                        ..default()
+                                                    },
+                                                    BackgroundColor(
+                                                        Srgba::new(0.1, 0.1, 0.6, 1.0).into()
+                                                    ),
+                                                    Button,
+                                                    BuildingButton::EditMarketBuyStatus(
+                                                        *tier,
+                                                        *slot,
+                                                        inpected_building.2.0,
+                                                    ),
+                                                    children![(
+                                                        Node {
+                                                            width: px(34),
+                                                            height: px(34),
+                                                            margin: UiRect::all(px(5)),
+                                                            ..default()
+                                                        },
+                                                        if inpected_building.2.0 {
+                                                            BackgroundColor(
+                                                                Srgba::new(0.1, 0.8, 0.1, 0.0)
+                                                                    .into(),
+                                                            )
+                                                            //Jank
+                                                        } else {
+                                                            BackgroundColor(
+                                                                Srgba::new(0.1, 0.8, 0.1, 1.0)
+                                                                    .into(),
+                                                            )
+                                                        },
+                                                    )],
+                                                )
+                                            ],
                                         ));
-                                        parent.spawn((
-                                            Text::new("---Change market itneraction---"),
-                                            BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
-                                        ));
-                                        for (button_text, button_func) in [
-                                            (
-                                                "Open selling to the market",
-                                                BuildingButton::EditMarketSellStatus(
-                                                    *tier, *slot, true,
-                                                ),
-                                            ),
-                                            (
-                                                "Close selling to the market",
-                                                BuildingButton::EditMarketSellStatus(
-                                                    *tier, *slot, false,
-                                                ),
-                                            ),
-                                            (
-                                                "Open buying from the market",
-                                                BuildingButton::EditMarketBuyStatus(
-                                                    *tier, *slot, true,
-                                                ),
-                                            ),
-                                            (
-                                                "Close buying form the market",
-                                                BuildingButton::EditMarketBuyStatus(
-                                                    *tier, *slot, false,
-                                                ),
-                                            ),
-                                        ] {
-                                            parent.spawn((
-                                                Button,
-                                                button_func,
-                                                Text::new(button_text.to_string()),
-                                                BackgroundColor(
-                                                    Srgba::new(0.8, 0.0, 0.0, 1.0).into(),
-                                                ),
-                                            ));
-                                        }
                                     }
                                     //Someone else owns this building
                                     else {
@@ -2071,6 +2136,62 @@ fn building_button(
                                             BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
                                         ));
                                     }
+
+                                    /*
+                                    parent.spawn((
+                                        match inpected_building.2.1 {
+                                            true => Text::new("Sells to the market"),
+                                            false => Text::new("Does not sell to the market"),
+                                        },
+                                        BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                    ));
+                                    parent.spawn((
+                                        match inpected_building.2.0 {
+                                            true => Text::new("Buys from the market"),
+                                            false => Text::new("Does not buy from the market"),
+                                        },
+                                        BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                    ));
+                                    parent.spawn((
+                                        Text::new("---Change market itneraction---"),
+                                        BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
+                                    ));
+                                    for (button_text, button_func) in [
+                                        (
+                                            "Open selling to the market",
+                                            BuildingButton::EditMarketSellStatus(
+                                                *tier, *slot, true,
+                                            ),
+                                        ),
+                                        (
+                                            "Close selling to the market",
+                                            BuildingButton::EditMarketSellStatus(
+                                                *tier, *slot, false,
+                                            ),
+                                        ),
+                                        (
+                                            "Open buying from the market",
+                                            BuildingButton::EditMarketBuyStatus(
+                                                *tier, *slot, true,
+                                            ),
+                                        ),
+                                        (
+                                            "Close buying form the market",
+                                            BuildingButton::EditMarketBuyStatus(
+                                                *tier, *slot, false,
+                                            ),
+                                        ),
+                                    ] {
+                                        parent.spawn((
+                                            Button,
+                                            button_func,
+                                            Text::new(button_text.to_string()),
+                                            BackgroundColor(
+                                                Srgba::new(0.8, 0.0, 0.0, 1.0).into(),
+                                            ),
+                                        ));
+
+                                    }*/
                                 }
                             }
                         });
