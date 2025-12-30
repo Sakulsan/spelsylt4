@@ -28,6 +28,7 @@ pub fn plugin(app: &mut App) {
     .init_resource::<Players>()
     .init_state::<NetworkMenuState>() //Feels weird to have duplicate names, but it works
     .add_systems(OnEnter(GameState::NetworkMenu), spawn_network_menu)
+    .add_systems(OnEnter(NetworkMenuState::Main), spawn_network_menu)
     .add_systems(
         Update,
         (
@@ -44,9 +45,7 @@ pub fn plugin(app: &mut App) {
     )
     .add_systems(
         Update,
-        (lobby_menu_setup, update_players)
-            .chain()
-            .run_if(resource_changed::<Players>),
+        update_players.run_if(resource_changed::<Players>.and(in_state(GameState::NetworkMenu))),
     )
     .add_systems(OnEnter(NetworkMenuState::Join), join_menu_setup)
     .configure_sets(
@@ -267,10 +266,6 @@ fn lobby_menu_setup(
     network_state: Res<State<NetworkState>>,
     old_lobby: Query<Entity, With<LobbyNode>>,
 ) {
-    for entity in old_lobby.iter() {
-        commands.entity(entity).despawn();
-    }
-
     let button_node = Node {
         width: px(200),
         height: px(65),
@@ -282,7 +277,6 @@ fn lobby_menu_setup(
     };
 
     commands.spawn((
-        LobbyNode,
         DespawnOnExit(NetworkMenuState::Lobby),
         Node {
             width: vw(100),

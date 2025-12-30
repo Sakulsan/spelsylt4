@@ -39,7 +39,7 @@ pub fn debt_collector(
     println!("player has {} money", player.money);
 
     if player.money < 0.0 {
-        player.money = player.money * 1.02;
+        player.money *= 1.02;
     }
 
     if player.money < -10000.0 {
