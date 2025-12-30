@@ -16,6 +16,7 @@ use crate::{
         namelists::CityNameList,
         strategic_hud::LockedCities,
         strategic_map::{BelongsTo, Caravan, CaravanId, Player, SelectedCity},
+        turn::TurnEnded,
     },
     network::{
         message::{ClientData, ClientMessage, NetworkMessage, PlayerId, Players, ServerMessage},
@@ -101,6 +102,7 @@ pub fn plugin(app: &mut App) {
             broadcast_city_menu_exited,
             read_caravan_requests,
             update_and_echo_caravan_edits,
+            update_and_echo_turnend,
         )
             .run_if(in_state(NetworkState::Host)),
     )
@@ -361,6 +363,31 @@ fn update_and_echo_caravan_edits(
 
         *c = caravan.clone();
         info!("updating caravan {caravan_id:?}");
+
+        writer.write(ServerMessage(msg.clone()));
+    }
+}
+
+fn update_and_echo_turnend(
+    mut reader: Reader,
+    mut writer: Writer,
+    mut commands: Commands,
+    players: Query<(Entity, &Player)>,
+) {
+    for msg in reader.read() {
+        let msg @ NetworkMessage::TurnEnded { player_id, money } = &**msg else {
+            continue;
+        };
+
+        let Some((c, _)) = players
+            .iter()
+            .find(|(_, player)| player.player_id == *player_id)
+        else {
+            error!("wtf");
+            continue;
+        };
+
+        commands.entity(c).insert(TurnEnded);
 
         writer.write(ServerMessage(msg.clone()));
     }
