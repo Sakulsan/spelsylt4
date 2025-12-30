@@ -60,7 +60,7 @@ pub fn fix_positions_of_tooltips(
     };
 
     for mut transform in query {
-        transform.translation = Val2::px(x + 20, y);
+        transform.translation = Val2::px(x + 20.0, y);
     }
 }
 

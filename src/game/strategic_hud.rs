@@ -59,7 +59,9 @@ pub fn plugin(app: &mut App) {
             Update,
             (kill_popup_menu, update_buildings, building_menu)
                 .chain()
-                .run_if(in_state(PopupHUD::Buildings).and(resource_changed::<SelectedCity>)),
+                .run_if(in_state(PopupHUD::Buildings).and(
+                    any_match_filter::<Changed<CityData>>.or(resource_changed::<SelectedCity>),
+                )),
         )
         .add_systems(
             Update,
