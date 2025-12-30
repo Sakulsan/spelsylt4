@@ -28,8 +28,7 @@ pub enum NetworkMessage {
     GameStart,
     TurnEnded {
         player_id: PlayerId,
-        caravans: Vec<Caravan>,
-        my_money: f64,
+        money: f64,
     },
     CityUpdated {
         updated_city: CityData,

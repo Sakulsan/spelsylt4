@@ -10,7 +10,7 @@ pub struct TurnEndSinglePlayer;
 pub struct TurnEnded;
 
 #[derive(Event)]
-pub struct TurnEnd(PlayerId);
+pub struct TurnEnd(pub PlayerId);
 
 pub(super) fn plugin(app: &mut App) {
     app.add_observer(market_updater)
