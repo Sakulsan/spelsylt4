@@ -1356,23 +1356,12 @@ fn caravan_button(
     }
 }
 
-fn update_caravan_order_idx(
-    caravan_query: Query<(&CaravanId, &mut Caravan), Changed<Caravan>>,
-    network_state: Res<State<NetworkState>>,
-    mut writer: client::Writer,
-) {
+fn update_caravan_order_idx(caravan_query: Query<(&CaravanId, &mut Caravan), Changed<Caravan>>) {
     for (caravan_id, mut caravan) in caravan_query {
         if caravan.orders[caravan.order_idx].goal_city_id == caravan.position_city_id
             && caravan.orders.len() > 1
         {
             caravan.order_idx = (caravan.order_idx + 1) % caravan.orders.len();
-        }
-
-        if *network_state == NetworkState::Client {
-            writer.write(ClientMessage(NetworkMessage::CaravanUpdated {
-                caravan_id: *caravan_id,
-                caravan: caravan.clone(),
-            }));
         }
     }
 }
