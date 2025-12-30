@@ -15,6 +15,7 @@ use super::tooltip::Tooltips;
 use crate::GameState;
 use crate::NetworkState;
 use crate::game::market;
+use crate::game::strategic_map::CaravanId;
 use crate::game::strategic_map::UpdatedCity;
 use crate::game::strategic_map::{ActivePlayer, BelongsTo, Faction};
 use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
@@ -1168,11 +1169,14 @@ fn caravan_button(
     hud_node: Query<(Entity, &CaravanCityUINode)>,
     //mut menu_state: ResMut<NextState<StrategicState>>,
     selected_caravan: Res<SelectedCaravan>,
-    mut caravans: Query<&mut Caravan>,
+    mut caravans: Query<(&CaravanId, &mut Caravan)>,
+    network_state: Res<State<NetworkState>>,
+    mut writer: client::Writer,
+
     mut window_state: ResMut<NextState<StrategicState>>,
     keys: Res<ButtonInput<KeyCode>>,
 ) {
-    let Ok(mut selected_caravan) = caravans.get_mut(selected_caravan.0) else {
+    let Ok((caravan_id, mut selected_caravan)) = caravans.get_mut(selected_caravan.0) else {
         return;
     };
 
@@ -1341,16 +1345,34 @@ fn caravan_button(
                     }
                 }
             }
+
+            if *network_state == NetworkState::Client {
+                writer.write(ClientMessage(NetworkMessage::CaravanUpdated {
+                    caravan_id: *caravan_id,
+                    caravan: selected_caravan.clone(),
+                }));
+            }
         }
     }
 }
 
-fn update_caravan_order_idx(caravan_query: Query<&mut Caravan, Changed<Caravan>>) {
-    for mut caravan in caravan_query {
+fn update_caravan_order_idx(
+    caravan_query: Query<(&CaravanId, &mut Caravan), Changed<Caravan>>,
+    network_state: Res<State<NetworkState>>,
+    mut writer: client::Writer,
+) {
+    for (caravan_id, mut caravan) in caravan_query {
         if caravan.orders[caravan.order_idx].goal_city_id == caravan.position_city_id
             && caravan.orders.len() > 1
         {
             caravan.order_idx = (caravan.order_idx + 1) % caravan.orders.len();
+        }
+
+        if *network_state == NetworkState::Client {
+            writer.write(ClientMessage(NetworkMessage::CaravanUpdated {
+                caravan_id: *caravan_id,
+                caravan: caravan.clone(),
+            }));
         }
     }
 }
@@ -1360,10 +1382,12 @@ fn caravan_destination_buttons(
     interaction_query: Query<(&Interaction, &CityNodeMarker), (Changed<Interaction>, With<Button>)>,
     city_data_query: Query<&CityData>,
     selected_caravan: Res<SelectedCaravan>,
-    mut caravans: Query<&mut Caravan>,
+    mut caravans: Query<(&CaravanId, &mut Caravan)>,
+    network_state: Res<State<NetworkState>>,
+    mut writer: client::Writer,
     mut window_state: ResMut<NextState<StrategicState>>,
 ) {
-    let Ok(mut selected_caravan) = caravans.get_mut(selected_caravan.0) else {
+    let Ok((caravan_id, mut selected_caravan)) = caravans.get_mut(selected_caravan.0) else {
         error!("Selected caravan doesn't exist");
         return;
     };
@@ -1378,6 +1402,13 @@ fn caravan_destination_buttons(
                     ..default()
                 });
                 window_state.set(StrategicState::HUDOpen);
+
+                if *network_state == NetworkState::Client {
+                    writer.write(ClientMessage(NetworkMessage::CaravanUpdated {
+                        caravan_id: *caravan_id,
+                        caravan: selected_caravan.clone(),
+                    }));
+                }
             }
         } else {
             error!("Clicked a non existing city");

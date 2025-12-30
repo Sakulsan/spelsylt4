@@ -5,6 +5,7 @@ use std::{
 };
 
 use crate::{
+    GlobalRngSeed, NetworkState,
     game::{
         city_data::CityData,
         namelists::CityNameList,
@@ -17,7 +18,6 @@ use crate::{
         network_menu::{CityMenuEntered, CityMenuExited, CityUpdateReceived, NetworkMenuState},
     },
     prelude::*,
-    GlobalRngSeed, NetworkState,
 };
 use bevy_renet::{
     netcode::{ClientAuthentication, NetcodeClientTransport},
