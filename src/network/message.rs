@@ -30,8 +30,18 @@ pub enum NetworkMessage {
     CityUpdated {
         updated_city: CityData,
     },
-    NewCaravan {
+    CaravanRequest {
         player_id: PlayerId,
+        caravan: Caravan,
+    },
+    CaravanCreated {
+        player_id: PlayerId,
+        caravan_id: CaravanId,
+        caravan: Caravan,
+    },
+    CaravanUpdated {
+        caravan_id: CaravanId,
+        caravan: Caravan,
     },
     TurnFinished {
         caravans: Vec<Caravan>,
