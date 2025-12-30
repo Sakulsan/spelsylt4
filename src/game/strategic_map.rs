@@ -136,13 +136,22 @@ impl Caravan {
                                 let price = current_city
                                     .1
                                     .get_bulk_buy_price(&trade, amount_bought as usize);
-                                info!("Caravan paid {0} for {2} {1}", price, trade.get_name(), amount_bought);
+                                info!(
+                                    "Caravan paid {0} for {2} {1}",
+                                    price,
+                                    trade.get_name(),
+                                    amount_bought
+                                );
                                 player.money -= price;
                                 caravan.cargo.insert(
                                     trade,
                                     cargo_access.get(&trade).unwrap_or(&0) + amount_bought as usize,
                                 );
-                                info!("Caravan now has {0} {1}", caravan.cargo.get(&trade).unwrap_or(&0), &trade.get_name());
+                                info!(
+                                    "Caravan now has {0} {1}",
+                                    caravan.cargo.get(&trade).unwrap_or(&0),
+                                    &trade.get_name()
+                                );
                                 current_city
                                     .1
                                     .market
@@ -237,14 +246,16 @@ impl Caravan {
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(
-        OnEnter(GameState::Game),
-        (
-            crate::kill_music,
-            spawn_map_sprite,
-            spawn_city_ui_nodes,
-            spawn_game_ost,
-        ))
+    app.insert_resource(CaravanIdTracker(0))
+        .add_systems(
+            OnEnter(GameState::Game),
+            (
+                crate::kill_music,
+                spawn_map_sprite,
+                spawn_city_ui_nodes,
+                spawn_game_ost,
+            ),
+        )
         .insert_resource(SelectedCity(CityData {
             id: "Placeholder".to_string(),
             ..default()
