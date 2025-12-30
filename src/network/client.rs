@@ -5,6 +5,7 @@ use std::{
 };
 
 use crate::{
+    GlobalRngSeed, NetworkState,
     game::{
         city_data::CityData, namelists::CityNameList, strategic_hud::LockedCities,
         strategic_map::SelectedCity,
@@ -14,7 +15,6 @@ use crate::{
         network_menu::{CityMenuEntered, CityMenuExited, CityUpdateReceived, NetworkMenuState},
     },
     prelude::*,
-    GlobalRngSeed, NetworkState,
 };
 use bevy_renet::{
     netcode::{ClientAuthentication, NetcodeClientTransport},
@@ -88,6 +88,7 @@ pub fn plugin(app: &mut App) {
                 receive_city_menu_entered,
                 receive_city_menu_exited,
             )
+                .chain()
                 .in_set(ClientSet),
         )
         .add_systems(
@@ -217,10 +218,11 @@ fn send_city_menu_entered(ev: On<CityMenuEntered>, mut writer: MessageWriter<Cli
 }
 
 fn receive_city_menu_entered(
-    mut reader: MessageReader<ClientMessage>,
+    mut reader: MessageReader<ServerMessage>,
     mut locked_cities: ResMut<LockedCities>,
 ) {
     for msg in reader.read() {
+        info!("reading messages from city_menu!!");
         let NetworkMessage::CityViewing {
             player_id: player_viewing,
             city_id: city_viewed,
@@ -242,7 +244,7 @@ fn send_city_menu_exited(ev: On<CityMenuExited>, mut writer: MessageWriter<Clien
 }
 
 fn receive_city_menu_exited(
-    mut reader: MessageReader<ClientMessage>,
+    mut reader: MessageReader<ServerMessage>,
     mut locked_cities: ResMut<LockedCities>,
 ) {
     for msg in reader.read() {
