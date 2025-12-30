@@ -16,6 +16,59 @@ pub(super) fn plugin(app: &mut App) {
     app.add_observer(market_updater)
         .add_observer(debt_collector);
 }
+
+fn update_turnend(player: On<TurnEnd>, mut commands: Commands, players: Query<(Entity, &Player)>) {
+    let (player, _) = players
+        .iter()
+        .find(|(_, p)| p.player_id == player.0)
+        .expect("no player :(");
+
+    commands.entity(player).insert(TurnEnded);
+}
+
+mod client {
+    use crate::network::message::ClientMessage;
+
+    use super::*;
+
+    pub fn update_turnend(
+        player: On<TurnEnd>,
+        mut writer: crate::network::client::Writer,
+        you: Query<&Player, With<ActivePlayer>>,
+    ) {
+        let you = you.single().unwrap();
+        if player.0 == you.player_id {
+            writer.write(ClientMessage(
+                crate::network::message::NetworkMessage::TurnEnded {
+                    player_id: you.player_id,
+                    money: you.money,
+                },
+            ));
+        }
+    }
+}
+
+mod server {
+    use super::*;
+    use crate::network::message::ServerMessage;
+
+    pub fn update_turnend(
+        player: On<TurnEnd>,
+        mut writer: crate::network::server::Writer,
+        you: Query<&Player, With<ActivePlayer>>,
+    ) {
+        let you = you.single().unwrap();
+        if player.0 == you.player_id {
+            writer.write(ServerMessage(
+                crate::network::message::NetworkMessage::TurnEnded {
+                    player_id: you.player_id,
+                    money: you.money,
+                },
+            ));
+        }
+    }
+}
+
 #[derive(Event)]
 pub struct GameEnd;
 
