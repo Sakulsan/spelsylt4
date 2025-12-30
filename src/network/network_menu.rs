@@ -42,6 +42,12 @@ pub fn plugin(app: &mut App) {
         OnEnter(NetworkMenuState::Lobby),
         (lobby_menu_setup, update_players).chain(),
     )
+    .add_systems(
+        Update,
+        (lobby_menu_setup, update_players)
+            .chain()
+            .run_if(resource_changed::<Players>),
+    )
     .add_systems(OnEnter(NetworkMenuState::Join), join_menu_setup)
     .configure_sets(
         Update,
