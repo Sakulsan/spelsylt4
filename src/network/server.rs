@@ -357,7 +357,7 @@ fn update_and_echo_caravan_edits(
         };
 
         let Some((mut c, _)) = caravans.iter_mut().find(|(_, id)| id.0 == caravan_id.0) else {
-            error!("wtf");
+            error!("no caravan to update");
             continue;
         };
 
