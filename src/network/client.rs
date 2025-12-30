@@ -307,10 +307,7 @@ fn spawn_caravans(mut reader: Reader, mut commands: Commands, players: Query<(En
     }
 }
 
-fn update_caravan_edits(
-    mut reader: Reader,
-    mut caravans: Query<(&mut Caravan, &CaravanId), Added<CaravanId>>,
-) {
+fn update_caravan_edits(mut reader: Reader, mut caravans: Query<(&mut Caravan, &CaravanId)>) {
     for msg in reader.read() {
         let NetworkMessage::CaravanUpdated {
             caravan_id,
