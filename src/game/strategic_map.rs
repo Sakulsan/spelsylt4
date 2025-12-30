@@ -127,25 +127,30 @@ impl Caravan {
                     for (trade, (amount, interacts_with_warehouse)) in
                         caravan.orders[caravan.order_idx].trade_order.clone()
                     {
-                        if amount > 0
-                            && available_commodies.contains(&trade)
-                            && !interacts_with_warehouse
-                        {
-                            let amount_available = current_city.1.market[&trade];
-                            let amount_bought = amount.abs().min(amount_available);
-                            let price = current_city
-                                .1
-                                .get_bulk_buy_price(&trade, amount_bought as usize);
-                            info!("Caravan paid {0} for {1}", price, trade.get_name());
-                            player.money -= price;
-                            caravan.cargo.insert(
-                                trade,
-                                cargo_access.get(&trade).unwrap_or(&0) + amount_bought as usize,
-                            );
-                            current_city
-                                .1
-                                .market
-                                .insert(trade, amount_available - amount_bought);
+                        println!("open market is set to: interacts_with_warehouse");
+                        //Buy from market
+                        if amount > 0 && interacts_with_warehouse {
+                            if available_commodies.contains(&trade) {
+                                let amount_available = current_city.1.market[&trade];
+                                let amount_bought = amount.abs().min(amount_available);
+                                let price = current_city
+                                    .1
+                                    .get_bulk_buy_price(&trade, amount_bought as usize);
+                                info!("Caravan paid {0} for {1}", price, trade.get_name());
+                                player.money -= price;
+                                caravan.cargo.insert(
+                                    trade,
+                                    cargo_access.get(&trade).unwrap_or(&0) + amount_bought as usize,
+                                );
+                                current_city
+                                    .1
+                                    .market
+                                    .insert(trade, amount_available - amount_bought);
+                            } else {
+                                error!("Could not buy commodety");
+                                continue;
+                            }
+                        // Take from warehouse
                         } else if amount > 0 {
                             let city_id = current_city.1.id.clone();
                             let Some(mut warehouse) =
@@ -170,7 +175,8 @@ impl Caravan {
                             );
                             warehouse.insert(trade, amount_available - amount_taken);
                         }
-                        if amount < 0 && !interacts_with_warehouse {
+                        //Sell to market
+                        if amount < 0 && interacts_with_warehouse {
                             let amount_available = current_city.1.market[&trade];
                             let amount_sold = amount
                                 .abs()
@@ -188,7 +194,9 @@ impl Caravan {
                                 .1
                                 .market
                                 .insert(trade, amount_available + amount_sold);
-                        } else if amount < 0 {
+                        }
+                        //Put into warehouse
+                        else {
                             let city_id = current_city.1.id.clone();
                             let Some(mut warehouse) =
                                 current_city.1.warehouses.get_mut(&player.player_id)

@@ -306,7 +306,7 @@ fn lobby_menu_setup(
                     height: vh(60),
                     align_items: AlignItems::Center,
                     justify_content: JustifyContent::Center,
-                    flex_direction: FlexDirection::Row,
+                    flex_direction: FlexDirection::Column,
                     ..default()
                 },
             ),
@@ -329,6 +329,7 @@ fn update_players(
     mut commands: Commands,
     players_container: Query<Entity, With<PlayerContainer>>,
     players: Option<Res<Players>>,
+    mut sylt: Sylt,
 ) {
     let Some(players) = players else {
         return;
@@ -342,13 +343,43 @@ fn update_players(
             for player in &players.0 {
                 parent.spawn((
                     Node {
-                        left: vw(10),
-                        width: vw(80),
+                        width: vw(60),
                         height: px(128),
                         ..default()
                     },
-                    BackgroundColor(Srgba::new(0.2, 0.2, 0.6, 1.0).into()),
-                    Text::new(player.to_string()),
+                    BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.2).into()),
+                    children![
+                        (
+                            Node {
+                                top: px(32),
+                                left: px(32),
+                                width: px(64),
+                                height: px(64),
+                                ..default()
+                            },
+                            ImageNode {
+                                image: sylt.get_image(match player {
+                                    0 => {
+                                        "player_red"
+                                    }
+                                    1 => {
+                                        "player_blue"
+                                    }
+                                    2 => {
+                                        "player_green"
+                                    }
+                                    3 => {
+                                        "player_yellow"
+                                    }
+                                    _ => {
+                                        "player_purple"
+                                    }
+                                }),
+                                ..default()
+                            }
+                        ),
+                        (Text::new(format!("Player: {}", player)))
+                    ],
                 ));
             }
         });
@@ -388,7 +419,7 @@ fn join_menu_setup(mut commands: Commands) {
     commands.spawn((
         DespawnOnExit(NetworkMenuState::Join),
         Node {
-            width: percent(100),
+            width: vw(80),
             height: percent(100),
             align_items: AlignItems::Center,
             justify_content: JustifyContent::Center,
