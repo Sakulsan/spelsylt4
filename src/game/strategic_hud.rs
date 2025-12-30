@@ -59,9 +59,7 @@ pub fn plugin(app: &mut App) {
             Update,
             (kill_popup_menu, update_buildings, building_menu)
                 .chain()
-                .run_if(in_state(PopupHUD::Buildings).and(
-                    any_match_filter::<Changed<CityData>>.or(resource_changed::<SelectedCity>),
-                )),
+                .run_if(in_state(PopupHUD::Buildings).and(resource_changed::<SelectedCity>)),
         )
         .add_systems(
             Update,
@@ -1040,13 +1038,24 @@ fn create_route_showcase(
                                     },
                                 )],
                                 related!(
-                                    Tooltips[(
-                                        Text::new("Toggle trades with warehouses"),
-                                        TextLayout::new_with_justify(Justify::Center),
-                                        Node { ..default() },
-                                        Visibility::Inherited,
-                                        BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
-                                    )]
+                                    Tooltips[
+                                        (
+                                            (
+                                                         Text::new(if *open_market {"Selling to public market"} else {"Moving between warhouses"}),
+                                                         TextLayout::new_with_justify(Justify::Center),
+                                                         Node { ..default() },
+                                                         Visibility::Inherited,
+                                                         BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
+                                                )),
+                                        ((
+                                            Text::new("Toggle trades with warehouses"),
+                                            TextLayout::new_with_justify(Justify::Center),
+                                            Node { ..default() },
+                                            Visibility::Inherited,
+                                            BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
+                                        )
+                                                )
+                                    ]
                                 ),
                             ));
                             let city =
@@ -1058,6 +1067,7 @@ fn create_route_showcase(
                                         stop.goal_city_id
                                     ));
 
+                            if *open_market {
                             let profit_text = if *amount < 0 {
                                 &format!(
                                     "Profit: {0:.2}$",
@@ -1085,6 +1095,7 @@ fn create_route_showcase(
                                     TextLayout::new_with_justify(Justify::Center),
                                 )],
                             ));
+                            }
 
                             parent.spawn((
                                 Button,
@@ -1139,7 +1150,7 @@ fn caravan_button(
                         match order.entry(resource) {
                             Entry::Occupied(_) => continue,
                             Entry::Vacant(e) => {
-                                e.insert((0, false));
+                                e.insert((0, true));
                                 break;
                             }
                         }

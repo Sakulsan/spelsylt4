@@ -286,7 +286,7 @@ fn lobby_menu_setup(
             flex_direction: FlexDirection::Column,
             ..default()
         },
-        BackgroundColor(LIGHT_SLATE_GRAY.into()),
+        //BackgroundColor(LIGHT_SLATE_GRAY.into()),
         //OnSettingsMenuScreen,
         children![
             (
@@ -304,6 +304,9 @@ fn lobby_menu_setup(
                 Node {
                     width: vw(100),
                     height: vh(60),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    flex_direction: FlexDirection::Row,
                     ..default()
                 },
             ),
@@ -344,6 +347,7 @@ fn update_players(
                         height: px(128),
                         ..default()
                     },
+                    BackgroundColor(Srgba::new(0.2, 0.2, 0.6, 1.0).into()),
                     Text::new(player.to_string()),
                 ));
             }
