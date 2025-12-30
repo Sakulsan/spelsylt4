@@ -236,46 +236,48 @@ impl Caravan {
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(
-        OnEnter(GameState::Game),
-        (
-            crate::kill_music,
-            spawn_map_sprite,
-            spawn_city_ui_nodes,
-            spawn_player.run_if(in_state(NetworkState::SinglePlayer)),
-            spawn_game_ost,
+    app.insert_resource(CaravanIdTracker(0))
+        .add_systems(
+            OnEnter(GameState::Game),
+            (
+                crate::kill_music,
+                spawn_map_sprite,
+                spawn_city_ui_nodes,
+                spawn_player.run_if(in_state(NetworkState::SinglePlayer)),
+                spawn_game_ost,
+            )
+                .in_set(MapGenSet)
+                .after(NodeGenSet),
         )
-            .in_set(MapGenSet)
-            .after(NodeGenSet),
-    )
-    .insert_resource(SelectedCity(CityData {
-        id: "Placeholder".to_string(),
-        ..default()
-    }))
-    .insert_resource(SelectedCaravan(Entity::PLACEHOLDER))
-    .insert_resource(BuildinTable(super::market::gen_building_tables()))
-    .init_state::<StrategicState>()
-    .add_systems(
-        Update,
-        update_caravan_outliner
-            .run_if(any_match_filter::<Changed<Caravan>>.or(resource_changed::<SelectedCaravan>)),
-    )
-    .add_systems(
-        Update,
-        (
-            city_interaction_system,
-            check_turn_button,
-            check_outline_button,
+        .insert_resource(SelectedCity(CityData {
+            id: "Placeholder".to_string(),
+            ..default()
+        }))
+        .insert_resource(SelectedCaravan(Entity::PLACEHOLDER))
+        .insert_resource(BuildinTable(super::market::gen_building_tables()))
+        .init_state::<StrategicState>()
+        .add_systems(
+            Update,
+            update_caravan_outliner.run_if(
+                any_match_filter::<Changed<Caravan>>.or(resource_changed::<SelectedCaravan>),
+            ),
         )
-            .run_if(in_state(GameState::Game))
-            .run_if(in_state(PopupHUD::Off)),
-    )
-    .add_systems(
-        Update,
-        (make_caravan_ids, update_miku_cat, open_miku_cat).run_if(in_state(GameState::Game)),
-    )
-    .add_observer(Caravan::update_orders)
-    .add_observer(on_city_updated);
+        .add_systems(
+            Update,
+            (
+                city_interaction_system,
+                check_turn_button,
+                check_outline_button,
+            )
+                .run_if(in_state(GameState::Game))
+                .run_if(in_state(PopupHUD::Off)),
+        )
+        .add_systems(
+            Update,
+            (make_caravan_ids, update_miku_cat, open_miku_cat).run_if(in_state(GameState::Game)),
+        )
+        .add_observer(Caravan::update_orders)
+        .add_observer(on_city_updated);
 }
 
 #[derive(Resource, Deref, DerefMut, Serialize, Deserialize)]
