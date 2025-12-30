@@ -4,12 +4,12 @@ use std::f32::consts::PI;
 use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::Faction;
-use crate::game::namelists::{generate_city_names, CityNameList};
+use crate::game::namelists::{CityNameList, generate_city_names};
 use crate::game::strategic_map::Player;
-use crate::{prelude::*, GameState};
+use crate::{GameState, prelude::*};
 
 use petgraph::algo::astar;
-use petgraph::{algo::connected_components, graph::NodeIndex, Graph, Undirected};
+use petgraph::{Graph, Undirected, algo::connected_components, graph::NodeIndex};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
@@ -508,12 +508,6 @@ fn setup(
                     panic!("epic embed fail")
                 }
             };
-
-            println!(
-                "{0:?} {1:?} {2:?} {3:?}",
-                namelists[0], namelists[1], namelists[2], namelists[3]
-            );
-            println!("{}", j);
 
             for _ in 0..j {
                 let mut city_pos = capital_pos + gen_rand_circle(c as i32, min, max, &mut rng);
