@@ -23,20 +23,6 @@ pub struct CityData {
 }
 
 impl CityData {
-    pub fn overwrite(&mut self, other: &CityData) {
-        self.id = other.id.clone();
-        self.race = other.race;
-        self.population = other.population;
-        self.buildings_t1 = other.buildings_t1.clone();
-        self.buildings_t2 = other.buildings_t2.clone();
-        self.buildings_t3 = other.buildings_t3.clone();
-        self.buildings_t4 = other.buildings_t4.clone();
-        self.buildings_t5 = other.buildings_t5.clone();
-        self.market = other.market.clone();
-        self.warehouses = other.warehouses.clone();
-        self.tier_up_counter = other.tier_up_counter;
-    }
-
     pub fn new(
         name: String,
         race: BuildingType,
