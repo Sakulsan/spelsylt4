@@ -7,8 +7,10 @@ use std::{
 use crate::{
     GlobalRngSeed, NetworkState,
     game::{
-        city_data::CityData, namelists::CityNameList, strategic_hud::LockedCities,
-        strategic_map::SelectedCity,
+        city_data::CityData,
+        namelists::CityNameList,
+        strategic_hud::LockedCities,
+        strategic_map::{BelongsTo, CaravanId, Player, SelectedCity},
     },
     network::{
         message::{ClientData, ClientMessage, NetworkMessage, Players, ServerMessage},
@@ -21,8 +23,8 @@ use bevy_renet::{
     renet::{DefaultChannel, RenetClient},
 };
 
-pub type Reader = MessageReader<ServerMessage>;
-pub type Writer = MessageWriter<ClientMessage>;
+pub type Reader<'a, 'b> = MessageReader<'a, 'b, ServerMessage>;
+pub type Writer<'a> = MessageWriter<'a, ClientMessage>;
 
 #[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct ClientSet;
@@ -279,5 +281,23 @@ fn receive_city_updates(
                 *city = updated_city.clone();
             }
         }
+    }
+}
+
+fn spawn_caravans(mut reader: Reader, mut commands: Commands, players: Query<(Entity, &Player)>) {
+    for msg in reader.read() {
+        let NetworkMessage::CaravanCreated {
+            caravan_id,
+            player_id,
+            caravan,
+        } = &**msg
+        else {
+            continue;
+        };
+        let Some((player, _)) = players.iter().find(|(e, p)| &p.player_id == player_id) else {
+            error!("wack");
+            return;
+        };
+        commands.spawn((*caravan_id, BelongsTo(player), caravan.clone()));
     }
 }

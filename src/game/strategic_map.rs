@@ -32,7 +32,7 @@ pub struct Player {
 #[derive(Reflect, Component, Default)]
 pub struct ActivePlayer;
 
-#[derive(Reflect, Component, Debug)]
+#[derive(Reflect, Component, Debug, Clone, Copy)]
 #[relationship(relationship_target = Owns)]
 pub struct BelongsTo(pub Entity);
 
@@ -276,6 +276,30 @@ pub fn plugin(app: &mut App) {
     )
     .add_observer(Caravan::update_orders)
     .add_observer(on_city_updated);
+}
+
+#[derive(Resource, Deref, DerefMut, Serialize, Deserialize)]
+pub struct CaravanIdTracker(pub u64);
+impl CaravanIdTracker {
+    fn next_id(&mut self) -> u64 {
+        let id = self.0;
+        self.0 += 1;
+        id
+    }
+}
+
+#[derive(Component, Clone, Copy, Deref, DerefMut, Serialize, Deserialize, Debug)]
+pub struct CaravanId(pub u64);
+
+fn make_caravan_ids(
+    mut commands: Commands,
+    query: Query<Entity, (Added<Caravan>, Without<CaravanId>)>,
+    mut ids: ResMut<CaravanIdTracker>,
+) {
+    for entity in query {
+        let next_id = ids.next_id();
+        commands.entity(entity).insert(CaravanId(next_id));
+    }
 }
 
 #[derive(Reflect, Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]

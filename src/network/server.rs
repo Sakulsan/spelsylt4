@@ -12,8 +12,10 @@ use bevy_renet::{
 use crate::{
     GlobalRngSeed, NetworkState,
     game::{
-        city_data::CityData, namelists::CityNameList, strategic_hud::LockedCities,
-        strategic_map::SelectedCity,
+        city_data::CityData,
+        namelists::CityNameList,
+        strategic_hud::LockedCities,
+        strategic_map::{BelongsTo, Caravan, CaravanId, Player, SelectedCity},
     },
     network::{
         message::{ClientData, ClientMessage, NetworkMessage, PlayerId, Players, ServerMessage},
@@ -22,8 +24,8 @@ use crate::{
     prelude::*,
 };
 
-pub type Reader = MessageReader<ClientMessage>;
-pub type Writer = MessageWriter<ServerMessage>;
+pub type Reader<'a, 'b> = MessageReader<'a, 'b, ClientMessage>;
+pub type Writer<'a> = MessageWriter<'a, ServerMessage>;
 
 #[derive(Reflect, Resource, Default)]
 pub struct ServerState {
@@ -97,8 +99,13 @@ pub fn plugin(app: &mut App) {
             broadcast_city_updates,
             broadcast_city_menu_entered,
             broadcast_city_menu_exited,
+            read_caravan_requests,
         )
             .run_if(in_state(NetworkState::Host)),
+    )
+    .add_systems(
+        PostUpdate,
+        broadcast_created_caravan.run_if(in_state(NetworkState::Host)),
     )
     .add_observer(send_message_city_menu_entered)
     .add_observer(send_message_city_menu_exited);
@@ -274,8 +281,8 @@ fn send_message_city_menu_exited(ev: On<CityMenuExited>, mut writer: MessageWrit
 }
 
 fn broadcast_city_menu_exited(
-    mut reader: MessageReader<ClientMessage>,
-    mut writer: MessageWriter<ServerMessage>,
+    mut reader: Reader,
+    mut writer: Writer,
     mut locked_cities: ResMut<LockedCities>,
 ) {
     for msg in reader.read() {
@@ -291,4 +298,45 @@ fn broadcast_city_menu_exited(
 
         writer.write(ServerMessage(pass_on.clone()));
     }
+}
+
+fn read_caravan_requests(
+    mut reader: Reader,
+    mut commands: Commands,
+    players: Query<(Entity, &Player)>,
+) {
+    for msg in reader.read() {
+        let NetworkMessage::CaravanRequest { player_id, caravan } = &**msg else {
+            continue;
+        };
+
+        let Some((ent, _)) = players.iter().find(|(e, p)| &p.player_id == player_id) else {
+            error!("wtf");
+            continue;
+        };
+
+        commands.spawn((caravan.clone(), BelongsTo(ent)));
+    }
+}
+
+fn broadcast_created_caravan(
+    mut writer: Writer,
+    caravans: Query<(&Caravan, &CaravanId, &BelongsTo), Added<CaravanId>>,
+    players: Query<&Player>,
+) {
+    for (caravan, caravan_id, pl_ent) in caravans {
+        let player_id = players.get(pl_ent.0).expect("wtf").player_id;
+
+        writer.write(ServerMessage(NetworkMessage::CaravanCreated {
+            player_id,
+            caravan_id: *caravan_id,
+            caravan: caravan.clone(),
+        }));
+    }
+}
+
+fn update_and_echo_caravan_edits(
+    caravans: Query<(&Caravan, &CaravanId, &BelongsTo), Added<CaravanId>>,
+    players: Query<&Player>,
+) {
 }

@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
 use crate::{
-    game::{city_data::CityData, strategic_map::Caravan},
+    game::{
+        city_data::CityData,
+        strategic_map::{Caravan, CaravanId},
+    },
     prelude::*,
 };
 use serde::{Deserialize, Serialize};
