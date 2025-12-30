@@ -1,15 +1,16 @@
 use super::city_data::CityData;
 use crate::game::strategic_map::{ActivePlayer, BuildinTable, Player};
+use crate::network::message::PlayerId;
 use crate::prelude::*;
 
 #[derive(Event)]
 pub struct TurnEndSinglePlayer;
 
-#[derive(Event)]
-pub struct TurnEndClient;
+#[derive(Component, Copy, Clone, Debug)]
+pub struct TurnEnded;
 
 #[derive(Event)]
-pub struct TurnEndHost;
+pub struct TurnEnd(PlayerId);
 
 pub(super) fn plugin(app: &mut App) {
     app.add_observer(market_updater)
