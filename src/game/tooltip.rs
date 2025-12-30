@@ -47,8 +47,6 @@ pub fn spawn_tooltip_container(
                 Visibility::Hidden,
             ))
             .id();
-
-        info!("Adding tooltip container with id {id:?}, targeting {ent:?}");
         commands.entity(ent).insert(TooltipContainerTarget { id });
     }
 }
@@ -62,7 +60,7 @@ pub fn fix_positions_of_tooltips(
     };
 
     for mut transform in query {
-        transform.translation = Val2::px(x, y);
+        transform.translation = Val2::px(x + 20, y);
     }
 }
 

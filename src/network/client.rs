@@ -112,6 +112,12 @@ fn read_player_joined(mut messages: MessageReader<ServerMessage>, mut players: R
     for message in messages.read() {
         if let NetworkMessage::Connected { player_id, .. } = **message {
             info!("read player joined: {player_id}");
+
+            if players.0.contains(&player_id) {
+                info!("we already have this player, skipping");
+                continue;
+            }
+
             players.0.push(player_id);
         }
     }
