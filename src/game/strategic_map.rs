@@ -401,6 +401,7 @@ fn spawn_map_sprite(
 
     //Next turn button
     commands.spawn((
+        ZIndex(2),
         Button,
         TurnButton,
         Node {
@@ -593,6 +594,7 @@ fn spawn_city_ui_nodes(
             },
             Button,
             CityNodeMarker(ent),
+            BorderRadius::MAX,
             Node {
                 width: px(32),
                 height: px(32),
@@ -638,7 +640,10 @@ struct CaravanHudItem(Entity);
 //}
 
 fn city_interaction_system(
-    mut interaction_query: Query<(&Interaction, &CityNodeMarker), Changed<Interaction>>,
+    mut interaction_query: Query<
+        (&Interaction, &CityNodeMarker, &mut BackgroundColor),
+        Changed<Interaction>,
+    >,
     city_data: Query<&CityData>,
     //ui_entities: Query<Entity, With<super::strategic_hud::PopUpItem>>,
     mut menu_state: ResMut<NextState<StrategicState>>,
@@ -647,7 +652,7 @@ fn city_interaction_system(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
 ) {
-    for (interaction, city_id) in &mut interaction_query {
+    for (interaction, city_id, mut node_color) in &mut interaction_query {
         let Ok(city) = city_data.get(city_id.0) else {
             continue;
         };
@@ -687,7 +692,8 @@ fn city_interaction_system(
                     },
                 ));
             }
-            //Interaction::Hovered => *node_color = Srgba::new(1.0, 0.1, 0.1, 1.0).into(),
+            Interaction::Hovered => *node_color = Srgba::new(1.0, 0.2, 0.2, 0.5).into(),
+            Interaction::None => *node_color = Srgba::new(0.2, 0.2, 0.2, 0.5).into(),
             _ => {}
         }
     }

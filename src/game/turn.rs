@@ -12,8 +12,9 @@ pub struct TurnEndClient;
 pub struct TurnEndHost;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_observer(market_updater);
-    app.add_observer(debt_collector);
+    app.add_observer(market_updater)
+        .add_observer(debt_collector)
+        .add_observer(debt_collector_server);
 }
 #[derive(Event)]
 pub struct GameEnd;
@@ -43,5 +44,22 @@ pub fn debt_collector(
 
     if player.money < -10000.0 {
         commands.trigger(GameEnd);
+    }
+}
+
+pub fn debt_collector_server(
+    _ev: On<TurnEndHost>,
+    mut players: Query<&mut Player>,
+    mut commands: Commands,
+) {
+    for mut player in players.iter_mut() {
+        println!("player {} has {} money", player.player_id, player.money);
+        if player.money < 0.0 {
+            player.money *= 1.02;
+        }
+
+        if player.money < -10000.0 {
+            commands.trigger(GameEnd);
+        }
     }
 }

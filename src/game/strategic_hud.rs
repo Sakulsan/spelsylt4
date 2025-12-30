@@ -141,7 +141,10 @@ fn off_city_scout(
 
 fn no_popup_button(
     mut commands: Commands,
-    interaction_query: Query<(&Interaction, &HudButton), (Changed<Interaction>, With<Button>)>,
+    mut interaction_query: Query<
+        (&Interaction, &HudButton, &mut BackgroundColor),
+        (Changed<Interaction>, With<Button>),
+    >,
     mut menu_state: ResMut<NextState<StrategicState>>,
     mut tab_state: ResMut<NextState<PopupHUD>>,
     selected_city: Res<SelectedCity>,
@@ -152,9 +155,9 @@ fn no_popup_button(
         return;
     };
 
-    for (interaction, menu_button_action) in &interaction_query {
-        if *interaction == Interaction::Pressed {
-            match menu_button_action {
+    for (interaction, menu_button_action, mut node_color) in &mut interaction_query {
+        match *interaction {
+            Interaction::Pressed => match menu_button_action {
                 HudButton::KillHud => {
                     menu_state.set(StrategicState::Map);
                 }
@@ -183,6 +186,16 @@ fn no_popup_button(
 
                 HudButton::FinanceAction => {
                     tab_state.set(PopupHUD::Finance);
+                }
+            },
+            Interaction::Hovered => {
+                if *menu_button_action != HudButton::KillHud {
+                    *node_color = Srgba::new(0.1, 0.8, 0.1, 1.0).into()
+                }
+            }
+            Interaction::None => {
+                if *menu_button_action != HudButton::KillHud {
+                    *node_color = Srgba::new(0.1, 0.6, 0.1, 1.0).into();
                 }
             }
         }
@@ -224,7 +237,7 @@ fn popup_window(commands: &mut Commands, direction: FlexDirection) -> Entity {
     ));
     commands
         .spawn((
-            ZIndex(2),
+            ZIndex(3),
             PopUpItem,
             Node {
                 top: Val::Vh(3.0),
@@ -880,7 +893,8 @@ fn create_route_showcase(
                                 border: UiRect::all(px(4)),
                                 ..default()
                             },
-                            BackgroundColor(Srgba::new(0.6, 0.3, 0.16, 1.0).into()),
+                            //Brown //BackgroundColor(Srgba::new(0.6, 0.3, 0.16, 1.0).into()),
+                            BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.8).into()),
                         ))
                         .with_children(|parent| {
                             //Resource drop down button
@@ -899,7 +913,7 @@ fn create_route_showcase(
                                     flex_direction: FlexDirection::Row,
                                     ..default()
                                 },
-                                BackgroundColor(Srgba::new(0.9, 0.2, 0.2, 1.0).into()),
+                                BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.3).into()),
                                 children![(
                                     Node {
                                         width: px(256),
@@ -929,7 +943,7 @@ fn create_route_showcase(
                                     flex_direction: FlexDirection::Row,
                                     ..default()
                                 },
-                                BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
+                                BackgroundColor(Srgba::new(0.1, 0.1, 0.6, 1.0).into()),
                                 children![(
                                     Node {
                                         width: px(44),
@@ -981,7 +995,7 @@ fn create_route_showcase(
                                     flex_direction: FlexDirection::Row,
                                     ..default()
                                 },
-                                BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
+                                BackgroundColor(Srgba::new(0.1, 0.1, 0.6, 1.0).into()),
                                 children![(
                                     Node {
                                         width: px(44),
@@ -1003,7 +1017,7 @@ fn create_route_showcase(
                                     margin: UiRect::all(px(2)),
                                     ..default()
                                 },
-                                BackgroundColor(Srgba::new(0.1, 0.2, 0.8, 1.0).into()),
+                                BackgroundColor(Srgba::new(0.1, 0.1, 0.6, 1.0).into()),
                                 Button,
                                 CaravanMenuButtons::ToggleTradeStockpileExclusivity(
                                     stop.goal_city_id.clone(),
@@ -1579,7 +1593,7 @@ fn wares_menu(
     });
 }
 
-#[derive(Reflect, Component)]
+#[derive(Reflect, Component, PartialEq)]
 enum HudButton {
     KillHud,
     EconomyTabAction,
@@ -1742,6 +1756,7 @@ fn create_resource_icon(
 #[derive(Reflect, Clone, Default, Eq, PartialEq, Hash, Component)]
 pub struct BottomBar;
 
+//Bottom menu, all the shit
 pub fn city_hud_setup(
     mut commands: Commands,
     selected_city: ResMut<SelectedCity>,
@@ -1781,6 +1796,21 @@ pub fn city_hud_setup(
         HudButton::KillHud, //Feels like a clunky way to quit the menu
     ));
 
+    let big_button_spawn = |text, button_functionality| {
+        (
+            Button,
+            button_functionality,
+            Node {
+                width: vw(23),
+                height: percent(50),
+                margin: UiRect::all(vw(1)),
+                ..default()
+            },
+            Text::new(text),
+            BackgroundColor(Srgba::new(0.1, 0.6, 0.1, 1.0).into()),
+        )
+    };
+
     //Action menu
     commands.spawn((
         BottomBar,
@@ -1801,21 +1831,24 @@ pub fn city_hud_setup(
             (
                 Node {
                     width: percent(100.0),
-                    height: percent(20.0),
-                    align_items: AlignItems::Start,
-                    justify_content: JustifyContent::Start,
+                    height: vh(8.0),
+                    align_items: AlignItems::Center,
                     display: Display::Flex,
                     flex_direction: FlexDirection::Row,
                     ..default()
                 },
                 children![(
                     Node {
-                        width: percent(40.0),
+                        width: percent(100.0),
                         ..default()
                     },
                     // Title
                     Text::new(city.id.clone()),
-                    TextFont { ..default() },
+                    TextFont {
+                        font_size: 28.0,
+                        ..default()
+                    },
+                    TextLayout::new_with_justify(Justify::Center),
                 ),]
             ),
             (
@@ -1829,54 +1862,10 @@ pub fn city_hud_setup(
                     ..default()
                 },
                 children![
-                    (
-                        Button,
-                        HudButton::BuldingTabAction,
-                        Node {
-                            width: percent(18),
-                            height: percent(80),
-                            margin: UiRect::all(percent(1)),
-                            ..default()
-                        },
-                        Text::new("Investigate buildings"),
-                        BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into()),
-                    ),
-                    (
-                        Button,
-                        HudButton::EconomyTabAction,
-                        Node {
-                            width: percent(18),
-                            height: percent(80),
-                            margin: UiRect::all(percent(1)),
-                            ..default()
-                        },
-                        Text::new("Check wares"),
-                        BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into())
-                    ),
-                    (
-                        Button,
-                        HudButton::OperationAction,
-                        Node {
-                            width: percent(18),
-                            height: percent(80),
-                            margin: UiRect::all(percent(1)),
-                            ..default()
-                        },
-                        Text::new("Send a new caravan"),
-                        BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into())
-                    ),
-                    (
-                        Button,
-                        HudButton::FinanceAction,
-                        Node {
-                            width: percent(18),
-                            height: percent(80),
-                            margin: UiRect::all(percent(1)),
-                            ..default()
-                        },
-                        Text::new("Finances"),
-                        BackgroundColor(Srgba::new(0.1, 0.9, 0.1, 1.0).into())
-                    )
+                    big_button_spawn("Investigate buildings", HudButton::BuldingTabAction),
+                    big_button_spawn("Check wares", HudButton::EconomyTabAction),
+                    big_button_spawn("Send a new caravan", HudButton::OperationAction),
+                    big_button_spawn("Finances", HudButton::FinanceAction),
                 ]
             ),
         ],
