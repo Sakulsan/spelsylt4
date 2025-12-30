@@ -5,6 +5,7 @@ use std::{
 };
 
 use crate::{
+    GlobalRngSeed, NetworkState,
     game::{
         city_data::CityData,
         namelists::CityNameList,
@@ -17,7 +18,6 @@ use crate::{
         network_menu::{CityMenuEntered, CityMenuExited, CityUpdateReceived, NetworkMenuState},
     },
     prelude::*,
-    GlobalRngSeed, NetworkState,
 };
 use bevy_renet::{
     netcode::{ClientAuthentication, NetcodeClientTransport},
@@ -351,18 +351,31 @@ fn update_turnend(mut reader: Reader, mut commands: Commands, players: Query<(En
 fn receive_host_finished_turn(
     mut commands: Commands,
     mut reader: MessageReader<ServerMessage>,
-    turn_end_entity: Query<Entity, With<TurnEnded>>,
-    //mut caravans:
+    mut players: Query<(Entity, &mut Player), With<TurnEnded>>,
+    mut caravans_query: Query<(&mut Caravan, &CaravanId)>,
 ) {
     for msg in reader.read() {
         let NetworkMessage::TurnFinished { caravans, economy } = &**msg else {
             continue;
         };
 
-        //for entity in turn_end_entity.iter() {
-        //    commands.entity(turn_end_entity).remove();
-        //}
+        for (caravan_id, caravan) in caravans {
+            let Some((mut c, _)) = caravans_query
+                .iter_mut()
+                .find(|(e, id)| id.0 == caravan_id.0)
+            else {
+                error!("wtf");
+                continue;
+            };
 
+            *c = caravan.clone();
+        }
+
+        for (entity, mut player) in players.iter_mut() {
+            player.money = economy[&player.player_id];
+
+            commands.entity(entity).remove::<TurnEnded>();
+        }
         commands.trigger(HostFixedTurnEnd);
     }
 }

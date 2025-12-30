@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 use super::city_data::CityData;
 use crate::NetworkState;
-use crate::game::strategic_map::{ActivePlayer, BuildinTable, Player};
+use crate::game::strategic_map::{ActivePlayer, BuildinTable, Caravan, CaravanId, Player};
 use crate::network::message::{PlayerId, ServerMessage};
 use crate::prelude::*;
 
@@ -36,7 +38,7 @@ pub(super) fn plugin(app: &mut App) {
 
 fn send_turn_update(
     mut commands: Commands,
-    writer: server::Writer,
+    mut writer: crate::network::server::Writer,
     caravans: Query<(&CaravanId, &Caravan)>,
     players: Query<(Entity, &Player)>,
 ) {
@@ -47,12 +49,12 @@ fn send_turn_update(
     let mut economy = HashMap::new();
     for (ent, player) in players {
         economy.insert(player.player_id, player.money);
-        commands.entity(ent).remove::<TurnEnd>();
+        commands.entity(ent).remove::<TurnEnded>();
     }
 
     writer.write(ServerMessage(
         crate::network::message::NetworkMessage::TurnFinished { caravans, economy },
-    ))
+    ));
 }
 
 fn every_turn_ended(mut commands: Commands, players: Query<(&Player, Option<&TurnEnded>)>) {
