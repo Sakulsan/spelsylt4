@@ -27,7 +27,10 @@ pub fn plugin(app: &mut App) {
     ))
     .init_resource::<Players>()
     .init_state::<NetworkMenuState>() //Feels weird to have duplicate names, but it works
-    .add_systems(OnEnter(GameState::NetworkMenu), spawn_network_menu)
+    .add_systems(
+        OnEnter(GameState::NetworkMenu),
+        (crate::kill_music, spawn_network_menu).chain(),
+    )
     .add_systems(OnEnter(NetworkMenuState::Main), spawn_network_menu)
     .add_systems(
         Update,
