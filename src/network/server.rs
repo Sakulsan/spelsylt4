@@ -100,6 +100,7 @@ pub fn plugin(app: &mut App) {
             broadcast_city_menu_entered,
             broadcast_city_menu_exited,
             read_caravan_requests,
+            update_and_echo_caravan_edits,
         )
             .run_if(in_state(NetworkState::Host)),
     )
@@ -336,7 +337,26 @@ fn broadcast_created_caravan(
 }
 
 fn update_and_echo_caravan_edits(
-    caravans: Query<(&Caravan, &CaravanId, &BelongsTo), Added<CaravanId>>,
-    players: Query<&Player>,
+    mut reader: Reader,
+    mut writer: Writer,
+    mut caravans: Query<(&mut Caravan, &CaravanId), Added<CaravanId>>,
 ) {
+    for msg in reader.read() {
+        let msg @ NetworkMessage::CaravanUpdated {
+            caravan_id,
+            caravan,
+        } = &**msg
+        else {
+            continue;
+        };
+
+        let Some((mut c, _)) = caravans.iter_mut().find(|(_, id)| id.0 == caravan_id.0) else {
+            error!("wtf");
+            continue;
+        };
+
+        *c = caravan.clone();
+
+        writer.write(ServerMessage(msg.clone()));
+    }
 }

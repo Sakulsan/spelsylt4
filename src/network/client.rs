@@ -10,7 +10,7 @@ use crate::{
         city_data::CityData,
         namelists::CityNameList,
         strategic_hud::LockedCities,
-        strategic_map::{BelongsTo, CaravanId, Player, SelectedCity},
+        strategic_map::{BelongsTo, Caravan, CaravanId, Player, SelectedCity},
     },
     network::{
         message::{ClientData, ClientMessage, NetworkMessage, Players, ServerMessage},
@@ -92,6 +92,7 @@ pub fn plugin(app: &mut App) {
                 receive_city_updates,
                 receive_city_menu_entered,
                 receive_city_menu_exited,
+                update_caravan_edits,
             )
                 .chain()
                 .in_set(ClientSet),
@@ -299,5 +300,27 @@ fn spawn_caravans(mut reader: Reader, mut commands: Commands, players: Query<(En
             return;
         };
         commands.spawn((*caravan_id, BelongsTo(player), caravan.clone()));
+    }
+}
+
+fn update_caravan_edits(
+    mut reader: Reader,
+    mut caravans: Query<(&mut Caravan, &CaravanId), Added<CaravanId>>,
+) {
+    for msg in reader.read() {
+        let msg @ NetworkMessage::CaravanUpdated {
+            caravan_id,
+            caravan,
+        } = &**msg
+        else {
+            continue;
+        };
+
+        let Some((mut c, _)) = caravans.iter_mut().find(|(e, id)| id.0 == caravan_id.0) else {
+            error!("wtf");
+            continue;
+        };
+
+        *c = caravan.clone();
     }
 }

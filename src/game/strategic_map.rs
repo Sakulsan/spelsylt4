@@ -272,7 +272,7 @@ pub fn plugin(app: &mut App) {
     )
     .add_systems(
         Update,
-        (update_miku_cat, open_miku_cat).run_if(in_state(GameState::Game)),
+        (make_caravan_ids, update_miku_cat, open_miku_cat).run_if(in_state(GameState::Game)),
     )
     .add_observer(Caravan::update_orders)
     .add_observer(on_city_updated);
