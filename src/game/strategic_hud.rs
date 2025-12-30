@@ -109,13 +109,12 @@ pub struct LockedCities(pub Vec<(String, PlayerId)>);
 
 impl LockedCities {
     pub fn lock(&mut self, player_id: PlayerId, city_id: &str) {
-        info!("Locking {city_id} for {player_id}");
-
         if let Some(player) = self.locking_player(city_id) {
-            error!("Attempting to lock {city_id} which is already locked by {player}");
+            warn!("Attempting to lock {city_id} which is already locked by {player}");
+        } else {
+            info!("Locking {city_id} for {player_id}");
+            self.push((city_id.to_string(), player_id));
         }
-
-        self.push((city_id.to_string(), player_id));
     }
 
     pub fn is_locked(&self, you: PlayerId, city_id: &str) -> bool {

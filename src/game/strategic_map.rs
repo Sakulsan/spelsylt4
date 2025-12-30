@@ -1,17 +1,17 @@
 use super::city_data::*;
-use super::strategic_hud::PopupHUD;
+use super::strategic_hud::{LockedCities, PopupHUD};
 use super::turn::TurnEndSinglePlayer;
-use crate::game::city_graph::{get_path, CityGraph, Node as CityNode};
+use crate::game::city_graph::{CityGraph, Node as CityNode, get_path};
 use crate::game::turn::{TurnEndClient, TurnEndHost};
 use crate::network::message::NetworkMessage;
 use crate::network::message::{ClientMessage, PlayerId, ServerMessage};
-use crate::{prelude::*, NetworkState};
+use crate::{NetworkState, prelude::*};
 
 use super::market::*;
 use crate::GameState;
 use std::collections::{BTreeMap, HashMap};
 
-use bevy_egui::{egui, EguiContext, EguiPrimaryContextPass, PrimaryEguiContext};
+use bevy_egui::{EguiContext, EguiPrimaryContextPass, PrimaryEguiContext, egui};
 use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
 use serde::{Deserialize, Serialize};
 
@@ -83,11 +83,11 @@ impl Caravan {
                 };
                 let current_node = city_by_id(&caravan.position_city_id);
                 let next_node = city_by_id(&caravan.orders[caravan.order_idx].goal_city_id);
-                let (_, path) = get_path(&city, current_node.0 .0, next_node.0 .0);
+                let (_, path) = get_path(&city, current_node.0.0, next_node.0.0);
                 info!(
                     "Nodes next to current node: {0:?}",
                     city.graph
-                        .neighbors(current_node.0 .0)
+                        .neighbors(current_node.0.0)
                         .map(|n| nodes.get(city.graph[n]).unwrap())
                         .map(|(_, data)| data.id.clone())
                         .collect::<Vec<String>>()
@@ -95,7 +95,7 @@ impl Caravan {
                 info!(
                     "Nodes next to next node: {0:?}",
                     city.graph
-                        .neighbors(next_node.0 .0)
+                        .neighbors(next_node.0.0)
                         .map(|n| nodes.get(city.graph[n]).unwrap())
                         .map(|(_, data)| data.id.clone())
                         .collect::<Vec<String>>()
@@ -608,6 +608,7 @@ fn city_interaction_system(
     mut menu_state: ResMut<NextState<StrategicState>>,
     mut selected_city: ResMut<SelectedCity>,
     mut popupp_state: ResMut<NextState<PopupHUD>>,
+    locked_cities: Res<LockedCities>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
 ) {
@@ -651,7 +652,13 @@ fn city_interaction_system(
                     },
                 ));
             }
-            Interaction::Hovered => *node_color = Srgba::new(1.0, 0.2, 0.2, 0.5).into(),
+            Interaction::Hovered => {
+                if locked_cities.any_locked(&city.id) {
+                    *node_color = Srgba::new(1.0, 0.2, 0.2, 0.5).into()
+                } else {
+                    *node_color = Srgba::new(0.2, 1.0, 0.2, 0.5).into()
+                }
+            }
             Interaction::None => *node_color = Srgba::new(0.2, 0.2, 0.2, 0.5).into(),
             _ => {}
         }
