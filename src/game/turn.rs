@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 
 use super::city_data::CityData;
-use crate::NetworkState;
-use crate::game::strategic_map::{ActivePlayer, BuildinTable, Caravan, CaravanId, Player};
+use crate::game::strategic_map::{
+    ActivePlayer, BuildinTable, Caravan, CaravanId, HostFixedTurnEnd, Player,
+};
 use crate::network::message::{PlayerId, ServerMessage};
 use crate::prelude::*;
+use crate::NetworkState;
 
 #[derive(Resource, Default, Deref, DerefMut)]
 struct Turn(u64);
@@ -55,6 +57,8 @@ fn send_turn_update(
     writer.write(ServerMessage(
         crate::network::message::NetworkMessage::TurnFinished { caravans, economy },
     ));
+
+    commands.trigger(HostFixedTurnEnd);
 }
 
 fn every_turn_ended(mut commands: Commands, players: Query<(&Player, Option<&TurnEnded>)>) {
