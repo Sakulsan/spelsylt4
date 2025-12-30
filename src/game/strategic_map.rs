@@ -237,20 +237,6 @@ impl Caravan {
 }
 
 pub fn plugin(app: &mut App) {
-<<<<<<< HEAD
-    app.insert_resource(CaravanIdTracker(0))
-        .add_systems(
-            OnEnter(GameState::Game),
-            (
-                crate::kill_music,
-                spawn_map_sprite,
-                spawn_city_ui_nodes,
-                spawn_player.run_if(in_state(NetworkState::SinglePlayer)),
-                spawn_game_ost,
-            )
-                .in_set(MapGenSet)
-                .after(NodeGenSet),
-=======
     app.add_systems(
         OnEnter(GameState::Game),
         (
@@ -258,7 +244,6 @@ pub fn plugin(app: &mut App) {
             spawn_map_sprite,
             spawn_city_ui_nodes,
             spawn_game_ost,
->>>>>>> 34f8d99 (fixed caravans)
         )
         .insert_resource(SelectedCity(CityData {
             id: "Placeholder".to_string(),
