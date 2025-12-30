@@ -1,7 +1,7 @@
-use std::collections::btree_map::Entry;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::collections::btree_map::Entry;
 
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy::math::usize;
@@ -12,6 +12,7 @@ use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::{Caravan, Order, Player, SelectedCaravan, SelectedCity, StrategicState};
 use super::tooltip::Tooltips;
+use crate::GameState;
 use crate::game::market;
 use crate::game::strategic_map::UpdatedCity;
 use crate::game::strategic_map::{ActivePlayer, BelongsTo, Faction};
@@ -21,7 +22,6 @@ use crate::network::network_menu::CityMenuEntered;
 use crate::network::network_menu::CityMenuExited;
 use crate::network::network_menu::CityUpdateReceived;
 use crate::prelude::*;
-use crate::GameState;
 
 pub fn plugin(app: &mut App) {
     app.init_state::<PopupHUD>()
@@ -104,8 +104,44 @@ pub enum PopupHUD {
     Finance,
 }
 
-#[derive(Resource)]
+#[derive(Resource, Deref, DerefMut)]
 pub struct LockedCities(pub Vec<(String, PlayerId)>);
+
+impl LockedCities {
+    pub fn lock(&mut self, player_id: PlayerId, city_id: &str) {
+        info!("Locking {city_id} for {player_id}");
+
+        if let Some(player) = self.locking_player(city_id) {
+            error!("Attempting to lock {city_id} which is already locked by {player}");
+        }
+
+        self.push((city_id.to_string(), player_id));
+    }
+
+    pub fn is_locked(&self, you: PlayerId, city_id: &str) -> bool {
+        self.iter()
+            .find(|(city, player)| city == city_id && player != &you)
+            .is_some()
+    }
+
+    pub fn any_locked(&self, city_id: &str) -> bool {
+        self.iter().find(|(city, _)| city == city_id).is_some()
+    }
+
+    pub fn locking_player(&self, city_id: &str) -> Option<PlayerId> {
+        self.iter()
+            .find(|(city, _)| city == city_id)
+            .map(|(_, player)| *player)
+    }
+
+    pub fn unlock(&mut self, city_id: &str) {
+        info!(
+            "Unlocking {city_id}, previous owner: {:?}",
+            self.locking_player(city_id)
+        );
+        self.retain(|(city, _)| city != city_id);
+    }
+}
 
 #[derive(Reflect, Component)]
 struct CaravanPickerText;
@@ -278,20 +314,14 @@ fn free_city_viewer(
     mut commands: Commands,
 ) {
     let selected_id = &selected_city.0.id;
-    let cur_player = &you.single().unwrap().player_id;
-    if locked_cities
-        .0
-        .iter()
-        .find(|(city, player)| selected_id == city && cur_player == player)
-        .is_some()
+    let you = you.single().unwrap().player_id;
+    if let Some(player) = locked_cities.locking_player(selected_id)
+        && player == you
     {
-        let pos = locked_cities
-            .0
-            .iter()
-            .position(|(city, player)| selected_id == city && cur_player == player);
-        locked_cities.0.remove(pos.unwrap());
+        locked_cities.unlock(selected_id);
+
         commands.trigger(CityMenuExited {
-            player: *cur_player,
+            player: you,
             city: selected_id.clone(),
         });
     }
@@ -1226,7 +1256,7 @@ fn caravan_button(
                         .remove(resource);
                 }
                 CaravanMenuButtons::ChangeTrade(city_id, resource) => {
-                    if let Some((entity, _)) = hud_node.iter().find(|n| n.1 .0 == *city_id) {
+                    if let Some((entity, _)) = hud_node.iter().find(|n| n.1.0 == *city_id) {
                         let order: BTreeSet<_> = selected_caravan
                             .orders
                             .iter()
@@ -1776,20 +1806,16 @@ pub fn city_hud_setup(
     you: Query<&Player, With<ActivePlayer>>,
     mut window_state: ResMut<NextState<StrategicState>>,
 ) {
-    if locked_cities
-        .0
-        .iter()
-        .find(|(id, p)| &selected_city.0.id == id && p != &you.single().unwrap().player_id)
-        .is_some()
+    let you = you.single().unwrap().player_id;
+    if let Some(player) = locked_cities.locking_player(&selected_city.0.id)
+        && player != you
     {
         window_state.set(StrategicState::Map);
         return;
     } else {
-        locked_cities
-            .0
-            .push((selected_city.0.id.clone(), you.single().unwrap().player_id));
+        locked_cities.lock(you, &selected_city.id);
         commands.trigger(CityMenuEntered {
-            player: you.single().unwrap().player_id,
+            player: you,
             city: selected_city.0.id.clone(),
         });
     }
@@ -1973,14 +1999,14 @@ fn building_button(
                                             BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
                                         ));
                                         parent.spawn((
-                                            match inpected_building.2 .1 {
+                                            match inpected_building.2.1 {
                                                 true => Text::new("Sells to the market"),
                                                 false => Text::new("Does not sell to the market"),
                                             },
                                             BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
                                         ));
                                         parent.spawn((
-                                            match inpected_building.2 .0 {
+                                            match inpected_building.2.0 {
                                                 true => Text::new("Buys from the market"),
                                                 false => Text::new("Does not buy from the market"),
                                             },
@@ -2089,7 +2115,7 @@ fn building_button(
                         }
                     }
                     .2
-                     .0 = *set_sell;
+                    .0 = *set_sell;
                 }
                 BuildingButton::EditMarketBuyStatus(tier, slot, set_buy) => {
                     match tier {
@@ -2104,7 +2130,7 @@ fn building_button(
                         }
                     }
                     .2
-                     .0 = *set_buy;
+                    .0 = *set_buy;
                 }
             }
         }

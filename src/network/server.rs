@@ -10,6 +10,7 @@ use bevy_renet::{
 };
 
 use crate::{
+    GlobalRngSeed, NetworkState,
     game::{
         city_data::CityData, namelists::CityNameList, strategic_hud::LockedCities,
         strategic_map::SelectedCity,
@@ -19,7 +20,6 @@ use crate::{
         network_menu::{CityMenuEntered, CityMenuExited, CityUpdateReceived, NetworkMenuState},
     },
     prelude::*,
-    GlobalRngSeed, NetworkState,
 };
 
 #[derive(Reflect, Resource, Default)]
@@ -256,7 +256,7 @@ fn broadcast_city_menu_entered(
             continue;
         };
 
-        locked_cities.0.push((city_viewed.clone(), *player_viewing));
+        locked_cities.lock(*player_viewing, city_viewed);
 
         writer.write(ServerMessage(pass_on.clone()));
     }
@@ -284,13 +284,7 @@ fn broadcast_city_menu_exited(
             continue;
         };
 
-        let pos = locked_cities
-            .0
-            .iter()
-            .position(|(city, player)| city_viewed == city && player_viewing == player);
-        if pos.is_some() {
-            locked_cities.0.remove(pos.unwrap());
-        }
+        locked_cities.unlock(city_viewed);
 
         writer.write(ServerMessage(pass_on.clone()));
     }

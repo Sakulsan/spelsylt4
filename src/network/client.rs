@@ -229,7 +229,7 @@ fn receive_city_menu_entered(
             continue;
         };
 
-        locked_cities.0.push((city_viewed.clone(), *player_viewing));
+        locked_cities.lock(*player_viewing, city_viewed);
     }
 }
 
@@ -253,13 +253,8 @@ fn receive_city_menu_exited(
         else {
             continue;
         };
-        let pos = locked_cities
-            .0
-            .iter()
-            .position(|(city, player)| city_viewed == city && player_viewing == player);
-        if pos.is_some() {
-            locked_cities.0.remove(pos.unwrap());
-        }
+
+        locked_cities.unlock(city_viewed);
     }
 }
 
