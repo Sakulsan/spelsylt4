@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 
 use super::city_data::CityData;
+use crate::NetworkState;
+use crate::game::strategic_hud::LockedCities;
 use crate::game::strategic_map::{
     ActivePlayer, BuildinTable, Caravan, CaravanId, HostFixedTurnEnd, Player,
 };
 use crate::network::message::{PlayerId, ServerMessage};
 use crate::prelude::*;
-use crate::NetworkState;
 
 #[derive(Resource, Default, Deref, DerefMut)]
 struct Turn(u64);
@@ -43,7 +44,9 @@ fn send_turn_update(
     mut writer: crate::network::server::Writer,
     caravans: Query<(&CaravanId, &Caravan)>,
     players: Query<(Entity, &Player)>,
+    mut locked_cities: ResMut<LockedCities>,
 ) {
+    locked_cities.clear();
     let caravans: Vec<_> = caravans
         .into_iter()
         .map(|(id, c)| (id.clone(), c.clone()))

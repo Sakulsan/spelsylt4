@@ -10,7 +10,9 @@ use crate::{
         city_data::CityData,
         namelists::CityNameList,
         strategic_hud::LockedCities,
-        strategic_map::{BelongsTo, Caravan, CaravanId, HostFixedTurnEnd, Player, SelectedCity},
+        strategic_map::{
+            ActivePlayer, BelongsTo, Caravan, CaravanId, HostFixedTurnEnd, Player, SelectedCity,
+        },
         turn::TurnEnded,
     },
     network::{
@@ -307,7 +309,11 @@ fn spawn_caravans(mut reader: Reader, mut commands: Commands, players: Query<(En
     }
 }
 
-fn update_caravan_edits(mut reader: Reader, mut caravans: Query<(&mut Caravan, &CaravanId)>) {
+fn update_caravan_edits(
+    mut reader: Reader,
+    mut caravans: Query<(&mut Caravan, &CaravanId, &BelongsTo)>,
+    you: Query<&Player, With<ActivePlayer>>,
+) {
     for msg in reader.read() {
         let NetworkMessage::CaravanUpdated {
             caravan_id,
@@ -317,14 +323,20 @@ fn update_caravan_edits(mut reader: Reader, mut caravans: Query<(&mut Caravan, &
             continue;
         };
 
-        let Some((mut c, _)) = caravans.iter_mut().find(|(e, id)| id.0 == caravan_id.0) else {
+        let Some((mut c, _, owner)) = caravans.iter_mut().find(|(_, id, _)| id.0 == caravan_id.0)
+        else {
             error!("wtf");
             continue;
         };
 
-        info!("updating caravan {caravan_id:?}");
+        if you.get(owner.0).is_ok() {
+            info!("skipping caravan {caravan_id:?}");
 
-        *c = caravan.clone();
+            continue;
+        } else {
+            info!("skipping caravan {caravan_id:?}");
+            *c = caravan.clone();
+        }
     }
 }
 
@@ -351,6 +363,7 @@ fn receive_host_finished_turn(
     mut reader: MessageReader<ServerMessage>,
     mut players: Query<(Entity, &mut Player), With<TurnEnded>>,
     mut caravans_query: Query<(&mut Caravan, &CaravanId)>,
+    mut locked_cities: ResMut<LockedCities>,
 ) {
     for msg in reader.read() {
         let NetworkMessage::TurnFinished { caravans, economy } = &**msg else {
@@ -375,5 +388,6 @@ fn receive_host_finished_turn(
             commands.entity(entity).remove::<TurnEnded>();
         }
         commands.trigger(HostFixedTurnEnd);
+        locked_cities.clear();
     }
 }
