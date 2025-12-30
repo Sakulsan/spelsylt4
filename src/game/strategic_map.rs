@@ -285,6 +285,7 @@ pub fn plugin(app: &mut App) {
             (make_caravan_ids, update_miku_cat, open_miku_cat).run_if(in_state(GameState::Game)),
         )
         .add_observer(Caravan::update_orders)
+        .add_observer(new_turn_revert_interaction)
         .add_observer(on_city_updated);
 }
 
@@ -726,16 +727,16 @@ fn check_turn_button(
                     commands.trigger(TurnEndSinglePlayer);
                 } else {
                     println!("Client: sending orders");
-                    for ent in lock_button_lock_query {
-                        commands.entity(ent).insert(InteractionDisabled);
+                    if *network_state.get() == NetworkState::Client {
+                        for ent in lock_button_lock_query {
+                            commands.entity(ent).insert(InteractionDisabled);
+                        }
+                        *visibility = Visibility::Hidden;
                     }
-                    //TODO REVERT
-                    //cmd.remove::<InteractionDisabled>();
-                    //*visibility = Visibility::Visible;
-                    *visibility = Visibility::Hidden;
                     let Ok(player) = player.single() else {
                         panic!("Could not end turn as there is no active player");
                     };
+
                     commands.trigger(TurnEnd(player.player_id));
                 }
             }
@@ -747,7 +748,10 @@ fn check_turn_button(
     }
 }
 
+#[derive(Event)]
+pub struct HostFixedTurnEnd;
 fn new_turn_revert_interaction(
+    _ev: On<HostFixedTurnEnd>,
     mut commands: Commands,
     mut interaction_query: Query<&mut Visibility, With<TurnButton>>,
     lock_button_lock_query: Query<Entity, (With<Button>, Without<TurnButton>)>,

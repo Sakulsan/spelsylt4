@@ -362,5 +362,7 @@ fn receive_host_finished_turn(
         //for entity in turn_end_entity.iter() {
         //    commands.entity(turn_end_entity).remove();
         //}
+
+        commands.trigger(HostFixedTurnEnd);
     }
 }
