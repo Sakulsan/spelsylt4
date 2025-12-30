@@ -11,6 +11,7 @@ use super::market::*;
 use crate::GameState;
 use std::collections::{BTreeMap, HashMap};
 
+use bevy::ui::InteractionDisabled;
 use bevy_egui::{egui, EguiContext, EguiPrimaryContextPass, PrimaryEguiContext};
 use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
 use serde::{Deserialize, Serialize};
@@ -523,9 +524,7 @@ fn spawn_city_ui_nodes(
     mut sylt: Sylt,
     _rng: ResMut<GlobalRng>,
 ) {
-    println!("Surely I create a city");
     for (ent, _node, city_data) in graph_nodes {
-        println!("Surely I create another city");
         let capitals = vec![
             "Great Lancastershire",
             "Jewel of All Creation",
@@ -711,14 +710,15 @@ fn city_interaction_system(
 //Next turn button
 fn check_turn_button(
     mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor),
+        (&Interaction, &mut BackgroundColor, &mut Visibility),
         (Changed<Interaction>, With<TurnButton>),
     >,
     mut commands: Commands,
     network_state: Res<State<NetworkState>>,
     player: Query<&Player, With<ActivePlayer>>,
+    lock_button_lock_query: Query<Entity, (With<Button>, Without<TurnButton>)>,
 ) {
-    for (interaction, mut node_color) in interaction_query.iter_mut() {
+    for (interaction, mut node_color, mut visibility) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
                 if *network_state.get() == NetworkState::SinglePlayer {
@@ -726,6 +726,13 @@ fn check_turn_button(
                     commands.trigger(TurnEndSinglePlayer);
                 } else {
                     println!("Client: sending orders");
+                    for ent in lock_button_lock_query {
+                        commands.entity(ent).insert(InteractionDisabled);
+                    }
+                    //TODO REVERT
+                    //cmd.remove::<InteractionDisabled>();
+                    //*visibility = Visibility::Visible;
+                    *visibility = Visibility::Hidden;
                     let Ok(player) = player.single() else {
                         panic!("Could not end turn as there is no active player");
                     };
@@ -737,6 +744,21 @@ fn check_turn_button(
             }
             _ => *node_color = BackgroundColor(Srgba::new(0.1, 0.6, 0.1, 1.0).into()),
         }
+    }
+}
+
+fn new_turn_revert_interaction(
+    mut commands: Commands,
+    mut interaction_query: Query<&mut Visibility, With<TurnButton>>,
+    lock_button_lock_query: Query<Entity, (With<Button>, Without<TurnButton>)>,
+) {
+    for (mut visibility) in interaction_query.iter_mut() {
+        *visibility = Visibility::Visible;
+    }
+
+    for ent in lock_button_lock_query {
+        //commands.entity(ent).insert(InteractionDisabled);
+        commands.entity(ent).remove::<InteractionDisabled>();
     }
 }
 

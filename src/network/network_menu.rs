@@ -294,7 +294,15 @@ fn lobby_menu_setup(mut commands: Commands, network_state: Res<State<NetworkStat
                 },
                 BackgroundColor(CRIMSON.into()),
             ),
-            (Text::new("IP: Unkown"), IPField),
+            (
+                Text::new("IP: Unkown"),
+                IPField,
+                if *network_state == NetworkState::Host {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
+                },
+            ),
             (
                 PlayerContainer,
                 Node {
