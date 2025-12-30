@@ -5,16 +5,21 @@ use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::Faction;
 use crate::game::namelists::{generate_city_names, CityNameList};
-use crate::game::strategic_map::{Player, spawn_player};
-use crate::{GameState, NetworkState, prelude::*};
+use crate::game::strategic_map::{spawn_player, Player};
+use crate::{prelude::*, GameState, NetworkState};
 
 use petgraph::algo::astar;
-use petgraph::{Graph, Undirected, algo::connected_components, graph::NodeIndex};
+use petgraph::{algo::connected_components, graph::NodeIndex, Graph, Undirected};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
         OnEnter(GameState::Game),
-        (spawn_player.run_if(in_state(NetworkState::SinglePlayer)), setup, gen_edges, remove_random_edges)
+        (
+            spawn_player.run_if(in_state(NetworkState::SinglePlayer)),
+            setup,
+            gen_edges,
+            remove_random_edges,
+        )
             .chain()
             .in_set(NodeGenSet),
     );
@@ -80,6 +85,7 @@ fn spawn_city(
     players: Query<&Player>,
 ) {
     let mut ent = commands.spawn_empty();
+    info!("spawning node on {}", ent.id());
     let idx = g.add_node(ent.id());
     let mut data = CityData::new(name, race, tier, &mut rng, players);
     let mut empty_market: HashMap<Resources, isize> = HashMap::new();

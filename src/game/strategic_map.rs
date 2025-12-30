@@ -1,17 +1,17 @@
 use super::city_data::*;
 use super::strategic_hud::{LockedCities, PopupHUD};
 use super::turn::TurnEndSinglePlayer;
-use crate::game::city_graph::{CityGraph, Node as CityNode, get_path};
+use crate::game::city_graph::{get_path, CityGraph, Node as CityNode};
 use crate::game::turn::TurnEnd;
 use crate::network::message::NetworkMessage;
 use crate::network::message::{ClientMessage, PlayerId, ServerMessage};
-use crate::{NetworkState, prelude::*};
+use crate::{prelude::*, NetworkState};
 
 use super::market::*;
 use crate::GameState;
 use std::collections::{BTreeMap, HashMap};
 
-use bevy_egui::{EguiContext, EguiPrimaryContextPass, PrimaryEguiContext, egui};
+use bevy_egui::{egui, EguiContext, EguiPrimaryContextPass, PrimaryEguiContext};
 use bevy_ui_anchor::{AnchorPoint, AnchorUiConfig, AnchoredUiNodes};
 use serde::{Deserialize, Serialize};
 
@@ -83,11 +83,11 @@ impl Caravan {
                 };
                 let current_node = city_by_id(&caravan.position_city_id);
                 let next_node = city_by_id(&caravan.orders[caravan.order_idx].goal_city_id);
-                let (_, path) = get_path(&city, current_node.0.0, next_node.0.0);
+                let (_, path) = get_path(&city, current_node.0 .0, next_node.0 .0);
                 info!(
                     "Nodes next to current node: {0:?}",
                     city.graph
-                        .neighbors(current_node.0.0)
+                        .neighbors(current_node.0 .0)
                         .map(|n| nodes.get(city.graph[n]).unwrap())
                         .map(|(_, data)| data.id.clone())
                         .collect::<Vec<String>>()
@@ -95,7 +95,7 @@ impl Caravan {
                 info!(
                     "Nodes next to next node: {0:?}",
                     city.graph
-                        .neighbors(next_node.0.0)
+                        .neighbors(next_node.0 .0)
                         .map(|n| nodes.get(city.graph[n]).unwrap())
                         .map(|(_, data)| data.id.clone())
                         .collect::<Vec<String>>()
@@ -252,7 +252,7 @@ pub fn plugin(app: &mut App) {
             (
                 crate::kill_music,
                 spawn_map_sprite,
-                spawn_city_ui_nodes,
+                spawn_city_ui_nodes.after(NodeGenSet),
                 spawn_game_ost,
             ),
         )
@@ -523,7 +523,9 @@ fn spawn_city_ui_nodes(
     mut sylt: Sylt,
     _rng: ResMut<GlobalRng>,
 ) {
+    println!("Surely I create a city");
     for (ent, _node, city_data) in graph_nodes {
+        println!("Surely I create another city");
         let capitals = vec![
             "Great Lancastershire",
             "Jewel of All Creation",
