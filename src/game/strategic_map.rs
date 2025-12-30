@@ -133,7 +133,8 @@ impl Caravan {
                         if amount > 0 && interacts_with_warehouse {
                             if available_commodies.contains(&trade) {
                                 let amount_available = current_city.1.market[&trade];
-                                let amount_bought = amount.abs().min(amount_available);
+                                let mut amount_bought = amount.abs().min(amount_available);
+                                if amount_bought < 0 { amount_bought = amount }
                                 let price = current_city
                                     .1
                                     .get_bulk_buy_price(&trade, amount_bought as usize);
@@ -223,15 +224,21 @@ impl Caravan {
                                 .expect(&format!("malformed warehouse in {0}", city_id))
                                 .clone();
 
+                            info!("found {0} {1} in city", amount_available, &trade.get_name());
+
                             let amount_deposited = amount
                                 .abs()
                                 .min(*cargo_access.get(&trade).unwrap_or(&0) as isize);
 
+                            info!("want to deposit {0} {1} in city", amount_deposited, &trade.get_name());
+                            
                             caravan.cargo.insert(
                                 trade,
                                 cargo_access.get(&trade).unwrap_or(&0) - amount_deposited as usize,
                             );
+                            info!("removed {0} {1} from caravan inventory", cargo_access.get(&trade).unwrap_or(&0) - amount_deposited as usize, &trade.get_name());
                             warehouse.insert(trade, amount_available + amount_deposited);
+                            info!("warehouse now has {0:?} {1}", warehouse.get(&trade), &trade.get_name());
                         }
                     }
 

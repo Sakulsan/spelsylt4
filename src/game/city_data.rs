@@ -103,7 +103,7 @@ impl CityData {
 
         let mut warehouses = HashMap::new();
 
-        //println!("players: {0:?}", players);
+        println!("players: {0:?}", players);
         for player in players {
             warehouses.insert(player.player_id, market.clone());
         }
@@ -147,6 +147,7 @@ impl CityData {
     }
 
     pub fn get_bulk_buy_price(&self, res: &Resources, amount: usize) -> f64 {
+        info!("called bulkprice getter with arguments: {0} x{1}", res.get_name(), amount);
         let mut amount_available = *self.market.get(res).expect(
             format!(
                 "tried to find resource {:?} but the resource was missing in internal market",
@@ -154,9 +155,12 @@ impl CityData {
             )
             .as_str(),
         );
+        info!("found {amount_available} resources in local market");
         let mut total_cost = 0.0;
-        for _i in 0..amount {
-            let price = self.get_theoretical_resource_value(res, amount_available);
+        info!("running cost tally...");
+        for i in 0..amount {
+            //info!("accumulated cost: {total_cost}");
+            let price = self.get_theoretical_resource_value(res, amount_available - i as isize);
             total_cost += price;
             amount_available -= 1;
         }
@@ -172,8 +176,8 @@ impl CityData {
             .as_str(),
         );
         let mut total_profit = 0.0;
-        for _i in 0..amount {
-            let price = self.get_theoretical_resource_value(res, amount_available);
+        for i in 0..amount {
+            let price = self.get_theoretical_resource_value(res, amount_available + i as isize);
             total_profit += price;
             amount_available += 1;
         }
@@ -274,7 +278,11 @@ impl CityData {
         macro_rules! update_player_buildings {
             ($list:expr) => {
                 for b in &$list {
-                    let Faction::Player(player_id) = b.1 else { continue; };
+                    let Faction::Player(player_id) = b.1 else { 
+                        //println!("building didnt have proper faction");
+                        continue; 
+                    };
+                    println!("processing player building: {b:?}");
                     let building = &building_table.0
                                                 .get(&b.0)
                                                 .expect(format!("Couldn't retrieve value for {:?}", &b.0).as_str());
@@ -338,6 +346,7 @@ impl CityData {
                             }
                         }
                     }
+                    println!("New value of warehouses in current city: {:?}", self.warehouses);
                 }
             }
         }
