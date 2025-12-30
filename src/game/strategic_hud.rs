@@ -2050,7 +2050,7 @@ fn building_button(
                                                     BuildingButton::EditMarketSellStatus(
                                                         *tier,
                                                         *slot,
-                                                        inpected_building.2.1,
+                                                        !inpected_building.2.1,
                                                     ),
                                                     children![(
                                                         Node {
@@ -2103,7 +2103,7 @@ fn building_button(
                                                     BuildingButton::EditMarketBuyStatus(
                                                         *tier,
                                                         *slot,
-                                                        inpected_building.2.0,
+                                                        !inpected_building.2.0,
                                                     ),
                                                     children![(
                                                         Node {
@@ -2136,62 +2136,6 @@ fn building_button(
                                             BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
                                         ));
                                     }
-
-                                    /*
-                                    parent.spawn((
-                                        match inpected_building.2.1 {
-                                            true => Text::new("Sells to the market"),
-                                            false => Text::new("Does not sell to the market"),
-                                        },
-                                        BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
-                                    ));
-                                    parent.spawn((
-                                        match inpected_building.2.0 {
-                                            true => Text::new("Buys from the market"),
-                                            false => Text::new("Does not buy from the market"),
-                                        },
-                                        BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
-                                    ));
-                                    parent.spawn((
-                                        Text::new("---Change market itneraction---"),
-                                        BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.7).into()),
-                                    ));
-                                    for (button_text, button_func) in [
-                                        (
-                                            "Open selling to the market",
-                                            BuildingButton::EditMarketSellStatus(
-                                                *tier, *slot, true,
-                                            ),
-                                        ),
-                                        (
-                                            "Close selling to the market",
-                                            BuildingButton::EditMarketSellStatus(
-                                                *tier, *slot, false,
-                                            ),
-                                        ),
-                                        (
-                                            "Open buying from the market",
-                                            BuildingButton::EditMarketBuyStatus(
-                                                *tier, *slot, true,
-                                            ),
-                                        ),
-                                        (
-                                            "Close buying form the market",
-                                            BuildingButton::EditMarketBuyStatus(
-                                                *tier, *slot, false,
-                                            ),
-                                        ),
-                                    ] {
-                                        parent.spawn((
-                                            Button,
-                                            button_func,
-                                            Text::new(button_text.to_string()),
-                                            BackgroundColor(
-                                                Srgba::new(0.8, 0.0, 0.0, 1.0).into(),
-                                            ),
-                                        ));
-
-                                    }*/
                                 }
                             }
                         });
@@ -2236,6 +2180,7 @@ fn building_button(
                     }
                 }
                 BuildingButton::EditMarketSellStatus(tier, slot, set_sell) => {
+                    println!("Toggled sell status to: {}", set_sell);
                     match tier {
                         1 => &mut selected_city.buildings_t1[*slot],
                         2 => &mut selected_city.buildings_t2[*slot],
@@ -2248,9 +2193,10 @@ fn building_button(
                         }
                     }
                     .2
-                    .0 = *set_sell;
+                    .1 = *set_sell;
                 }
                 BuildingButton::EditMarketBuyStatus(tier, slot, set_buy) => {
+                    println!("Toggled buy status to: {}", set_buy);
                     match tier {
                         1 => &mut selected_city.buildings_t1[*slot],
                         2 => &mut selected_city.buildings_t2[*slot],
