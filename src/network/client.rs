@@ -308,7 +308,7 @@ fn update_caravan_edits(
     mut caravans: Query<(&mut Caravan, &CaravanId), Added<CaravanId>>,
 ) {
     for msg in reader.read() {
-        let msg @ NetworkMessage::CaravanUpdated {
+        let NetworkMessage::CaravanUpdated {
             caravan_id,
             caravan,
         } = &**msg
@@ -320,6 +320,8 @@ fn update_caravan_edits(
             error!("wtf");
             continue;
         };
+
+        info!("updating caravan {caravan_id:?}");
 
         *c = caravan.clone();
     }

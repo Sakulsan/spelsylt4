@@ -316,6 +316,8 @@ fn read_caravan_requests(
             continue;
         };
 
+        info!("got request for caravan from {player_id}");
+
         commands.spawn((caravan.clone(), BelongsTo(ent)));
     }
 }
@@ -327,6 +329,8 @@ fn broadcast_created_caravan(
 ) {
     for (caravan, caravan_id, pl_ent) in caravans {
         let player_id = players.get(pl_ent.0).expect("wtf").player_id;
+
+        info!("sending out caravan {caravan_id:?}");
 
         writer.write(ServerMessage(NetworkMessage::CaravanCreated {
             player_id,
@@ -356,6 +360,7 @@ fn update_and_echo_caravan_edits(
         };
 
         *c = caravan.clone();
+        info!("updating caravan {caravan_id:?}");
 
         writer.write(ServerMessage(msg.clone()));
     }

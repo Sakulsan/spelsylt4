@@ -18,6 +18,7 @@ use crate::game::market;
 use crate::game::strategic_map::UpdatedCity;
 use crate::game::strategic_map::{ActivePlayer, BelongsTo, Faction};
 use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
+use crate::network::client;
 use crate::network::message::NetworkMessage;
 use crate::network::message::PlayerId;
 use crate::network::network_menu::CityMenuEntered;
@@ -186,7 +187,7 @@ fn no_popup_button(
     mut tab_state: ResMut<NextState<PopupHUD>>,
     selected_city: Res<SelectedCity>,
     network_state: Res<State<NetworkState>>,
-    mut message_writer: MessageWriter<ClientMessage>,
+    mut message_writer: client::Writer,
     mut player: Query<(Entity, &mut Player), With<ActivePlayer>>,
 ) {
     let Ok((player, mut player_data)) = player.single_mut() else {
@@ -213,14 +214,14 @@ fn no_popup_button(
                         ..default()
                     };
 
-                    if *network_state == NetworkState::SinglePlayer || *network_state == NetworkState::Host {
-                        commands.spawn((caravan,
-                                        BelongsTo(player)));
-                    }
-                    else {
-                        message_writer.write(NetworkMessage::CaravanRequest{
+                    if *network_state == NetworkState::SinglePlayer
+                        || *network_state == NetworkState::Host
+                    {
+                        commands.spawn((caravan, BelongsTo(player)));
+                    } else {
+                        message_writer.write(NetworkMessage::CaravanRequest {
                             player_id: player_data.player_id,
-                            caravan
+                            caravan,
                         });
                     }
                 }
