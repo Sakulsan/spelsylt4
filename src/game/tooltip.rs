@@ -22,15 +22,18 @@ pub struct TooltipContainerTarget {
 pub struct TooltipContainer;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, (spawn_tooltip_container, reparent_tooltips).chain())
-        .add_systems(Update, (reveal_tooltips, fix_positions_of_tooltips));
+    app.add_systems(
+        PostUpdate,
+        (spawn_tooltip_container, reparent_tooltips).chain(),
+    )
+    .add_systems(Update, (reveal_tooltips, fix_positions_of_tooltips));
 }
 
 pub fn spawn_tooltip_container(
     mut commands: Commands,
-    query: Query<Entity, (Added<Tooltips>, Without<TooltipContainerTarget>)>,
+    query: Query<(Entity, &Tooltips), (Added<Tooltips>, Without<TooltipContainerTarget>)>,
 ) {
-    for ent in query {
+    for (ent, tooltips) in query {
         let id = commands
             .spawn((
                 TooltipContainer,
@@ -45,6 +48,7 @@ pub fn spawn_tooltip_container(
             ))
             .id();
 
+        info!("Adding tooltip container with id {id:?}, targeting {ent:?}");
         commands.entity(ent).insert(TooltipContainerTarget { id });
     }
 }

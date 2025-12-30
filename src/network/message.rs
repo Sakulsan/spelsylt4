@@ -44,7 +44,7 @@ pub enum NetworkMessage {
     NotCityViewing {
         player_id: PlayerId,
         city_id: String,
-    }
+    },
 }
 
 #[derive(Resource)]

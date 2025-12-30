@@ -4,7 +4,7 @@ use std::f32::consts::PI;
 use super::city_data::CityData;
 use super::market::*;
 use super::strategic_map::Faction;
-use crate::game::namelists::{CityNameList, generate_city_names};
+use crate::game::namelists::{generate_city_names, CityNameList};
 use crate::game::strategic_map::Player;
 use crate::{prelude::*, GameState};
 
@@ -424,7 +424,12 @@ fn spawn_city(
     ));
 }
 
-fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands, players: Query<&Player>, namelists: ResMut<CityNameList>) {
+fn setup(
+    mut rng: ResMut<GlobalRng>,
+    mut commands: Commands,
+    players: Query<&Player>,
+    namelists: ResMut<CityNameList>,
+) {
     let vec2 = |x, y| Vec2::new(x, y);
     let mut namelists = namelists.0.clone();
 
@@ -506,10 +511,7 @@ fn setup(mut rng: ResMut<GlobalRng>, mut commands: Commands, players: Query<&Pla
 
             println!(
                 "{0:?} {1:?} {2:?} {3:?}",
-                namelists[0],
-                namelists[1],
-                namelists[2],
-                namelists[3]
+                namelists[0], namelists[1], namelists[2], namelists[3]
             );
             println!("{}", j);
 

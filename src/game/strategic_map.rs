@@ -261,7 +261,6 @@ pub fn plugin(app: &mut App) {
     .insert_resource(SelectedCaravan(Entity::PLACEHOLDER))
     .insert_resource(BuildinTable(super::market::gen_building_tables()))
     .init_state::<StrategicState>()
-    .add_systems(EguiPrimaryContextPass, debug_ui)
     .add_systems(
         Update,
         update_caravan_outliner
@@ -283,32 +282,6 @@ pub fn plugin(app: &mut App) {
     )
     .add_observer(Caravan::update_orders)
     .add_observer(on_city_updated);
-}
-
-pub fn debug_ui(world: &mut World) {
-    let mut query = world.query::<(Entity, &Interaction)>();
-
-    let entities: Vec<Entity> = query
-        .iter(&world)
-        .filter(|(_, interaction)| interaction == &&Interaction::Hovered)
-        .map(|x| x.0)
-        .collect();
-
-    let Ok(egui_context) = world
-        .query_filtered::<&mut EguiContext, With<PrimaryEguiContext>>()
-        .single(world)
-    else {
-        return;
-    };
-
-    let mut ctx = egui_context.clone();
-    egui::Window::new("Hovered").show(ctx.get_mut(), |ui| {
-        egui::ScrollArea::both().show(ui, |ui| {
-            for ent in entities {
-                bevy_inspector_egui::bevy_inspector::ui_for_entity_with_children(world, ent, ui);
-            }
-        });
-    });
 }
 
 #[derive(Reflect, Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]

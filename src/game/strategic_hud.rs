@@ -1032,7 +1032,7 @@ fn create_route_showcase(
                                     },
                                     if *open_market {
                                         BackgroundColor(Srgba::new(0.1, 0.8, 0.1, 0.0).into())
-                                    //Jank
+                                        //Jank
                                     } else {
                                         BackgroundColor(Srgba::new(0.1, 0.8, 0.1, 1.0).into())
                                     },
@@ -1040,10 +1040,9 @@ fn create_route_showcase(
                                 related!(
                                     Tooltips[(
                                         Text::new("Toggle trades with warehouses"),
-                                        // Set the justification of the Text
                                         TextLayout::new_with_justify(Justify::Center),
-                                        // Set the style of the Node itself.
                                         Node { ..default() },
+                                        Visibility::Inherited,
                                         BackgroundColor(Srgba::new(0.05, 0.05, 0.05, 1.0).into()),
                                     )]
                                 ),

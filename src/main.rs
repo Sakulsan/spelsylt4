@@ -163,8 +163,6 @@ fn main() {
             TextInputPlugin,
             AnchorUiPlugin::<DefaultUiCameraMarker>::new(),
         ))
-        .add_plugins(EguiPlugin::default())
-        .add_plugins(WorldInspectorPlugin::new())
         .add_plugins((
             splash::splash_plugin,
             menu::menu_plugin,
@@ -176,9 +174,14 @@ fn main() {
         .insert_resource(DisplayQuality::Medium)
         .insert_resource(GlobalRngSeed(0))
         //.insert_resource(GlobalRng(StdRng::from_seed([0; 32])))
-        .insert_resource(GlobalRng(Xoshiro256StarStar::seed_from_u64(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).expect("Error in system time.").as_secs())))
+        .insert_resource(GlobalRng(Xoshiro256StarStar::seed_from_u64(
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .expect("Error in system time.")
+                .as_secs(),
+        )))
         .insert_resource(Volume(7))
-        .insert_resource(CityNameList(vec!()))
+        .insert_resource(CityNameList(vec![]))
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
         .init_state::<NetworkState>()
