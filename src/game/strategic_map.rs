@@ -2,7 +2,7 @@ use super::city_data::*;
 use super::strategic_hud::{LockedCities, PopupHUD};
 use super::turn::TurnEndSinglePlayer;
 use crate::game::city_graph::{CityGraph, Node as CityNode, get_path};
-use crate::game::turn::{TurnEndClient, TurnEndHost};
+use crate::game::turn::TurnEnd;
 use crate::network::message::NetworkMessage;
 use crate::network::message::{ClientMessage, PlayerId, ServerMessage};
 use crate::{NetworkState, prelude::*};
@@ -714,23 +714,22 @@ fn check_turn_button(
     >,
     mut commands: Commands,
     network_state: Res<State<NetworkState>>,
+    player: Query<&Player, With<ActivePlayer>>,
 ) {
     for (interaction, mut node_color) in interaction_query.iter_mut() {
         match *interaction {
-            Interaction::Pressed => match network_state.get() {
-                NetworkState::SinglePlayer => {
+            Interaction::Pressed => {
+                if *network_state.get() == NetworkState::SinglePlayer {
                     println!("Singleplayer: New turn");
                     commands.trigger(TurnEndSinglePlayer);
-                }
-                NetworkState::Client => {
+                } else {
                     println!("Client: sending orders");
-                    commands.trigger(TurnEndClient);
+                    let Ok(player) = player.single() else {
+                        panic!("Could not end turn as there is no active player");
+                    };
+                    commands.trigger(TurnEnd(player.player_id));
                 }
-                NetworkState::Host => {
-                    println!("Host: New turn");
-                    commands.trigger(TurnEndHost);
-                }
-            },
+            }
             Interaction::Hovered => {
                 *node_color = BackgroundColor(Srgba::new(0.6, 0.1, 0.1, 1.0).into())
             }
