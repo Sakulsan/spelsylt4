@@ -5,7 +5,6 @@ use std::{
 };
 
 use crate::{
-    GlobalRngSeed, NetworkState,
     game::{
         city_data::CityData,
         namelists::CityNameList,
@@ -18,6 +17,7 @@ use crate::{
         network_menu::{CityMenuEntered, CityMenuExited, CityUpdateReceived, NetworkMenuState},
     },
     prelude::*,
+    GlobalRngSeed, NetworkState,
 };
 use bevy_renet::{
     netcode::{ClientAuthentication, NetcodeClientTransport},
@@ -93,6 +93,7 @@ pub fn plugin(app: &mut App) {
                 receive_city_updates,
                 receive_city_menu_entered,
                 receive_city_menu_exited,
+                receive_host_finished_turn,
                 update_caravan_edits,
                 update_turnend,
                 spawn_caravans,

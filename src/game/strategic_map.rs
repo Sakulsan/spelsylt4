@@ -727,12 +727,10 @@ fn check_turn_button(
                     commands.trigger(TurnEndSinglePlayer);
                 } else {
                     println!("Client: sending orders");
-                    if *network_state.get() == NetworkState::Client {
-                        for ent in lock_button_lock_query {
-                            commands.entity(ent).insert(InteractionDisabled);
-                        }
-                        *visibility = Visibility::Hidden;
+                    for ent in lock_button_lock_query {
+                        commands.entity(ent).insert(InteractionDisabled);
                     }
+                    *visibility = Visibility::Hidden;
                     let Ok(player) = player.single() else {
                         panic!("Could not end turn as there is no active player");
                     };
