@@ -94,11 +94,15 @@ pub struct CityMenuExited {
     pub city: String,
 }
 
-fn spawn_network_menu(mut commands: Commands, mut state: ResMut<NextState<NetworkMenuState>>) {
+fn spawn_network_menu(
+    mut commands: Commands,
+    mut state: ResMut<NextState<NetworkMenuState>>,
+    asset_server: Res<AssetServer>,
+) {
     state.set(NetworkMenuState::Main);
 
     commands.spawn((
-        //AudioPlayer::new(asset_server.load("music/Bellsachiming.ogg")),
+        AudioPlayer::new(asset_server.load("music/LOBBY 1.ogg")),
         PlaybackSettings {
             mode: bevy::audio::PlaybackMode::Loop,
             ..default()

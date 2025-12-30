@@ -134,7 +134,9 @@ impl Caravan {
                             if available_commodies.contains(&trade) {
                                 let amount_available = current_city.1.market[&trade];
                                 let mut amount_bought = amount.abs().min(amount_available);
-                                if amount_bought < 0 { amount_bought = amount }
+                                if amount_bought < 0 {
+                                    amount_bought = amount
+                                }
                                 let price = current_city
                                     .1
                                     .get_bulk_buy_price(&trade, amount_bought as usize);
@@ -231,7 +233,7 @@ impl Caravan {
                                 .min(*cargo_access.get(&trade).unwrap_or(&0) as isize);
 
                             //info!("want to deposit {0} {1} in city", amount_deposited, &trade.get_name());
-                            
+
                             caravan.cargo.insert(
                                 trade,
                                 cargo_access.get(&trade).unwrap_or(&0) - amount_deposited as usize,
@@ -734,9 +736,9 @@ fn check_turn_button(
                     commands.trigger(TurnEndSinglePlayer);
                 } else {
                     println!("Client: sending orders");
-                    for ent in lock_button_lock_query {
+                    /*for ent in lock_button_lock_query {
                         commands.entity(ent).insert(InteractionDisabled);
-                    }
+                    }*/
                     *visibility = Visibility::Hidden;
                     let Ok(player) = player.single() else {
                         panic!("Could not end turn as there is no active player");
