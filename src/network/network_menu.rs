@@ -261,11 +261,7 @@ use crate::NetworkState;
 
 #[derive(Component, Default)]
 pub struct LobbyNode;
-fn lobby_menu_setup(
-    mut commands: Commands,
-    network_state: Res<State<NetworkState>>,
-    old_lobby: Query<Entity, With<LobbyNode>>,
-) {
+fn lobby_menu_setup(mut commands: Commands, network_state: Res<State<NetworkState>>) {
     let button_node = Node {
         width: px(200),
         height: px(65),
@@ -314,6 +310,7 @@ fn lobby_menu_setup(
                 Text::new("Start game"),
                 Button,
                 NetworkMenuButton::StartButton,
+                BackgroundColor(NORMAL_BUTTON),
                 if *network_state == NetworkState::Host {
                     Visibility::Visible
                 } else {
@@ -344,15 +341,19 @@ fn update_players(
                 parent.spawn((
                     Node {
                         width: vw(60),
-                        height: px(128),
+                        height: px(96),
+                        margin: UiRect {
+                            bottom: px(8),
+                            ..default()
+                        },
                         ..default()
                     },
                     BackgroundColor(Srgba::new(0.0, 0.0, 0.0, 0.2).into()),
                     children![
                         (
                             Node {
-                                top: px(32),
-                                left: px(32),
+                                top: px(16),
+                                left: px(16),
                                 width: px(64),
                                 height: px(64),
                                 ..default()
@@ -378,7 +379,14 @@ fn update_players(
                                 ..default()
                             }
                         ),
-                        (Text::new(format!("Player: {}", player)))
+                        (
+                            Node {
+                                top: px(32),
+                                left: px(64),
+                                ..default()
+                            },
+                            Text::new(format!("Player: {}", player))
+                        )
                     ],
                 ));
             }
