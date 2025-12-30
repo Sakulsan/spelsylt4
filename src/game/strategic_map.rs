@@ -244,7 +244,7 @@ pub fn plugin(app: &mut App) {
             spawn_map_sprite,
             spawn_city_ui_nodes,
             spawn_game_ost,
-        )
+        ))
         .insert_resource(SelectedCity(CityData {
             id: "Placeholder".to_string(),
             ..default()
