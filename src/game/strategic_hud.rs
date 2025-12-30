@@ -13,10 +13,12 @@ use super::market::*;
 use super::strategic_map::{Caravan, Order, Player, SelectedCaravan, SelectedCity, StrategicState};
 use super::tooltip::Tooltips;
 use crate::GameState;
+use crate::NetworkState;
 use crate::game::market;
 use crate::game::strategic_map::UpdatedCity;
 use crate::game::strategic_map::{ActivePlayer, BelongsTo, Faction};
 use crate::game::strategic_map::{BuildinTable, CityNodeMarker};
+use crate::network::message::NetworkMessage;
 use crate::network::message::PlayerId;
 use crate::network::network_menu::CityMenuEntered;
 use crate::network::network_menu::CityMenuExited;
@@ -183,6 +185,8 @@ fn no_popup_button(
     mut menu_state: ResMut<NextState<StrategicState>>,
     mut tab_state: ResMut<NextState<PopupHUD>>,
     selected_city: Res<SelectedCity>,
+    network_state: Res<State<NetworkState>>,
+    mut message_writer: MessageWriter<ClientMessage>,
     mut player: Query<(Entity, &mut Player), With<ActivePlayer>>,
 ) {
     let Ok((player, mut player_data)) = player.single_mut() else {
@@ -200,17 +204,25 @@ fn no_popup_button(
                 HudButton::OperationAction => {
                     info!("Spawning caravan");
                     player_data.money -= 500.;
-                    commands.spawn((
-                        Caravan {
-                            position_city_id: selected_city.0.id.clone(),
-                            orders: vec![Order {
-                                goal_city_id: selected_city.0.id.clone(),
-                                ..default()
-                            }],
+                    let caravan = Caravan {
+                        position_city_id: selected_city.0.id.clone(),
+                        orders: vec![Order {
+                            goal_city_id: selected_city.0.id.clone(),
                             ..default()
-                        },
-                        BelongsTo(player),
-                    ));
+                        }],
+                        ..default()
+                    };
+
+                    if *network_state == NetworkState::SinglePlayer || *network_state == NetworkState::Host {
+                        commands.spawn((caravan,
+                                        BelongsTo(player)));
+                    }
+                    else {
+                        message_writer.write(NetworkMessage::CaravanRequest{
+                            player_id: player_data.player_id,
+                            caravan
+                        });
+                    }
                 }
                 HudButton::EconomyTabAction => {
                     tab_state.set(PopupHUD::Wares);
