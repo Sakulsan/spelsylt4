@@ -435,7 +435,8 @@ fn join_menu_setup(mut commands: Commands) {
     commands.spawn((
         DespawnOnExit(NetworkMenuState::Join),
         Node {
-            width: vw(80),
+            left: vw(25),
+            width: vw(50),
             height: percent(100),
             align_items: AlignItems::Center,
             justify_content: JustifyContent::Center,
@@ -446,7 +447,7 @@ fn join_menu_setup(mut commands: Commands) {
             Node {
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
-
+                width: vw(50),
                 ..default()
             },
             BackgroundColor(CRIMSON.into()),

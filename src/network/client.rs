@@ -9,7 +9,7 @@ use crate::{
         city_data::CityData,
         namelists::CityNameList,
         strategic_hud::LockedCities,
-        strategic_map::{BelongsTo, Caravan, CaravanId, Player, SelectedCity},
+        strategic_map::{BelongsTo, Caravan, CaravanId, HostFixedTurnEnd, Player, SelectedCity},
         turn::TurnEnded,
     },
     network::{
