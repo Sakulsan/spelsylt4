@@ -95,6 +95,7 @@ pub fn plugin(app: &mut App) {
                 receive_city_menu_exited,
                 update_caravan_edits,
                 update_turnend,
+                spawn_caravans,
             )
                 .chain()
                 .in_set(ClientSet),
