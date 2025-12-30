@@ -102,7 +102,7 @@ fn spawn_network_menu(
     state.set(NetworkMenuState::Main);
 
     commands.spawn((
-        AudioPlayer::new(asset_server.load("music/LOBBY 1.ogg")),
+        AudioPlayer::new(asset_server.load("sprites/LOBBY 1.ogg")),
         PlaybackSettings {
             mode: bevy::audio::PlaybackMode::Loop,
             ..default()
